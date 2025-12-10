@@ -1,0 +1,6 @@
+@charset "utf-8";
+@import "tailwindcss";
+@plugin "daisyui" {
+    themes: all;
+}
+@source "../.fable-build/**/*.{js,ts,jsx,tsx}";

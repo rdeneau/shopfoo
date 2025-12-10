@@ -1,0 +1,27 @@
+source https://api.nuget.org/v3/index.json
+framework: net9.0
+storage: none
+
+nuget Fable.Remoting.Giraffe
+nuget Giraffe
+nuget Giraffe.GoodRead
+
+nuget Fable.Core
+nuget Fable.React
+nuget Fable.Remoting.Client
+nuget Feliz
+nuget Feliz.DaisyUI
+nuget Feliz.Router
+nuget Feliz.UseElmish
+
+nuget FsToolkit.ErrorHandling.TaskResult
+
+group Build
+    source https://api.nuget.org/v3/index.json
+    framework: net9.0
+    storage: none
+
+    nuget FSharp.Core
+    nuget Fake.Core.Target
+    nuget Fake.DotNet.Cli
+    nuget Fake.IO.FileSystem

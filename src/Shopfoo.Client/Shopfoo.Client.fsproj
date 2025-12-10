@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net9.0</TargetFramework>
+    </PropertyGroup>
+    <ItemGroup>
+        <Compile Include="Server.fs" />
+        <Compile Include="Router.fs" />
+        <Compile Include="Extensions.fs" />
+        <Compile Include="Pages\Index.fs" />
+        <Compile Include="View.fs" />
+        <Compile Include="App.fs" />
+    </ItemGroup>
+    <ItemGroup>
+        <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
+    </ItemGroup>
+    <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>
