@@ -7,9 +7,9 @@ type ServerError =
 exception ServerException of ServerError
 
 module ServerError =
-    let failwith (er:ServerError) = raise (ServerException er)
+    let failwith (er: ServerError) = raise (ServerException er)
 
-    let ofResult<'a> (v:Result<'a,ServerError>) =
+    let ofResult<'a> (v: Result<'a, ServerError>) =
         match v with
         | Ok v -> v
         | Error e -> e |> failwith
