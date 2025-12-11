@@ -13,7 +13,8 @@ type prop with
 type Html with
     static member inline a(text: string, p: Page) =
         Html.a [ // ↩
-            yield! prop.hrefRouted
+            yield! prop.hrefRouted p
+            prop.key $"{p}"
             prop.text text
         ]
 
