@@ -7,6 +7,7 @@
         <Compile Include="Server.fs" />
         <Compile Include="Router.fs" />
         <Compile Include="Extensions.fs" />
+        <Compile Include="Pages\About.fs" />
         <Compile Include="Pages\Index.fs" />
         <Compile Include="View.fs" />
         <Compile Include="App.fs" />

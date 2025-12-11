@@ -142,7 +142,7 @@ let AppView () =
     let page =
         match state.Page with
         | Page.Index -> Pages.Index.IndexView()
-        | Page.About -> Html.div [ prop.key "about-page"; prop.text "Shopfoo Client Application - About Page" ]
+        | Page.About -> Pages.About.AboutView()
 
     React.router [ // ↩
         router.pathMode

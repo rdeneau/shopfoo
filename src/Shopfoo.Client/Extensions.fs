@@ -1,6 +1,7 @@
 ﻿[<AutoOpen>]
 module Shopfoo.Client.Extensions
 
+open Fable.Core.JsInterop
 open Feliz
 open Router
 
@@ -10,11 +11,16 @@ type prop with
         prop.onClick Router.goToUrl
     ]
 
+    static member inline child(item: ReactElement) =
+        let key = System.Guid.NewGuid()
+        let wrappingFragment = Fable.React.ReactBindings.React.createElement(Fable.React.ReactBindings.React.Fragment, createObj ["key" ==> string key], [item])
+        prop.children [ wrappingFragment ]
+
 type Html with
     static member inline a(text: string, p: Page) =
         Html.a [ // ↩
             yield! prop.hrefRouted p
-            prop.key $"{p}"
+            prop.key $"{p.Key}"
             prop.text text
         ]
 

@@ -8,6 +8,11 @@ type Page =
     | Index
     | About
 
+    member this.Key =
+        match this with
+        | Page.Index -> "index"
+        | Page.About -> "about"
+
 [<RequireQualifiedAccess>]
 module Page =
     let defaultPage = Page.Index
