@@ -6,18 +6,83 @@ open Feliz.DaisyUI
 open Feliz.UseElmish
 open Router
 
-type private Msg = UrlChanged of Page
+[<RequireQualifiedAccess>]
+type private ThemeGroup =
+    | Light
+    | Dark
 
-type private State = { Page: Page }
+[<RequireQualifiedAccess>]
+type private Theme =
+    | Light
+    | Dark
+    | Corporate
+    | Business
+
+type private Msg =
+    | UrlChanged of Page
+    | ThemeChanged of Theme
+
+type private State = { // ↩
+    Page: Page
+    Theme: Theme
+}
+
+let private keyOf x = $"{x}".ToLowerInvariant()
+
+let private setupTheme theme =
+    Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
 
 let private init () =
-    let nextPage = Router.currentPath () |> Page.parseFromUrlSegments
+    let currentPage = Router.currentPath () |> Page.parseFromUrlSegments
+    let defaultTheme = Theme.Light
 
-    { Page = nextPage }, Cmd.navigatePage nextPage
+    { Page = currentPage; Theme = defaultTheme },
+    Cmd.batch [ // ↩
+        Cmd.navigatePage currentPage
+        Cmd.ofMsg (ThemeChanged defaultTheme)
+    ]
 
 let private update (msg: Msg) (state: State) : State * Cmd<Msg> =
     match msg with
-    | UrlChanged page -> { state with Page = page }, Cmd.none
+    | UrlChanged page ->
+        { state with Page = page }, // ↩
+        Cmd.none
+
+    | ThemeChanged theme ->
+        { state with Theme = theme }, // ↩
+        Cmd.ofEffect (fun _ -> Fable.Core.JS.setTimeout (fun () -> setupTheme theme) 0 |> ignore)
+
+type private ThemeMenu(currentTheme, dispatch) =
+    member _.group(themeGroup: ThemeGroup) =
+        let key = keyOf themeGroup
+
+        Daisy.menuTitle [ // ↩
+            prop.key $"%s{key}-theme-group"
+            prop.text $"{themeGroup} Themes"
+        ]
+
+    member _.item(theme: Theme, emoji: string) =
+        let key = keyOf theme
+
+        Html.li [
+            prop.key $"{key}-theme"
+            prop.children [
+                Html.a [
+                    prop.key $"{key}-theme-link"
+                    prop.className "whitespace-nowrap"
+                    prop.onClick (fun _ -> dispatch (ThemeChanged theme))
+                    prop.children [
+                        Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
+                        Html.span [ prop.key $"{key}-theme-text"; prop.text $"{theme}"; prop.custom ("data-theme", key) ]
+                        Html.span [ // ↩
+                            prop.key $"{key}-theme-tick"
+                            prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
+                            prop.text (if theme = currentTheme then "✓" else "")
+                        ]
+                    ]
+                ]
+            ]
+        ]
 
 [<ReactComponent>]
 let AppView () =
@@ -33,6 +98,35 @@ let AppView () =
                     prop.className "flex-1"
                     prop.children [ // ↩
                         Html.a ("⚙️ Shopfoo", Page.Index)
+                    ]
+                ]
+                Daisy.dropdown [
+                    dropdown.hover
+                    dropdown.end'
+                    prop.key "theme-dropdown"
+                    prop.className "flex-none"
+                    prop.children [
+                        Daisy.button.button [ button.ghost; prop.key "theme-button"; prop.text "🌗" ]
+                        Daisy.dropdownContent [
+                            prop.className "p-2 shadow menu bg-base-100 rounded-box"
+                            prop.tabIndex 0
+                            prop.children [
+                                Html.ul [
+                                    prop.key "theme-dropdown-list"
+                                    prop.children [
+                                        let themeMenu = ThemeMenu(state.Theme, dispatch)
+
+                                        themeMenu.group ThemeGroup.Light
+                                        themeMenu.item (Theme.Light, "🌞")
+                                        themeMenu.item (Theme.Corporate, "🏢")
+
+                                        themeMenu.group ThemeGroup.Dark
+                                        themeMenu.item (Theme.Dark, "🌜")
+                                        themeMenu.item (Theme.Business, "💼")
+                                    ]
+                                ]
+                            ]
+                        ]
                     ]
                 ]
                 Html.div [
