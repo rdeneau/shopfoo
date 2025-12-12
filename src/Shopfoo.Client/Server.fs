@@ -1,29 +1,15 @@
 ﻿module Shopfoo.Client.Server
 
-open Fable.SimpleJson
 open Fable.Remoting.Client
-open Shopfoo.Shared.Errors
-open Shopfoo.Shared.API
+open Shopfoo.Shared.Remoting
 
-let private exnToError (e: exn) : ServerError =
-    match e with
-    | :? ProxyRequestException as ex ->
-        try
-            let serverError = Json.parseAs<{| error: ServerError |}> (ex.Response.ResponseBody)
+/// A proxy you can use to talk to server directly
+let api: RootApi =
+    let options =
+        Remoting.createApi () // ↩
+        |> Remoting.withRouteBuilder Route.builder
 
-            serverError.error
-        with _ ->
-            ServerError.Exception(e.Message)
-    | _ -> ServerError.Exception(e.Message)
-
-type ServerResult<'a> = Result<'a, ServerError>
-
-module Cmd =
-    open Elmish
-
-    module OfAsync =
-        let eitherAsResult fn resultMsg =
-            Cmd.OfAsync.either fn () (Result.Ok >> resultMsg) (exnToError >> Result.Error >> resultMsg)
-
-let service =
-    Remoting.createApi () |> Remoting.withRouteBuilder Service.RouteBuilder |> Remoting.buildProxy<Service>
+    {
+        Home = Remoting.buildProxy options // ↩
+        Product = Remoting.buildProxy options
+    }

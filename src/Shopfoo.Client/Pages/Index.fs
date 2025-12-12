@@ -4,22 +4,16 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
-open Shopfoo.Client.Server
 
-type private State = { Message: string }
+type private State = unit
 
-type private Msg =
-    | AskForMessage of bool
-    | MessageReceived of ServerResult<string>
+type private Msg = unit
 
-let private init () =
-    { Message = "Click on one of the buttons!" }, Cmd.none
+let private init () = (), Cmd.none
 
 let private update (msg: Msg) (model: State) : State * Cmd<Msg> =
     match msg with
-    | AskForMessage success -> model, Cmd.OfAsync.eitherAsResult (fun _ -> service.GetMessage success) MessageReceived
-    | MessageReceived(Ok msg) -> { model with Message = $"Got success response: {msg}" }, Cmd.none
-    | MessageReceived(Error error) -> { model with Message = $"Got server error: {error}" }, Cmd.none
+    | () -> model, Cmd.none
 
 [<AutoOpen>]
 module private Component =

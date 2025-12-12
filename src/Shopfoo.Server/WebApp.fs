@@ -1,31 +1,42 @@
 ﻿module Shopfoo.Server.WebApp
 
+open System
+open Fable.Remoting.Giraffe
+open Fable.Remoting.Server
 open Giraffe
 open Giraffe.GoodRead
-open Fable.Remoting.Server
-open Fable.Remoting.Giraffe
+open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
-open Shopfoo.Shared.API
-open Shopfoo.Shared.Errors
+open Shopfoo.Domain.Types.Errors
+open Shopfoo.Shared
+open Shopfoo.Shared.Remoting
 
-let service = {
-    GetMessage =
-        fun success ->
-            task {
-                if success then
-                    return "Hi from Server!"
-                else
-                    return ServerError.failwith (ServerError.Exception "OMG, something terrible happened")
-            }
-            |> Async.AwaitTask
-}
+let errorHandler (logger: ILogger) (FirstException exn) (routeInfo: RouteInfo<HttpContext>) =
+    logger.LogError(exn, $"Error at %s{routeInfo.path} on method %s{routeInfo.methodName}")
 
-let webApp: HttpHandler =
-    let remoting logger =
-        Remoting.createApi ()
-        |> Remoting.withRouteBuilder Service.RouteBuilder
-        |> Remoting.fromValue service
-        |> Remoting.withErrorHandler (Remoting.errorHandler logger)
-        |> Remoting.buildHttpHandler
+    // Propagate to the client the exception (1) that we could have thrown (2)
+    // (1) Only its message, in order to prevent technical disclosure
+    // (2) Using F# helpers: failwith, invalidArg, invalidOp, nullArg
+    match exn with
+    | Operators.Failure _
+    | :? ArgumentException
+    | :? ArgumentNullException
+    | :? InvalidOperationException -> // ↩
+        Propagate(ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail()))
+    | _ -> Ignore
 
-    choose [ Require.services<ILogger<_>> remoting; htmlFile "public/index.html" ]
+let apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
+    Remoting.createApi ()
+    |> Remoting.withErrorHandler (errorHandler logger)
+    |> Remoting.withRouteBuilder Route.builder
+    |> Remoting.fromValue api
+    |> Remoting.buildHttpHandler
+
+let webApp (api: Remoting.RootApi) : HttpHandler =
+    choose [
+        choose [ // ↩
+            Require.services<ILogger> (apiHttpHandler api.Home)
+            Require.services<ILogger> (apiHttpHandler api.Product)
+        ]
+        htmlFile "public/index.html"
+    ]

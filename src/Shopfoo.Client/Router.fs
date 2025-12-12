@@ -4,7 +4,7 @@ open Browser.Types
 open Feliz.Router
 open Fable.Core.JsInterop
 
-type private PageUrl = {
+type PageUrl = {
     Segments: string list
     Query: (string * string) list
 } with
@@ -37,7 +37,7 @@ module Page =
         | [] -> Page.Index
         | _ -> defaultPage
 
-let private (|PageUrl|) =
+let (|PageUrl|) =
     function
     | Page.About -> PageUrl.WithSegments("about")
     | Page.Index -> PageUrl.Root

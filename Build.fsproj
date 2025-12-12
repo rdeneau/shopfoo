@@ -4,6 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
+    <Content Include="paket.references" />
     <Compile Include="BuildHelpers.fs" />
     <Compile Include="BuildTools.fs" />
     <Compile Include="Build.fs" />
