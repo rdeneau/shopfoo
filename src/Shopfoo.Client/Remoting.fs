@@ -15,7 +15,7 @@ type ApiCall<'response> =
 
 type ApiCallArgs<'response, 'msg> = {
     Call: RootApi -> Async<Response<'response>>
-    Feat: Feat
+    Feat: Feat // TODO: [Claims] with Feat.Admin, we don't need the 'Feat' field anymore
     Error: ApiError -> 'msg
     Success: 'response -> 'msg
 }
@@ -50,8 +50,8 @@ type FullContext with
 
     member this.PrepareRequest body =
         let secureRequest: Request<'a> = {
-            Lang = this.Lang
             Token = this.Token
+            Lang = this.Lang
             Body = body
         }
 

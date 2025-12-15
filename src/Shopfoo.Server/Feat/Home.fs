@@ -17,8 +17,8 @@ type Api() =
         [
             TagCode "About", "About", "À propos"
             TagCode "Login", "Login", "Connexion"
+            TagCode "Logout", "Logout", "Se déconnecter"
             TagCode "Products", "Products", "Produits"
-            TagCode "Save", "Save", "Enregistrer"
         ]
 
         PageCode.About,
@@ -42,6 +42,7 @@ type Api() =
             TagCode "CatalogInfo", "Catalog Info", "Info Catalogue"
             TagCode "Description", "Description", "Description"
             TagCode "Name", "Name", "Nom"
+            TagCode "Save", "Save", "Enregistrer"
         ]
     ]
 

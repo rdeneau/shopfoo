@@ -11,6 +11,7 @@
     <Compile Include="Remoting\FeatApi.fs" />
     <Compile Include="Remoting\Security.fs" />
     <Compile Include="Remoting\Home\IndexHandler.fs" />
+    <Compile Include="Remoting\Home\GetTranslationsHandler.fs" />
     <Compile Include="Remoting\Home\HomeApiBuilder.fs" />
     <Compile Include="Remoting\Product\GetProductsHandler.fs" />
     <Compile Include="Remoting\Product\GetProductDetailsHandler.fs" />

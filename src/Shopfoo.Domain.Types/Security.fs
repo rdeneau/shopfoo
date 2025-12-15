@@ -20,6 +20,7 @@ type Claims = (Feat * Access) list
 module Claims =
     let none = []
 
+[<RequireQualifiedAccess>]
 type User =
     | Anonymous
     | Authorized of userName: string * claims: Claims

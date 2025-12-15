@@ -57,10 +57,8 @@ module TranslationPages =
         inherit Base(PageCode.Home, ?translations = translations)
         member this.About = this.Get "About"
         member this.Login = this.Get "Login"
+        member this.Logout = this.Get "Logout"
         member this.Products = this.Get "Products"
-
-        // TODO: [Translations] move to Shared (new Page)
-        member this.Save = this.Get "Save"
 
     type Login internal (?translations) =
         inherit Base(PageCode.Login, ?translations = translations)
@@ -71,6 +69,7 @@ module TranslationPages =
         member this.CatalogInfo = this.Get "CatalogInfo"
         member this.Description = this.Get "Description"
         member this.Name = this.Get "Name"
+        member this.Save = this.Get "Save"
 
 open TranslationPages
 
@@ -97,6 +96,14 @@ type AppTranslations
         Section.Login, login
         Section.Product, product
     ]
+
+    let pageCodes predicate =
+        sections
+        |> Seq.map snd
+        |> Seq.distinct
+        |> Seq.filter predicate
+        |> Seq.map _.PageCode
+        |> Set
 
     new() = AppTranslations(About(), Home(), Login(), Product())
 
@@ -125,13 +132,10 @@ type AppTranslations
             translations
         )
 
-    member val EmptyPages =
-        sections
-        |> Seq.map snd
-        |> Seq.distinct
-        |> Seq.filter _.IsEmpty
-        |> Seq.map _.PageCode
-        |> Set
+    member val EmptyPages = pageCodes _.IsEmpty
+    member val PopulatedPages = pageCodes (fun x -> not x.IsEmpty)
+
+    member this.IsEmpty = this.PopulatedPages.IsEmpty
 
     member val DebugInfo =
         sections

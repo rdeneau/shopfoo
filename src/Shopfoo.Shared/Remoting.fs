@@ -6,6 +6,7 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Translations
 
+[<RequireQualifiedAccess>]
 type FullContext = {
     Lang: Lang
     User: User
@@ -92,6 +93,7 @@ module HomeApi =
 
     type HomeApi = {
         Index: QueryWithTranslations<unit, HomeIndexResponse>
+        GetTranslations: Query<Set<PageCode>, Translations>
     } with
         interface IApi
 

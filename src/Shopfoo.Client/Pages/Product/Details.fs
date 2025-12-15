@@ -32,14 +32,14 @@ let private init (fullContext: FullContext) sku =
     { Products = Remote.Loading }, // ↩
     Cmd.loadProducts (fullContext.PrepareRequest sku)
 
-let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | Msg.ProductDetailsFetched(Ok { Product = Some product }) -> { model with Products = Remote.Loaded product }, Cmd.none
     | Msg.ProductDetailsFetched(Ok { Product = None }) -> { model with Products = Remote.Empty }, Cmd.none
 
     | Msg.ProductDetailsFetched(Error apiError) ->
         { model with Products = Remote.LoadError apiError }, // ↩
-        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
+        Cmd.none
 
 [<AutoOpen>]
 module private Component =
@@ -75,6 +75,7 @@ type private Component =
     [<ReactComponent>]
     static member InputWithActions(key: string, value: Value, actions: Action list) =
         Html.div [
+            prop.key $"{key}-div"
             prop.className "flex items-center mb-4 w-full"
             prop.children [
                 Daisy.label.input [
@@ -108,6 +109,7 @@ type private Component =
                             prop.text "⏷"
                         ]
                         Daisy.dropdownContent [
+                            prop.key $"{key}-dropdown-content"
                             prop.className "p-2 shadow menu bg-base-100 rounded-box"
                             prop.tabIndex 0
                             prop.children [
@@ -169,7 +171,7 @@ module private Section =
                     button.primary
                     prop.className "justify-self-start"
                     prop.key "save-product-button"
-                    prop.text translations.Home.Save
+                    prop.text translations.Product.Save
                     prop.onClick (fun _ -> ()) // TODO
                 ]
             ]
@@ -210,11 +212,9 @@ module private Section =
         ]
 
 [<ReactComponent>]
-let DetailsView (fullContext: ReactState<FullContext>, sku: SKU) =
-    let translations = fullContext.Current.Translations
-
-    let model, dispatch =
-        React.useElmish (init fullContext.Current sku, update fullContext, [||])
+let DetailsView (fullContext, sku: SKU) =
+    let model, dispatch = React.useElmish (init fullContext sku, update, [||])
+    let translations = fullContext.Translations
 
     Html.section [
         prop.key "product-details-page"

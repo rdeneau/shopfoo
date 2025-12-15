@@ -36,9 +36,3 @@ type Html with
 
     static member inline divClassed (cn: string) (elm: ReactElement list) = // ↩
         Html.classed Html.div cn elm
-
-type ReactState<'t>(initialValue: 't) =
-    let current, update = React.useStateWithUpdater initialValue
-    member val Current = current
-    member _.Update(updater) = update updater
-    member _.Update(value) = update (fun _ -> value)

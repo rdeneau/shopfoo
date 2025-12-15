@@ -3,11 +3,16 @@
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client
+open Shopfoo.Client.Routing
 open Shopfoo.Shared.Remoting
 
 [<ReactComponent>]
-let AboutView (fullContext: ReactState<FullContext>) =
-    let translations = fullContext.Current.Translations
+let AboutView (fullContext: FullContext) =
+    let translations = fullContext.Translations
+
+    // Navigate to the Login page to load translations
+    if translations.IsEmpty then
+        Router.navigatePage Page.Login
 
     Html.section [
         prop.key "about-page"

@@ -18,4 +18,7 @@ type HomeApiBuilder(api: FeatApi) =
         Index =
             IndexHandler(api, AuthorizedPageCodes) // ↩
             |> Security.authorizeHandler Claims.none
+        GetTranslations =
+            GetTranslationsHandler(api) // ↩
+            |> Security.authorizeHandler Claims.none
     }

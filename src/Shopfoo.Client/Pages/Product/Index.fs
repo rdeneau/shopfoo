@@ -32,21 +32,20 @@ let private init (fullContext: FullContext) =
     { Products = Remote.Loading }, // ↩
     Cmd.loadProducts (fullContext.PrepareQueryWithTranslations())
 
-let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update (fillTranslations: Translations -> unit) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | Msg.ProductsFetched(Ok(data, translations)) ->
         { model with Products = Remote.Loaded data.Products }, // ↩
-        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(translations))
+        Cmd.ofEffect (fun _ -> fillTranslations translations)
 
     | Msg.ProductsFetched(Error apiError) ->
         { model with Products = Remote.LoadError apiError }, // ↩
-        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
+        Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
 [<ReactComponent>]
-let IndexView (fullContext: ReactState<FullContext>) =
-    let translations = fullContext.Current.Translations
-
-    let model, _ = React.useElmish (init fullContext.Current, update fullContext, [||])
+let IndexView (fullContext, fillTranslations) =
+    let model, _ = React.useElmish (init fullContext, update fillTranslations, [||])
+    let translations = fullContext.Translations
 
     Html.section [
         prop.key "products-page"
@@ -82,17 +81,20 @@ let IndexView (fullContext: ReactState<FullContext>) =
                             )
                         ]
                         Html.tbody [
-                            for i, product in List.indexed products do
-                                Html.tr [
-                                    prop.key $"product-%i{i}"
-                                    prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
-                                    prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Value))
-                                    prop.children [
-                                        Html.td [ prop.key $"product-%i{i}-num"; prop.text (i + 1) ]
-                                        Html.td [ prop.key $"product-%i{i}-name"; prop.text product.Name ]
-                                        Html.td [ prop.key $"product-%i{i}-desc"; prop.text product.Description ]
+                            prop.key "products-table-tbody"
+                            prop.children [
+                                for i, product in List.indexed products do
+                                    Html.tr [
+                                        prop.key $"product-%i{i}"
+                                        prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
+                                        prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Value))
+                                        prop.children [
+                                            Html.td [ prop.key $"product-%i{i}-num"; prop.text (i + 1) ]
+                                            Html.td [ prop.key $"product-%i{i}-name"; prop.text product.Name ]
+                                            Html.td [ prop.key $"product-%i{i}-desc"; prop.text product.Description ]
+                                        ]
                                     ]
-                                ]
+                            ]
                         ]
                     ]
                 ]
