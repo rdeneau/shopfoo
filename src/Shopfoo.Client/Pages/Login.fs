@@ -8,7 +8,6 @@ open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
-open Shopfoo.Shared
 open Shopfoo.Shared.Remoting
 
 type Model = { DemoUsers: Remote<User list> }

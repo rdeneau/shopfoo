@@ -8,8 +8,6 @@ open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
-open Shopfoo.Domain.Types.Security
-open Shopfoo.Shared
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 

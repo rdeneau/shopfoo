@@ -8,9 +8,7 @@ open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
-open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
-open Shopfoo.Shared
 open Shopfoo.Shared.Remoting
 
 type private Model = { Products: Remote<Product list> }
