@@ -3,8 +3,8 @@
 [<RequireQualifiedAccess>]
 type PageCode =
     | About
+    | Login
     | Product
-    | Shared
 
 type TagCode = TagCode of code: string
 
@@ -13,7 +13,7 @@ type TranslationKey = { Page: PageCode; Tag: TagCode }
 type Translations = {
     Pages: Map<PageCode, Map<TagCode, string>>
 } with
-    static member FallbackText key =
+    static let fallbackText key =
         let (TagCode tagCode) = key.Tag
         $"[*** %A{key.Page}.%s{tagCode} ***]"
 
@@ -25,15 +25,20 @@ type Translations = {
     member x.Get(key, ?defaultValue) =
         x.GetOrNone(key) // ↩
         |> Option.orElse defaultValue
-        |> Option.defaultWith (fun () -> Translations.FallbackText key)
+        |> Option.defaultWith (fun () -> fallbackText key)
 
-    static member Empty = { Pages = Map.empty }
+[<RequireQualifiedAccess>]
+module Translations =
+    let Empty = { Pages = Map.empty }
 
-    static member Add (key: TranslationKey, value) x =
-        Translations.AddByCodes (key.Page, key.Tag, value) x
-
-    static member AddByCodes (pageCode, tagCode, value) x =
+    let addByCodes pageCode tagCode value translations =
         let tagMap =
-            x.Pages |> Map.tryFind pageCode |> Option.defaultValue Map.empty |> Map.add tagCode value
+            translations.Pages // ↩
+            |> Map.tryFind pageCode
+            |> Option.defaultValue Map.empty
+            |> Map.add tagCode value
 
-        { x with Pages = x.Pages |> Map.add pageCode tagMap }
+        { translations with Pages = translations.Pages |> Map.add pageCode tagMap }
+
+    let add (key: TranslationKey) value translations =
+        translations |> addByCodes key.Page key.Tag value

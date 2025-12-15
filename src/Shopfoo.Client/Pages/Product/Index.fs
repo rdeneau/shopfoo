@@ -1,17 +1,17 @@
-﻿module Shopfoo.Client.Pages.Index
+﻿module Shopfoo.Client.Pages.Product.Index
 
 open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 
-type private State = unit
+type private Model = unit
 
 type private Msg = unit
 
 let private init () = (), Cmd.none
 
-let private update (msg: Msg) (model: State) : State * Cmd<Msg> =
+let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | () -> model, Cmd.none
 

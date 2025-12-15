@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Router
+﻿module Shopfoo.Client.Routing
 
 open Browser.Types
 open Feliz.Router
@@ -20,27 +20,39 @@ type PageUrl = {
 
 type Page =
     | About
-    | Index
+    | Home
+    | Login
+    | ProductIndex
+    | ProductDetail of sku: string
 
     member this.Key =
         match this with
-        | Page.Index -> "index"
         | Page.About -> "about"
+        | Page.Home -> "home"
+        | Page.Login -> "login"
+        | Page.ProductIndex -> "product"
+        | Page.ProductDetail sku -> $"product-{sku}"
 
 [<RequireQualifiedAccess>]
 module Page =
-    let defaultPage = Page.Index
+    let defaultPage = Page.Login
 
     let parseFromUrlSegments =
         function
+        | [] -> Page.Home
         | [ "about" ] -> Page.About
-        | [] -> Page.Index
-        | _ -> defaultPage
+        | [ "login" ] -> Page.Login
+        | [ "product" ] -> Page.ProductIndex
+        | [ "product"; sku ] -> Page.ProductDetail sku
+        | segments -> failwith $"Url not supported: %A{segments}"
 
 let (|PageUrl|) =
     function
     | Page.About -> PageUrl.WithSegments("about")
-    | Page.Index -> PageUrl.Root
+    | Page.Home -> PageUrl.Root
+    | Page.Login -> PageUrl.WithSegments("login")
+    | Page.ProductIndex -> PageUrl.WithSegments("product")
+    | Page.ProductDetail sku -> PageUrl.WithSegments("product", sku)
 
 [<RequireQualifiedAccess>]
 module Router =

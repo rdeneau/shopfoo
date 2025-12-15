@@ -3,7 +3,7 @@
 open System
 open Shopfoo.Domain.Types.Translations
 
-module Translations =
+module TranslationPages =
     type internal TranslationKeyBuilder(pageCode: PageCode) =
         member _.Create tag : TranslationKey = // ↩
             { Page = pageCode; Tag = TagCode tag }
@@ -51,37 +51,41 @@ module Translations =
         inherit Base(PageCode.About, ?translations = translations)
         member this.Disclaimer = this.Get "Disclaimer"
 
+    type Login internal (?translations) =
+        inherit Base(PageCode.Login, ?translations = translations)
+        member this.SelectDemoUser = this.Get "SelectDemoUser"
+
     type Product internal (?translations) =
         inherit Base(PageCode.Product, ?translations = translations)
 
-    type Shared internal (?translations) =
-        inherit Base(PageCode.Shared, ?translations = translations)
-        member this.Login = this.Get "Login"
-
-open Translations
+open TranslationPages
 
 type private Section =
     | Section of string
 
     static member About = Section(nameof About)
+    static member Login = Section(nameof Login)
     static member Product = Section(nameof Product)
-    static member Shared = Section(nameof Shared)
 
 type AppTranslations
     private
     (
         about: About, // ↩
+        login: Login,
         product: Product,
-        shared: Shared,
         ?translations
     ) =
-    let sections = [ Section.About, about :> Base; Section.Product, product; Section.Shared, shared ]
+    let sections = [ // ↩
+        Section.About, about :> Base
+        Section.Login, login
+        Section.Product, product
+    ]
 
-    new() = AppTranslations(About(), Product(), Shared())
+    new() = AppTranslations(About(), Login(), Product())
 
     member val About = about
+    member val Login = login
     member val Product = product
-    member val Shared = shared
 
     member val Translations = defaultArg translations Translations.Empty
 
@@ -97,12 +101,18 @@ type AppTranslations
 
         AppTranslations( // ↩
             recreatePageIfNeeded about (fun () -> About translations),
+            recreatePageIfNeeded login (fun () -> Login translations),
             recreatePageIfNeeded product (fun () -> Product translations),
-            recreatePageIfNeeded shared (fun () -> Shared translations),
             translations
         )
 
-    member val EmptyPages = sections |> Seq.map snd |> Seq.distinct |> Seq.filter _.IsEmpty |> Seq.map _.PageCode |> Set
+    member val EmptyPages =
+        sections // ↩
+        |> Seq.map snd
+        |> Seq.distinct
+        |> Seq.filter _.IsEmpty
+        |> Seq.map _.PageCode
+        |> Set
 
     member val DebugInfo =
         sections

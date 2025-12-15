@@ -7,7 +7,7 @@ open Shopfoo.Shared.Remoting
 
 [<Sealed>]
 type ProductApiBuilder(api: FeatApi) =
-    static let AuthorizedPageCodes = Set [ PageCode.Shared; PageCode.Product ]
+    static let AuthorizedPageCodes = Set [ PageCode.Login; PageCode.Product ]
 
     member _.Build() : ProductApi = {
         Index =

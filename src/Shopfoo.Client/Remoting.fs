@@ -23,7 +23,6 @@ type ApiCallArgs<'response, 'msg> = {
 type Cmder = {
     User: User
 } with
-
     member this.ofApiCall(args: ApiCallArgs<'response, 'msg>) : Elmish.Cmd<'msg> =
         let api, cmdOfAsyncEither = Server.api, Cmd.OfAsync.either
 

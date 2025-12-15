@@ -7,13 +7,21 @@
         <Content Include="paket.references" />
         <Compile Include="Server.fs" />
         <Compile Include="Remoting.fs" />
-        <Compile Include="Router.fs" />
-        <Compile Include="Extensions.fs" />
+        <Compile Include="Routing.fs" />
+        <Compile Include="FelizExtensions.fs" />
+        <Compile Include="ReactContexts.fs" />
         <Compile Include="Pages\About.fs" />
-        <Compile Include="Pages\Index.fs" />
+        <Compile Include="Pages\Login.fs" />
+        <Compile Include="Pages\Product\Index.fs" />
         <Compile Include="View.fs" />
         <Compile Include="App.fs" />
         <Content Include="index.html" />
+        <Content Include="..\..\package.json">
+          <Link>package.json</Link>
+        </Content>
+        <Content Include="..\..\yarn.lock">
+          <Link>yarn.lock</Link>
+        </Content>
     </ItemGroup>
     <ItemGroup>
         <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />

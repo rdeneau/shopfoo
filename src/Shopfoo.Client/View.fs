@@ -3,8 +3,10 @@
 open Elmish
 open Feliz
 open Feliz.DaisyUI
+open Feliz.Router
 open Feliz.UseElmish
-open Router
+open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types.Security
 
 [<RequireQualifiedAccess>]
 type private ThemeGroup =
@@ -86,6 +88,7 @@ type private ThemeMenu(currentTheme, dispatch) =
 
 [<ReactComponent>]
 let AppView () =
+    let fullContext = ReactContexts.FullContext.Use()
     let state, dispatch = React.useElmish (init, update)
 
     let navigation =
@@ -97,7 +100,7 @@ let AppView () =
                     prop.key "nav-index"
                     prop.className "flex-1"
                     prop.children [ // ↩
-                        Html.a ("⚙️ Shopfoo", Page.Index)
+                        Html.a ("⚙️ Shopfoo", Page.Home)
                     ]
                 ]
                 Daisy.dropdown [
@@ -129,6 +132,7 @@ let AppView () =
                         ]
                     ]
                 ]
+                // TODO: user name + dropdown to change lang and logout
                 Html.div [
                     prop.key "nav-about"
                     prop.className "flex-none text-xs mr-2"
@@ -139,10 +143,20 @@ let AppView () =
             ]
         ]
 
+    let user =
+        if isNull (box fullContext.current) then
+            User.Anonymous
+        else
+            fullContext.current.User
+
     let page =
-        match state.Page with
-        | Page.Index -> Pages.Index.IndexView()
-        | Page.About -> Pages.About.AboutView()
+        match user, state.Page with
+        | _, Page.About -> Pages.About.AboutView()
+        | User.Anonymous, _ -> Pages.Login.LoginView()
+        | User.Authorized _, Page.Home
+        | User.Authorized _, Page.Login
+        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView()
+        | User.Authorized _, Page.ProductDetail sku -> Html.text $"🚧 Page 'product/{sku}' not implemented yet"
 
     React.router [ // ↩
         router.pathMode

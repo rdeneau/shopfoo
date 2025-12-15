@@ -1,9 +1,10 @@
 ﻿[<AutoOpen>]
-module Shopfoo.Client.Extensions
+module Shopfoo.Client.FelizExtensions
 
 open Fable.Core.JsInterop
 open Feliz
-open Router
+open Feliz.Router
+open Shopfoo.Client.Routing
 
 type prop with
     static member inline hrefRouted(PageUrl pageUrl) = [ // ↩

@@ -12,6 +12,13 @@ type FullContext = {
     Token: AuthToken option
     Translations: AppTranslations
 } with
+    static member Default : FullContext = {
+        Lang = Lang.English
+        User = User.Anonymous
+        Token = None
+        Translations = AppTranslations()
+    }
+
     member this.FillTranslations(translations: Translations) = // ↩
         { this with Translations = this.Translations.Fill translations }
 
@@ -77,8 +84,10 @@ type IApi = interface end
 
 [<AutoOpen>]
 module HomeApi =
+    type HomeIndexResponse = { DemoUsers: User list }
+
     type HomeApi = {
-        Index: QueryWithTranslations<unit, unit>
+        Index: QueryWithTranslations<unit, HomeIndexResponse>
     } with
         interface IApi
 
