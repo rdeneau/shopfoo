@@ -1,7 +1,6 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
-open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =
@@ -59,6 +58,7 @@ module TranslationPages =
         member this.About = this.Get "About"
         member this.Login = this.Get "Login"
         member this.Products = this.Get "Products"
+        member this.Save = this.Get "Save"
 
     type Login internal (?translations) =
         inherit Base(PageCode.Login, ?translations = translations)
@@ -66,7 +66,9 @@ module TranslationPages =
 
     type Product internal (?translations) =
         inherit Base(PageCode.Product, ?translations = translations)
-        member this.ProductWith(SKU sku) = this.Format("Product:SKU", sku)
+        member this.CatalogInfo = this.Get "CatalogInfo"
+        member this.Description = this.Get "Description"
+        member this.Name = this.Get "Name"
 
 open TranslationPages
 

@@ -12,61 +12,48 @@ type GetAllowedTranslationsRequest = {
 }
 
 type Api() =
+    let translationPages = [
+        PageCode.Home,
+        [
+            TagCode "About", "About", "À propos"
+            TagCode "Login", "Login", "Connexion"
+            TagCode "Products", "Products", "Produits"
+            TagCode "Save", "Save", "Enregistrer"
+        ]
+
+        PageCode.About,
+        [
+            TagCode "Disclaimer",
+            "This application is a demo project showcasing the SAFE functional architecture, "
+            + "with domain workflows based on pseudo algebraic effects.",
+            "Cette application est un projet démo illustrant l'architecture 'SAFE functional', "
+            + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
+        ]
+
+        PageCode.Login,
+        [
+            TagCode "SelectDemoUser", // ↩
+            "Select a demo user",
+            "Sélectionner un utilisateur de démo"
+        ]
+
+        PageCode.Product,
+        [
+            TagCode "CatalogInfo", "Catalog Info", "Info Catalogue"
+            TagCode "Description", "Description", "Description"
+            TagCode "Name", "Name", "Nom"
+        ]
+    ]
+
+    let mapTranslationPages f = [
+        for pageCode, translations in translationPages do
+            pageCode, translations |> List.map f |> Map.ofList
+    ]
+
     let translationsByLang =
         Map [
-            Lang.English,
-            [
-                PageCode.Home,
-                Map [
-                    TagCode "About", "About"
-                    TagCode "Login", "Login"
-                    TagCode "Products", "Products"
-                ]
-
-                PageCode.About,
-                Map [
-                    TagCode "Disclaimer",
-                    "This application is a demo project showcasing the SAFE functional architecture, "
-                    + "with domain workflows based on pseudo algebraic effects."
-                ]
-
-                PageCode.Product,
-                Map [ // ↩
-                    TagCode "Product:SKU", "Product: {0}"
-                ]
-
-                PageCode.Login,
-                Map [ // ↩
-                    TagCode "SelectDemoUser", "Select a demo user"
-                ]
-            ]
-
-            Lang.French,
-            [
-                PageCode.Home,
-                Map [
-                    TagCode "About", "À propos"
-                    TagCode "Login", "Connexion"
-                    TagCode "Products", "Produits"
-                ]
-
-                PageCode.About,
-                Map [
-                    TagCode "Disclaimer",
-                    "Cette application est un projet démo illustrant l'architecture 'SAFE functional', "
-                    + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
-                ]
-
-                PageCode.Product,
-                Map [ // ↩
-                    TagCode "Product:SKU", "Produit : {0}"
-                ]
-
-                PageCode.Login,
-                Map [ // ↩
-                    TagCode "SelectDemoUser", "Sélectionner un utilisateur de démo"
-                ]
-            ]
+            Lang.English, mapTranslationPages (fun (tagCode, en, _) -> tagCode, en)
+            Lang.French, mapTranslationPages (fun (tagCode, _, fr) -> tagCode, fr)
         ]
 
     member _.GetAllowedTranslations(request: GetAllowedTranslationsRequest) : Async<Result<Translations, Error>> =
