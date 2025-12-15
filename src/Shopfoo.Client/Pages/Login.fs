@@ -52,9 +52,11 @@ let LoginView (fullContext: ReactState<FullContext>) =
 
     Html.section [
         prop.key "login-page"
-        prop.className "bg-base-200 border border-base-300 rounded-box p-4"
         prop.children [
-            Html.h1 [ prop.key "login-title"; prop.text translations.Login.Title ]
+            Daisy.breadcrumbs [
+                prop.key "login-title"
+                prop.child (Html.ul [ Html.li [ prop.key "login-title-text"; prop.text translations.Home.Login ] ])
+            ]
 
             match model.DemoUsers with
             | Remote.Empty -> ()
@@ -75,18 +77,23 @@ let LoginView (fullContext: ReactState<FullContext>) =
                             | User.Authorized(userName, _) -> userName, user
                     ]
 
-                Daisy.select [
-                    prop.key "users-select"
-                    prop.children [
-                        Html.option [
-                            prop.disabled true
-                            prop.selected true
-                            prop.text translations.Login.SelectDemoUser
+                Html.div [
+                    prop.className "bg-base-200 border border-base-300 rounded-box p-4"
+                    prop.child (
+                        Daisy.select [
+                            prop.key "users-select"
+                            prop.children [
+                                Html.option [
+                                    prop.disabled true
+                                    prop.selected true
+                                    prop.text translations.Login.SelectDemoUser
+                                ]
+                                for userName in authUsers.Keys do
+                                    Html.option userName
+                            ]
+                            prop.onChange (fun userName -> dispatch (Msg.Login authUsers[userName]))
                         ]
-                        for userName in authUsers.Keys do
-                            Html.option userName
-                    ]
-                    prop.onChange (fun userName -> dispatch (Msg.Login authUsers[userName]))
+                    )
                 ]
         ]
     ]

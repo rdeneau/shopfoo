@@ -46,12 +46,19 @@ let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Mod
 
 [<ReactComponent>]
 let IndexView (fullContext: ReactState<FullContext>) =
+    let translations = fullContext.Current.Translations
+
     let model, dispatch =
         React.useElmish (init fullContext.Current, update fullContext, [||])
 
     Html.section [
         prop.key "products-page"
         prop.children [
+            Daisy.breadcrumbs [
+                prop.key "products-title"
+                prop.child (Html.ul [ Html.li [ prop.key "products-title-text"; prop.text translations.Home.Products ] ])
+            ]
+
             match model.Products with
             | Remote.Empty -> ()
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-4 w-full"; prop.key "products-skeleton" ]

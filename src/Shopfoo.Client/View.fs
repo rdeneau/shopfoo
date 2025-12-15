@@ -139,7 +139,7 @@ let AppView () =
                 Html.div [
                     prop.key "nav-about"
                     prop.className "flex-none text-xs mr-2"
-                    prop.children (Html.a (translations.About.Title, Page.About))
+                    prop.children (Html.a (translations.Home.About, Page.About))
                 ]
             ]
         ]

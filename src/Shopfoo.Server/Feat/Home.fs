@@ -16,28 +16,56 @@ type Api() =
         Map [
             Lang.English,
             [
+                PageCode.Home,
+                Map [
+                    TagCode "About", "About"
+                    TagCode "Login", "Login"
+                    TagCode "Products", "Products"
+                ]
+
                 PageCode.About,
                 Map [
-                    TagCode "Title", "About"
                     TagCode "Disclaimer",
-                    "This application is a demo project showcasing the SAFE functional architecture, " // ↩
+                    "This application is a demo project showcasing the SAFE functional architecture, "
                     + "with domain workflows based on pseudo algebraic effects."
                 ]
-                PageCode.Product, Map []
-                PageCode.Login, Map [ TagCode "Title", "Login"; TagCode "SelectDemoUser", "Select a demo user" ]
+
+                PageCode.Product,
+                Map [ // ↩
+                    TagCode "Product:SKU", "Product: {0}"
+                ]
+
+                PageCode.Login,
+                Map [ // ↩
+                    TagCode "SelectDemoUser", "Select a demo user"
+                ]
             ]
 
             Lang.French,
             [
+                PageCode.Home,
+                Map [
+                    TagCode "About", "À propos"
+                    TagCode "Login", "Connexion"
+                    TagCode "Products", "Produits"
+                ]
+
                 PageCode.About,
                 Map [
-                    TagCode "Title", "À propos"
                     TagCode "Disclaimer",
-                    "Cette application est un projet démo illustrant l'architecture 'SAFE functional', " // ↩
+                    "Cette application est un projet démo illustrant l'architecture 'SAFE functional', "
                     + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
                 ]
-                PageCode.Product, Map []
-                PageCode.Login, Map [ TagCode "Title", "Connexion"; TagCode "SelectDemoUser", "Sélectionner un utilisateur de démo" ]
+
+                PageCode.Product,
+                Map [ // ↩
+                    TagCode "Product:SKU", "Produit : {0}"
+                ]
+
+                PageCode.Login,
+                Map [ // ↩
+                    TagCode "SelectDemoUser", "Sélectionner un utilisateur de démo"
+                ]
             ]
         ]
 

@@ -5,6 +5,8 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
+open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types.Products
 open Shopfoo.Shared.Remoting
 
 type private Model = unit
@@ -117,13 +119,10 @@ module private Section =
             prop.key "product-details-fieldset"
             prop.className "bg-base-200 border border-base-300 rounded-box p-4"
             prop.children [
-                Html.legend [ prop.key "product-details-legend"; prop.text "🗂️ Catalog Info" ]
-
-                Daisy.fieldsetLabel [ prop.key "sku-label"; prop.text "SKU" ]
-                Html.p [
-                    prop.key "sku-value"
-                    prop.className "font-bold mb-4"
-                    prop.text "0321125215"
+                Html.legend [
+                    prop.key "product-details-legend"
+                    prop.className "text-sm"
+                    prop.text "🗂️ Catalog Info"
                 ]
 
                 Daisy.fieldsetLabel [ prop.key "name-label"; prop.text "Name" ]
@@ -164,7 +163,11 @@ module private Section =
             prop.key "product-actions-fieldset"
             prop.className "bg-base-200 border border-base-300 rounded-box p-4"
             prop.children [
-                Html.legend [ prop.key "product-actions-legend"; prop.text "⚡ Actions" ]
+                Html.legend [
+                    prop.key "product-actions-legend"
+                    prop.className "text-sm"
+                    prop.text "⚡ Actions"
+                ]
 
                 Daisy.fieldsetLabel [ prop.key "price-label"; prop.text "Price" ]
                 Component.InputWithActions(
@@ -190,22 +193,46 @@ module private Section =
         ]
 
 [<ReactComponent>]
-let DetailsView (fullContext: ReactState<FullContext>, sku) =
-    let state, dispatch = React.useElmish (init, update, [||])
+let DetailsView (fullContext: ReactState<FullContext>, sku: SKU) =
+    let translations = fullContext.Current.Translations
+    let model, dispatch = React.useElmish (init, update, [||])
 
-    Html.div [
+    Html.section [
         prop.key "product-details-page"
-        prop.className "grid grid-cols-4 gap-4"
         prop.children [
-            Html.div [
-                prop.key "index-page-product-details"
-                prop.className "col-span-3"
-                prop.children Section.ProductCatalogInfo
+            Daisy.breadcrumbs [
+                prop.key "product-details-title"
+                prop.child (
+                    Html.ul [
+                        Html.li [
+                            prop.key "products-link"
+                            prop.className "cursor-pointer"
+                            prop.text translations.Home.Products
+                            prop.onClick (fun _ -> Router.navigatePage Page.ProductIndex)
+                        ]
+                        Html.li [
+                            prop.key "product-sku"
+                            prop.className "font-semibold"
+                            prop.text sku.Value
+                        ]
+                    ]
+                )
             ]
             Html.div [
-                prop.key "index-page-product-actions"
-                prop.className "col-span-1"
-                prop.children Section.ProductActions
+                prop.key "product-details-grid"
+                prop.className "grid grid-cols-4 gap-4"
+                prop.children [
+                    Html.div [
+                        prop.key "index-page-product-details"
+                        prop.className "col-span-3"
+                        prop.children Section.ProductCatalogInfo
+                    ]
+                    Html.div [
+                        prop.key "index-page-product-actions"
+                        prop.className "col-span-1"
+                        prop.children Section.ProductActions
+                    ]
+                ]
             ]
         ]
     ]

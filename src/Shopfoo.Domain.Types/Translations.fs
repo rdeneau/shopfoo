@@ -3,6 +3,7 @@
 [<RequireQualifiedAccess>]
 type PageCode =
     | About
+    | Home
     | Login
     | Product
 
