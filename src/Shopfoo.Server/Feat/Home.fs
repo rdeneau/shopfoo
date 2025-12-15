@@ -15,35 +15,41 @@ type Api() =
     let translationsByLang =
         Map [
             Lang.English,
-            {
-                Pages =
-                    Map [ // ↩
-                        PageCode.About, Map []
-                        PageCode.Product, Map []
-                        PageCode.Login, Map [
-                                                TagCode "SelectDemoUser", "Select a demo user"
-                                            ]
-                    ]
-            }
+            [
+                PageCode.About,
+                Map [
+                    TagCode "Title", "About"
+                    TagCode "Disclaimer",
+                    "This application is a demo project showcasing the SAFE functional architecture, " // ↩
+                    + "with domain workflows based on pseudo algebraic effects."
+                ]
+                PageCode.Product, Map []
+                PageCode.Login, Map [ TagCode "Title", "Login"; TagCode "SelectDemoUser", "Select a demo user" ]
+            ]
 
             Lang.French,
-            {
-                Pages =
-                    Map [ // ↩
-                        PageCode.About, Map []
-                        PageCode.Product, Map []
-                        PageCode.Login, Map [
-                                                TagCode "SelectDemoUser", "Sélectionner un utilisateur de démo"
-                                            ]
-                    ]
-            }
+            [
+                PageCode.About,
+                Map [
+                    TagCode "Title", "À propos"
+                    TagCode "Disclaimer",
+                    "Cette application est un projet démo illustrant l'architecture 'SAFE functional', " // ↩
+                    + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
+                ]
+                PageCode.Product, Map []
+                PageCode.Login, Map [ TagCode "Title", "Connexion"; TagCode "SelectDemoUser", "Sélectionner un utilisateur de démo" ]
+            ]
         ]
 
     member _.GetAllowedTranslations(request: GetAllowedTranslationsRequest) : Async<Result<Translations, Error>> =
         async {
-            // TODO
-            // let pageCodes =
-            //     Set.intersect request.allowed request.requested
-            //     |> Set.toList
-            return Ok Translations.Empty
+            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
+
+            let pageCodes = Set.intersect request.allowed request.requested
+
+            let pages =
+                translationsByLang[request.lang] // ↩
+                |> List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode)
+
+            return Ok { Pages = Map pages }
         }

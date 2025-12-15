@@ -150,6 +150,8 @@ let AppView () =
         | User.Anonymous, _ -> Pages.Login.LoginView(fullContext)
         | User.Authorized _, Page.Home
         | User.Authorized _, Page.Login
+        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext)
+        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku)
 
     React.router [
         router.pathMode
