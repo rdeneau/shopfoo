@@ -9,6 +9,7 @@ open Microsoft.AspNetCore.Http
 open Microsoft.Extensions.Logging
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Shared
+open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 
 let errorHandler (logger: ILogger) (FirstException exn) (routeInfo: RouteInfo<HttpContext>) =

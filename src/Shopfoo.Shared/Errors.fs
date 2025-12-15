@@ -1,6 +1,4 @@
-﻿// TODO: [Shared] 2. rename Errors and remove AutoOpen
-[<AutoOpen>]
-module Shopfoo.Shared.Common
+﻿module Shopfoo.Shared.Errors
 
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security

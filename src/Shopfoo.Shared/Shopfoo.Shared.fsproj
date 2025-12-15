@@ -4,7 +4,7 @@
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
   <ItemGroup>
-    <Compile Include="Common.fs" />
+    <Compile Include="Errors.fs" />
     <Compile Include="Translations.fs" />
     <Compile Include="Remoting.fs" />
   </ItemGroup>

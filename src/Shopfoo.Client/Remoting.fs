@@ -4,7 +4,7 @@ open System
 open Elmish
 open Fable.Core
 open Shopfoo.Domain.Types.Security
-open Shopfoo.Shared
+open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 
 type ApiResult<'response> = Result<'response, ApiError>

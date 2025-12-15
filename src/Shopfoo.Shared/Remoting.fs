@@ -4,6 +4,7 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
+open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
