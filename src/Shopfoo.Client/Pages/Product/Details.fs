@@ -5,19 +5,41 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
+open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Security
+open Shopfoo.Shared
 open Shopfoo.Shared.Remoting
+open Shopfoo.Shared.Translations
 
-type private Model = unit
+type private Model = { Products: Remote<Product> }
 
-type private Msg = unit
+type private Msg = // ↩
+    | ProductDetailsFetched of ApiResult<GetProductDetailsResponse>
 
-let private init () = (), Cmd.none
+[<RequireQualifiedAccess>]
+module private Cmd =
+    let loadProducts (cmder: Cmder, request) =
+        cmder.ofApiCall {
+            Call = fun api -> api.Product.GetProductDetails request
+            Feat = Feat.Home
+            Error = Error >> ProductDetailsFetched
+            Success = Ok >> ProductDetailsFetched
+        }
 
-let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private init (fullContext: FullContext) sku =
+    { Products = Remote.Loading }, // ↩
+    Cmd.loadProducts (fullContext.PrepareRequest sku)
+
+let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
-    | () -> model, Cmd.none
+    | Msg.ProductDetailsFetched(Ok { Product = Some product }) -> { model with Products = Remote.Loaded product }, Cmd.none
+    | Msg.ProductDetailsFetched(Ok { Product = None }) -> { model with Products = Remote.Empty }, Cmd.none
+
+    | Msg.ProductDetailsFetched(Error apiError) ->
+        { model with Products = Remote.LoadError apiError }, // ↩
+        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
 
 [<AutoOpen>]
 module private Component =
@@ -114,7 +136,7 @@ type private Component =
         ]
 
 module private Section =
-    let ProductCatalogInfo =
+    let ProductCatalogInfo (product: Product) dispatch (translations: AppTranslations) =
         Daisy.fieldset [
             prop.key "product-details-fieldset"
             prop.className "bg-base-200 border border-base-300 rounded-box p-4"
@@ -122,37 +144,32 @@ module private Section =
                 Html.legend [
                     prop.key "product-details-legend"
                     prop.className "text-sm"
-                    prop.text "🗂️ Catalog Info"
+                    prop.text $"🗂️ %s{translations.Product.CatalogInfo}"
                 ]
 
-                Daisy.fieldsetLabel [ prop.key "name-label"; prop.text "Name" ]
+                Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
                 Daisy.input [
                     prop.key "name-input"
-                    prop.placeholder "Name"
+                    prop.placeholder translations.Product.Name
                     prop.className "mb-4 w-full"
                     prop.onChange (fun (value: string) -> ()) // TODO
-                    prop.value "Domain-Driven Design: Tackling Complexity in the Heart of Software"
+                    prop.value product.Name
                 ]
 
-                Daisy.fieldsetLabel [ prop.key "description-label"; prop.text "Description" ]
+                Daisy.fieldsetLabel [ prop.key "description-label"; prop.text translations.Product.Description ]
                 Daisy.textarea [
                     prop.key "description-textarea"
-                    prop.placeholder "Description"
+                    prop.placeholder translations.Product.Description
                     prop.className "h-21 mb-4 w-full"
                     prop.onChange (fun (value: string) -> ()) // TODO
-                    prop.value (
-                        "Leading software designers have recognized domain modeling and design as critical topics for at least twenty years, "
-                        + "yet surprisingly little has been written about what needs to be done or how to do it. Although it has never been "
-                        + "clearly formulated, a philosophy has developed as an undercurrent in the object community, which I call 'domain-driven design'."
-                    )
+                    prop.value product.Description
                 ]
 
                 Daisy.button.button [
                     button.primary
                     prop.className "justify-self-start"
                     prop.key "save-product-button"
-                    prop.type' "submit"
-                    prop.text "Save"
+                    prop.text translations.Home.Save
                     prop.onClick (fun _ -> ()) // TODO
                 ]
             ]
@@ -195,7 +212,9 @@ module private Section =
 [<ReactComponent>]
 let DetailsView (fullContext: ReactState<FullContext>, sku: SKU) =
     let translations = fullContext.Current.Translations
-    let model, dispatch = React.useElmish (init, update, [||])
+
+    let model, dispatch =
+        React.useElmish (init fullContext.Current sku, update fullContext, [||])
 
     Html.section [
         prop.key "product-details-page"
@@ -218,21 +237,33 @@ let DetailsView (fullContext: ReactState<FullContext>, sku: SKU) =
                     ]
                 )
             ]
-            Html.div [
-                prop.key "product-details-grid"
-                prop.className "grid grid-cols-4 gap-4"
-                prop.children [
-                    Html.div [
-                        prop.key "index-page-product-details"
-                        prop.className "col-span-3"
-                        prop.children Section.ProductCatalogInfo
-                    ]
-                    Html.div [
-                        prop.key "index-page-product-actions"
-                        prop.className "col-span-1"
-                        prop.children Section.ProductActions
+
+            match model.Products with
+            | Remote.Empty -> () // TODO
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-4 w-full"; prop.key "products-skeleton" ]
+            | Remote.LoadError apiError ->
+                Daisy.alert [
+                    alert.error
+                    prop.key "product-load-error"
+                    prop.text apiError.ErrorMessage
+                ]
+
+            | Remote.Loaded product ->
+                Html.div [
+                    prop.key "product-details-grid"
+                    prop.className "grid grid-cols-4 gap-4"
+                    prop.children [
+                        Html.div [
+                            prop.key "index-page-product-details"
+                            prop.className "col-span-3"
+                            prop.children (Section.ProductCatalogInfo product dispatch translations)
+                        ]
+                        Html.div [
+                            prop.key "index-page-product-actions"
+                            prop.className "col-span-1"
+                            prop.children Section.ProductActions
+                        ]
                     ]
                 ]
-            ]
         ]
     ]

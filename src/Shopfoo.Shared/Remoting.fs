@@ -100,9 +100,11 @@ module ProductApi =
     open Shopfoo.Domain.Types.Products
 
     type GetProductsResponse = { Products: Product list }
+    type GetProductDetailsResponse = { Product: Product option }
 
     type ProductApi = {
-        Index: QueryWithTranslations<unit, GetProductsResponse>
+        GetProducts: QueryWithTranslations<unit, GetProductsResponse>
+        GetProductDetails: Query<SKU, GetProductDetailsResponse>
     } with
         interface IApi
 

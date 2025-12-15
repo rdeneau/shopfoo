@@ -16,7 +16,10 @@ type ProductApiBuilder(api: FeatApi) =
         ]
 
     member _.Build() : ProductApi = {
-        Index =
-            IndexHandler(api, AuthorizedPageCodes) // ↩
+        GetProducts =
+            GetProductsHandler(api, AuthorizedPageCodes) // ↩
+            |> Security.authorizeHandler [ Feat.Catalog, Access.View ]
+        GetProductDetails =
+            GetProductDetailsHandler(api) // ↩
             |> Security.authorizeHandler [ Feat.Catalog, Access.View ]
     }

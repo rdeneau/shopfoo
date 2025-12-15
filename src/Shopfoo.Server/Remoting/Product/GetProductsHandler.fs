@@ -6,7 +6,7 @@ open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
 
 [<Sealed>]
-type IndexHandler(api: FeatApi, authorizedPageCodes) =
+type GetProductsHandler(api: FeatApi, authorizedPageCodes) =
     inherit SecureQueryDataAndTranslationsHandler<unit, GetProductsResponse>()
 
     override _.Handle lang request user =

@@ -40,3 +40,10 @@ type Api() =
             do! Async.Sleep(millisecondsDueTime = 500) // Simulate latency
             return Ok products
         }
+
+    member _.GetProductDetails(sku) : Async<Result<Product option, Error>> =
+        async {
+            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
+            let product = products |> List.tryFind (fun x -> x.SKU = sku)
+            return Ok product
+        }
