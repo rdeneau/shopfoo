@@ -55,10 +55,10 @@ module ResponseBuilder =
         | Ok translations -> translations
         | Error(_: Error) -> Translations.Empty
 
-    let plain<'a> (feat, user) =
+    let plain<'a> user =
         { new IResponseBuilder<'a, 'a> with
             member _.ApiError(error, ?key) =
-                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key)
+                ApiError.FromError(error, User.errorDetailLevel user, ?key = key)
                 |> ServerError.ApiError
                 |> Response.Error
 
@@ -66,10 +66,10 @@ module ResponseBuilder =
                 Response.Ok response
         }
 
-    let withTranslations<'a> (feat, user) (TranslationsOrEmpty translations) =
+    let withTranslations<'a> user (TranslationsOrEmpty translations) =
         { new IResponseBuilder<'a * Translations, 'a> with
             member _.ApiError(error, ?key) =
-                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key)
+                ApiError.FromError(error, User.errorDetailLevel user, ?key = key)
                 |> ServerError.ApiError
                 |> Response.Error
 

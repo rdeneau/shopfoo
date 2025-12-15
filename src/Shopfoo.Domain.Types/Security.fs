@@ -3,22 +3,29 @@
 type Access =
     | View
     | Edit
-    // TODO: [Claims] 3b. remove Access.Admin
-    | Admin
 
-// TODO: [Claims] 3a. add Feat.Admin
 type Feat =
+    | Admin
     | Home
     | Catalog
     | Sales
     | Warehouse
 
-// TODO: [Claims] 3c. change type: Map<Feat, Access> (Access.Edit implies Access.View)
-type Claims = (Feat * Access) list
+type Claims = Map<Feat, Access>
 
 [<RequireQualifiedAccess>]
 module Claims =
-    let none = []
+    let none: Claims = Map.empty
+    let single feat access : Claims = Map [ feat, access ]
+
+    let toSet (claims: Claims) =
+        Set [
+            for KeyValue(feat, access) in claims do
+                feat, access
+
+                if access = Access.Edit then
+                    feat, Access.View
+        ]
 
 [<RequireQualifiedAccess>]
 type User =

@@ -23,7 +23,6 @@ module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiCall {
             Call = fun api -> api.Product.GetProductDetails request
-            Feat = Feat.Home
             Error = Error >> ProductDetailsFetched
             Success = Ok >> ProductDetailsFetched
         }
@@ -139,6 +138,8 @@ type private Component =
 
 module private Section =
     let ProductCatalogInfo (product: Product) dispatch (translations: AppTranslations) =
+        // TODO: [Product] handle user claims
+
         Daisy.fieldset [
             prop.key "product-details-fieldset"
             prop.className "bg-base-200 border border-base-300 rounded-box p-4"

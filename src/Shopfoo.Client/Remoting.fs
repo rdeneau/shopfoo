@@ -15,7 +15,6 @@ type ApiCall<'response> =
 
 type ApiCallArgs<'response, 'msg> = {
     Call: RootApi -> Async<Response<'response>>
-    Feat: Feat // TODO: [Claims] with Feat.Admin, we don't need the 'Feat' field anymore
     Error: ApiError -> 'msg
     Success: 'response -> 'msg
 }
@@ -33,7 +32,7 @@ type Cmder = {
             | Error(ServerError.AuthError authError) -> args.Error(ApiError.ForAuthenticationError(authError))
 
         let onException exn =
-            args.Error(ApiError.FromException(exn, args.Feat, this.User))
+            args.Error(ApiError.FromException(exn, this.User))
 
         cmdOfAsyncEither args.Call api onResponse onException
 

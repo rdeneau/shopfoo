@@ -9,33 +9,22 @@ open Shopfoo.Shared.Remoting
 type IndexHandler(api: FeatApi, authorizedPageCodes) =
     inherit SecureQueryDataAndTranslationsHandler<unit, HomeIndexResponse>()
 
-    let features = [
+    let coreFeatures = [
         Feat.Home
         Feat.Catalog
         Feat.Sales
         Feat.Warehouse
     ]
 
-    let allFeaturesWithAccess accesses = [
-        for feat in features do
-            for access in accesses do
-                feat, access
-    ]
+    let withAccess access features : Claims =
+        Map [ for feat in features -> feat, access ]
 
     override _.Handle lang request user =
         async {
             let demoUsers = [
-                User.Authorized(userName = "Guest", claims = allFeaturesWithAccess [ Access.View ])
-                User.Authorized(userName = "Manager", claims = allFeaturesWithAccess [ Access.View ])
-                User.Authorized(
-                    userName = "Administrator",
-                    claims =
-                        allFeaturesWithAccess [
-                            Access.View
-                            Access.Edit
-                            Access.Admin
-                        ]
-                )
+                User.Authorized(userName = "Guest", claims = (coreFeatures |> withAccess Access.View))
+                User.Authorized(userName = "Manager", claims = (coreFeatures |> withAccess Access.Edit))
+                User.Authorized(userName = "Administrator", claims = (Feat.Admin :: coreFeatures |> withAccess Access.Edit))
             ]
 
             let! translations =
@@ -45,6 +34,6 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
                     requested = request.TranslationPages
                 }
 
-            let response = ResponseBuilder.withTranslations (Feat.Home, user) translations
+            let response = ResponseBuilder.withTranslations user translations
             return response.Ok { DemoUsers = demoUsers }
         }

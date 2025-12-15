@@ -20,7 +20,7 @@ type GetProductsHandler(api: FeatApi, authorizedPageCodes) =
                     requested = request.TranslationPages
                 }
 
-            let response = ResponseBuilder.withTranslations (Feat.Catalog, user) translations
+            let response = ResponseBuilder.withTranslations user translations
 
             return
                 match result with

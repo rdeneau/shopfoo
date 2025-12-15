@@ -38,10 +38,9 @@ let private checkToken (claims: Claims) (token: AuthToken option) =
         let userClaims =
             match user with
             | User.Anonymous -> Set.empty
-            | User.Authorized(_, userClaims) -> Set.ofList userClaims
+            | User.Authorized(_, userClaims) -> userClaims |> Claims.toSet
 
-        let requiredClaims = Set.ofList claims
-
+        let requiredClaims = claims |> Claims.toSet
         let missingClaims = Set.intersect requiredClaims userClaims
 
         if missingClaims.IsEmpty then

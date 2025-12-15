@@ -37,6 +37,6 @@ type GetTranslationsHandler(api: FeatApi) =
                 | Ok translations -> translations
                 | Error _ -> Translations.Empty
 
-            let response = ResponseBuilder.plain (Feat.Home, user)
+            let response = ResponseBuilder.plain user
             return response.Ok translations
         }

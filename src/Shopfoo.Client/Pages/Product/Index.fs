@@ -23,7 +23,6 @@ module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiCall {
             Call = fun api -> api.Product.GetProducts request
-            Feat = Feat.Home
             Error = Error >> ProductsFetched
             Success = Ok >> ProductsFetched
         }

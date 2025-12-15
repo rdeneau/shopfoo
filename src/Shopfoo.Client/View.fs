@@ -46,7 +46,6 @@ module private Cmd =
     let fetchTranslations (cmder: Cmder, request) =
         cmder.ofApiCall {
             Call = fun api -> api.Home.GetTranslations request
-            Feat = Feat.Home
             Error = Error >> TranslationsFetched
             Success = Ok >> TranslationsFetched
         }

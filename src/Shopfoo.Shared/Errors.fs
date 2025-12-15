@@ -5,10 +5,9 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 
 module internal User =
-    // TODO: [Shared] 3. add Feat.Admin, remove 'feat' param
-    let errorDetailLevel feat user =
+    let errorDetailLevel user =
         match user with
-        | User.Authorized(_, claims) when claims |> List.contains (feat, Access.Admin) -> ErrorDetailLevel.Admin
+        | User.Authorized(_, claims) when claims |> Map.containsKey Feat.Admin -> ErrorDetailLevel.Admin
         | _ -> ErrorDetailLevel.NoDetail
 
 type ErrorDetail = { Exception: string }
@@ -47,8 +46,8 @@ and ApiError = {
         | ValidationError _ -> ApiErrorBuilder.Business.Build(errorMessage, ?key = key, ?translations = translations)
         | Bug exn -> ApiErrorBuilder.Technical.Build(errorMessage, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
 
-    static member FromException(FirstException exn, feat, user: User) =
-        ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel feat user))
+    static member FromException(FirstException exn, user: User) =
+        ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))
 
     static member ForAuthenticationError(authError) =
         let errorMessage =

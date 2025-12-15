@@ -22,7 +22,6 @@ module private Cmd =
     let loadHomeData (cmder: Cmder, request) =
         cmder.ofApiCall {
             Call = fun api -> api.Home.Index request
-            Feat = Feat.Home
             Error = Error >> HomeDataFetched
             Success = Ok >> HomeDataFetched
         }

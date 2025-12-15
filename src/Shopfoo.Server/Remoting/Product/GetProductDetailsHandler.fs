@@ -1,7 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Product
 
 open Shopfoo.Domain.Types.Products
-open Shopfoo.Domain.Types.Security
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
@@ -14,7 +13,7 @@ type GetProductDetailsHandler(api: FeatApi) =
         async {
             let! result = api.Catalog.GetProductDetails(sku)
 
-            let response = ResponseBuilder.plain (Feat.Catalog, user)
+            let response = ResponseBuilder.plain user
 
             return
                 match result with
