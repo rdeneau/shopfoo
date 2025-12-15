@@ -59,3 +59,10 @@ type FullContext with
 
     member this.PrepareQueryWithTranslations query =
         this.PrepareRequest { Query = query; TranslationPages = this.Translations.EmptyPages }
+
+[<RequireQualifiedAccess>]
+type Remote<'a> =
+    | Empty
+    | Loading
+    | LoadError of ApiError
+    | Loaded of 'a

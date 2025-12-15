@@ -6,7 +6,6 @@ open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
 open Shopfoo.Client.Remoting
-open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared

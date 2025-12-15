@@ -59,11 +59,3 @@ and ApiError = {
             | UserUnauthorized -> "UserUnauthorized"
 
         ApiErrorBuilder.Technical.Build(errorMessage)
-
-// TODO: [Shared] move Remote type to UI/Client
-[<RequireQualifiedAccess>]
-type Remote<'a> =
-    | Empty
-    | Loading
-    | LoadError of ApiError
-    | Loaded of 'a
