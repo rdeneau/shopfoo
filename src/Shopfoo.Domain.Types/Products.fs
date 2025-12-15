@@ -8,4 +8,5 @@ type Product = {
     SKU: SKU
     Name: string
     Description: string
+    // TODO: [Product] add image url
 }

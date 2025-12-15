@@ -238,14 +238,15 @@ let DetailsView (fullContext: ReactState<FullContext>, sku: SKU) =
                 )
             ]
 
+            // TODO: [Product] handle Remote<Product> (skeleton, details...) in Section.ProductCatalogInfo
             match model.Products with
-            | Remote.Empty -> () // TODO
-            | Remote.Loading -> Daisy.skeleton [ prop.className "h-4 w-full"; prop.key "products-skeleton" ]
+            | Remote.Empty -> () // TODO: [Product] display a 'not found'
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
             | Remote.LoadError apiError ->
                 Daisy.alert [
                     alert.error
                     prop.key "product-load-error"
-                    prop.text apiError.ErrorMessage
+                    prop.text apiError.ErrorMessage // TODO: [Admin] display error detail to admin
                 ]
 
             | Remote.Loaded product ->

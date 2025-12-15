@@ -1,4 +1,4 @@
-﻿// TODO 2. rename Errors and remove AutoOpen
+﻿// TODO: [Shared] 2. rename Errors and remove AutoOpen
 [<AutoOpen>]
 module Shopfoo.Shared.Common
 
@@ -7,7 +7,7 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 
 module internal User =
-    // TODO 3. add Feat.Admin, remove 'feat' param
+    // TODO: [Shared] 3. add Feat.Admin, remove 'feat' param
     let errorDetailLevel feat user =
         match user with
         | User.Authorized(_, claims) when claims |> List.contains (feat, Access.Admin) -> ErrorDetailLevel.Admin
@@ -60,7 +60,7 @@ and ApiError = {
 
         ApiErrorBuilder.Technical.Build(errorMessage)
 
-// TODO 1. move to UI/Client
+// TODO: [Shared] move Remote type to UI/Client
 [<RequireQualifiedAccess>]
 type Remote<'a> =
     | Empty

@@ -30,6 +30,7 @@ type Api() =
                     "Leading software designers have recognized domain modeling and design as critical topics for at least twenty years, "
                     + "yet surprisingly little has been written about what needs to be done or how to do it. Although it has never been "
                     + "clearly formulated, a philosophy has developed as an undercurrent in the object community, which I call 'domain-driven design'."
+                // TODO: [Product] add more books
             }
         }
         |> Seq.map Mappers.EntitiesToDemain.mapProduct

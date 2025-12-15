@@ -15,15 +15,14 @@ open Shopfoo.Shared.Remoting
 
 type private Model = { Products: Remote<Product list> }
 
-type private Msg =
+type private Msg = // ↩
     | ProductsFetched of ApiResult<GetProductsResponse * Translations>
-    | SelectProduct of SKU
 
 [<RequireQualifiedAccess>]
 module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiCall {
-            Call = fun api -> api.Product.Index request
+            Call = fun api -> api.Product.GetProducts request
             Feat = Feat.Home
             Error = Error >> ProductsFetched
             Success = Ok >> ProductsFetched
@@ -36,20 +35,18 @@ let private init (fullContext: FullContext) =
 let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | Msg.ProductsFetched(Ok(data, translations)) ->
-        { model with Products = Remote.Loaded data.Products }, Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(translations))
+        { model with Products = Remote.Loaded data.Products }, // ↩
+        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(translations))
 
     | Msg.ProductsFetched(Error apiError) ->
-        { model with Products = Remote.LoadError apiError }, Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
-
-    | Msg.SelectProduct sku -> // ↩
-        model, Cmd.navigatePage (Page.ProductDetail sku.Value)
+        { model with Products = Remote.LoadError apiError }, // ↩
+        Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
 
 [<ReactComponent>]
 let IndexView (fullContext: ReactState<FullContext>) =
     let translations = fullContext.Current.Translations
 
-    let model, dispatch =
-        React.useElmish (init fullContext.Current, update fullContext, [||])
+    let model, _ = React.useElmish (init fullContext.Current, update fullContext, [||])
 
     Html.section [
         prop.key "products-page"
@@ -61,12 +58,12 @@ let IndexView (fullContext: ReactState<FullContext>) =
 
             match model.Products with
             | Remote.Empty -> ()
-            | Remote.Loading -> Daisy.skeleton [ prop.className "h-4 w-full"; prop.key "products-skeleton" ]
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
             | Remote.LoadError apiError ->
                 Daisy.alert [
                     alert.error
                     prop.key "products-load-error"
-                    prop.text apiError.ErrorMessage
+                    prop.text apiError.ErrorMessage // TODO: [Admin] display error detail to admin
                 ]
 
             | Remote.Loaded products ->
@@ -78,8 +75,9 @@ let IndexView (fullContext: ReactState<FullContext>) =
                             prop.key "products-table-thead"
                             prop.child (
                                 Html.tr [
-                                    Html.th [ prop.key "products-table-header-num"; prop.text "#" ]
-                                    Html.th [ prop.key "products-table-header-name"; prop.text "Name" ]
+                                    Html.th [ prop.key "products-table-header-num"; prop.text " " ]
+                                    Html.th [ prop.key "products-table-header-name"; prop.text translations.Product.Name ]
+                                    Html.th [ prop.key "products-table-header-desc"; prop.text translations.Product.Description ]
                                 ]
                             )
                         ]
@@ -88,10 +86,11 @@ let IndexView (fullContext: ReactState<FullContext>) =
                                 Html.tr [
                                     prop.key $"product-%i{i}"
                                     prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
-                                    prop.onClick (fun _ -> dispatch (Msg.SelectProduct product.SKU))
+                                    prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Value))
                                     prop.children [
                                         Html.td [ prop.key $"product-%i{i}-num"; prop.text (i + 1) ]
                                         Html.td [ prop.key $"product-%i{i}-name"; prop.text product.Name ]
+                                        Html.td [ prop.key $"product-%i{i}-desc"; prop.text product.Description ]
                                     ]
                                 ]
                         ]

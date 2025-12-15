@@ -135,7 +135,7 @@ let AppView () =
                         ]
                     ]
                 ]
-                // TODO: user name + dropdown to change lang and logout
+                // TODO: [UI] user name + dropdown to change lang and logout
                 Html.div [
                     prop.key "nav-about"
                     prop.className "flex-none text-xs mr-2"

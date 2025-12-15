@@ -9,7 +9,7 @@ module UI =
     type IServiceCollection with
         member services.AddRemotingApi() =
             services
-                .AddSingleton<ILogger>(NullLogger.Instance) // TODO: use NLog?
+                .AddSingleton<ILogger>(NullLogger.Instance) // TODO: [Server] use NLog?
                 .AddSingleton<Feat.Catalog.Api>()
                 .AddSingleton<Feat.Home.Api>()
                 .AddSingleton<Remoting.FeatApi>()

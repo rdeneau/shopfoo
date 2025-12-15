@@ -58,6 +58,8 @@ module TranslationPages =
         member this.About = this.Get "About"
         member this.Login = this.Get "Login"
         member this.Products = this.Get "Products"
+
+        // TODO: [Translations] move to Shared (new Page)
         member this.Save = this.Get "Save"
 
     type Login internal (?translations) =
