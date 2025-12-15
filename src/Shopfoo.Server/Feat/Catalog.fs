@@ -10,6 +10,7 @@ module internal Entities =
         SKU: string
         Name: string
         Description: string
+        ImageUrl: string
     }
 
 module internal Mappers =
@@ -18,6 +19,7 @@ module internal Mappers =
             SKU = SKU dto.SKU
             Name = dto.Name
             Description = dto.Description
+            ImageUrl = dto.ImageUrl
         }
 
 type Api() =
@@ -30,6 +32,8 @@ type Api() =
                     "Leading software designers have recognized domain modeling and design as critical topics for at least twenty years, "
                     + "yet surprisingly little has been written about what needs to be done or how to do it. Although it has never been "
                     + "clearly formulated, a philosophy has developed as an undercurrent in the object community, which I call 'domain-driven design'."
+                ImageUrl = "https://m.media-amazon.com/images/I/81ykBjVaUjL._SY425_.jpg"
+
                 // TODO: [Product] add more books
             }
         }

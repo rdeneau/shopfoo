@@ -148,6 +148,37 @@ module private Section =
                     prop.text $"🗂️ %s{translations.Product.CatalogInfo}"
                 ]
 
+                Html.div [
+                    prop.key "image-grid"
+                    prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
+                    prop.children [
+                        Html.div [
+                            prop.key "image-input-div"
+                            prop.children [
+                                Daisy.fieldsetLabel [ prop.key "image-label"; prop.text translations.Product.ImageUrl ]
+                                Daisy.input [
+                                    prop.key "image-input-column"
+                                    prop.placeholder translations.Product.ImageUrl
+                                    prop.className "mb-4 w-full"
+                                    prop.onChange (fun (value: string) -> ()) // TODO
+                                    prop.value product.ImageUrl
+                                ]
+                            ]
+                        ]
+                        Html.div [
+                            prop.key "image-preview-column"
+                            prop.children [
+                                Html.img [
+                                    prop.key "image-preview"
+                                    prop.src product.ImageUrl
+                                    prop.width 115
+                                    prop.height 62
+                                ]
+                            ]
+                        ]
+                    ]
+                ]
+
                 Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
                 Daisy.input [
                     prop.key "name-input"

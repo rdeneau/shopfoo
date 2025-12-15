@@ -41,6 +41,7 @@ type Api() =
         [
             TagCode "CatalogInfo", "Catalog Info", "Info Catalogue"
             TagCode "Description", "Description", "Description"
+            TagCode "ImageUrl", "Image Url", "Url de l'image"
             TagCode "Name", "Name", "Nom"
             TagCode "Save", "Save", "Enregistrer"
         ]

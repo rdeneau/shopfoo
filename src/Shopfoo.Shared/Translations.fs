@@ -68,6 +68,7 @@ module TranslationPages =
         inherit Base(PageCode.Product, ?translations = translations)
         member this.CatalogInfo = this.Get "CatalogInfo"
         member this.Description = this.Get "Description"
+        member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
         member this.Save = this.Get "Save"
 
