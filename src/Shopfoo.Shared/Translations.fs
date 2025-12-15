@@ -36,7 +36,9 @@ module TranslationPages =
             this.Get(buildTagCode tag, ?defaultValue = defaultValue)
 
         member internal this.Get(tagCode, ?defaultValue) =
-            this.GetOrNone tagCode |> Option.orElse defaultValue |> Option.defaultWith (fun () -> this.FallbackValue tagCode)
+            this.GetOrNone tagCode
+            |> Option.orElse defaultValue
+            |> Option.defaultWith (fun () -> this.FallbackValue tagCode)
 
         member internal this.GetOrNone(tag: string) = this.GetOrNone(buildTagCode tag)
         member internal this.GetOrNone(tagCode) = tagMap |> Map.tryFind tagCode
@@ -49,10 +51,12 @@ module TranslationPages =
 
     type About internal (?translations) =
         inherit Base(PageCode.About, ?translations = translations)
+        member this.Title = this.Get "Title"
         member this.Disclaimer = this.Get "Disclaimer"
 
     type Login internal (?translations) =
         inherit Base(PageCode.Login, ?translations = translations)
+        member this.Title = this.Get "Title"
         member this.SelectDemoUser = this.Get "SelectDemoUser"
 
     type Product internal (?translations) =
@@ -75,7 +79,7 @@ type AppTranslations
         product: Product,
         ?translations
     ) =
-    let sections = [ // ↩
+    let sections = [
         Section.About, about :> Base
         Section.Login, login
         Section.Product, product
@@ -99,7 +103,7 @@ type AppTranslations
             else
                 page
 
-        AppTranslations( // ↩
+        AppTranslations(
             recreatePageIfNeeded about (fun () -> About translations),
             recreatePageIfNeeded login (fun () -> Login translations),
             recreatePageIfNeeded product (fun () -> Product translations),
@@ -107,7 +111,7 @@ type AppTranslations
         )
 
     member val EmptyPages =
-        sections // ↩
+        sections
         |> Seq.map snd
         |> Seq.distinct
         |> Seq.filter _.IsEmpty

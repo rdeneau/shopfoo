@@ -8,11 +8,11 @@
         <Compile Include="Server.fs" />
         <Compile Include="Remoting.fs" />
         <Compile Include="Routing.fs" />
-        <Compile Include="FelizExtensions.fs" />
-        <Compile Include="ReactContexts.fs" />
+        <Compile Include="UI.fs" />
         <Compile Include="Pages\About.fs" />
         <Compile Include="Pages\Login.fs" />
         <Compile Include="Pages\Product\Index.fs" />
+        <Compile Include="Pages\Product\Details.fs" />
         <Compile Include="View.fs" />
         <Compile Include="App.fs" />
         <Content Include="index.html" />

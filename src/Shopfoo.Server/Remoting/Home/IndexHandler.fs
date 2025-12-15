@@ -27,7 +27,15 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
             let demoUsers = [
                 User.Authorized(userName = "Guest", claims = allFeaturesWithAccess [ Access.View ])
                 User.Authorized(userName = "Manager", claims = allFeaturesWithAccess [ Access.View ])
-                User.Authorized(userName = "Administrator", claims = allFeaturesWithAccess [ Access.View; Access.Edit; Access.Admin ])
+                User.Authorized(
+                    userName = "Administrator",
+                    claims =
+                        allFeaturesWithAccess [
+                            Access.View
+                            Access.Edit
+                            Access.Admin
+                        ]
+                )
             ]
 
             let! translations =

@@ -1,4 +1,5 @@
-﻿[<AutoOpen>]
+﻿// TODO 2. rename Errors and remove AutoOpen
+[<AutoOpen>]
 module Shopfoo.Shared.Common
 
 open Shopfoo.Domain.Types.Errors
@@ -6,6 +7,7 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 
 module internal User =
+    // TODO 3. add Feat.Admin, remove 'feat' param
     let errorDetailLevel feat user =
         match user with
         | User.Authorized(_, claims) when claims |> List.contains (feat, Access.Admin) -> ErrorDetailLevel.Admin
@@ -58,12 +60,10 @@ and ApiError = {
 
         ApiErrorBuilder.Technical.Build(errorMessage)
 
+// TODO 1. move to UI/Client
+[<RequireQualifiedAccess>]
 type Remote<'a> =
     | Empty
     | Loading
     | LoadError of ApiError
-    | Body of 'a
-
-module Remote =
-    let inline isLoading remote = // ↩
-        remote = Loading
+    | Loaded of 'a

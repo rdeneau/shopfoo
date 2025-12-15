@@ -6,7 +6,9 @@ open Feliz.DaisyUI
 open Feliz.Router
 open Feliz.UseElmish
 open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Security
+open Shopfoo.Shared.Remoting
 
 [<RequireQualifiedAccess>]
 type private ThemeGroup =
@@ -24,10 +26,7 @@ type private Msg =
     | UrlChanged of Page
     | ThemeChanged of Theme
 
-type private State = { // ↩
-    Page: Page
-    Theme: Theme
-}
+type private Model = { Page: Page; Theme: Theme }
 
 let private keyOf x = $"{x}".ToLowerInvariant()
 
@@ -44,22 +43,19 @@ let private init () =
         Cmd.ofMsg (ThemeChanged defaultTheme)
     ]
 
-let private update (msg: Msg) (state: State) : State * Cmd<Msg> =
+let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
-    | UrlChanged page ->
-        { state with Page = page }, // ↩
-        Cmd.none
+    | UrlChanged page -> // ↩
+        { model with Page = page }, Cmd.none
 
     | ThemeChanged theme ->
-        { state with Theme = theme }, // ↩
+        { model with Theme = theme }, // ↩
         Cmd.ofEffect (fun _ -> Fable.Core.JS.setTimeout (fun () -> setupTheme theme) 0 |> ignore)
 
 type private ThemeMenu(currentTheme, dispatch) =
     member _.group(themeGroup: ThemeGroup) =
-        let key = keyOf themeGroup
-
         Daisy.menuTitle [ // ↩
-            prop.key $"%s{key}-theme-group"
+            prop.key $"%s{(keyOf themeGroup)}-theme-group"
             prop.text $"{themeGroup} Themes"
         ]
 
@@ -75,8 +71,12 @@ type private ThemeMenu(currentTheme, dispatch) =
                     prop.onClick (fun _ -> dispatch (ThemeChanged theme))
                     prop.children [
                         Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
-                        Html.span [ prop.key $"{key}-theme-text"; prop.text $"{theme}"; prop.custom ("data-theme", key) ]
-                        Html.span [ // ↩
+                        Html.span [
+                            prop.key $"{key}-theme-text"
+                            prop.text $"{theme}"
+                            prop.custom ("data-theme", key)
+                        ]
+                        Html.span [
                             prop.key $"{key}-theme-tick"
                             prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
                             prop.text (if theme = currentTheme then "✓" else "")
@@ -88,7 +88,8 @@ type private ThemeMenu(currentTheme, dispatch) =
 
 [<ReactComponent>]
 let AppView () =
-    let fullContext = ReactContexts.FullContext.Use()
+    let fullContext = ReactState(FullContext.Default)
+    let translations = fullContext.Current.Translations
     let state, dispatch = React.useElmish (init, update)
 
     let navigation =
@@ -99,9 +100,7 @@ let AppView () =
                 Html.div [
                     prop.key "nav-index"
                     prop.className "flex-1"
-                    prop.children [ // ↩
-                        Html.a ("⚙️ Shopfoo", Page.Home)
-                    ]
+                    prop.child (Html.a ("⚙️ Shopfoo", Page.Home))
                 ]
                 Daisy.dropdown [
                     dropdown.hover
@@ -109,7 +108,11 @@ let AppView () =
                     prop.key "theme-dropdown"
                     prop.className "flex-none"
                     prop.children [
-                        Daisy.button.button [ button.ghost; prop.key "theme-button"; prop.text "🌗" ]
+                        Daisy.button.button [
+                            button.ghost
+                            prop.key "theme-button"
+                            prop.text "🌗"
+                        ]
                         Daisy.dropdownContent [
                             prop.className "p-2 shadow menu bg-base-100 rounded-box"
                             prop.tabIndex 0
@@ -136,30 +139,27 @@ let AppView () =
                 Html.div [
                     prop.key "nav-about"
                     prop.className "flex-none text-xs mr-2"
-                    prop.children [ // ↩
-                        Html.a ("About", Page.About)
-                    ]
+                    prop.children (Html.a (translations.About.Title, Page.About))
                 ]
             ]
         ]
 
-    let user =
-        if isNull (box fullContext.current) then
-            User.Anonymous
-        else
-            fullContext.current.User
-
     let page =
-        match user, state.Page with
-        | _, Page.About -> Pages.About.AboutView()
-        | User.Anonymous, _ -> Pages.Login.LoginView()
+        match fullContext.Current.User, state.Page with
+        | _, Page.About -> Pages.About.AboutView(fullContext)
+        | User.Anonymous, _ -> Pages.Login.LoginView(fullContext)
         | User.Authorized _, Page.Home
         | User.Authorized _, Page.Login
-        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView()
-        | User.Authorized _, Page.ProductDetail sku -> Html.text $"🚧 Page 'product/{sku}' not implemented yet"
 
-    React.router [ // ↩
+    React.router [
         router.pathMode
         router.onUrlChanged (Page.parseFromUrlSegments >> UrlChanged >> dispatch)
-        router.children [ navigation; Html.div [ prop.key "app-content"; prop.className "px-4 py-2"; prop.children page ] ]
+        router.children [
+            navigation
+            Html.div [
+                prop.key "app-content"
+                prop.className "px-4 py-2"
+                prop.children page
+            ]
+        ]
     ]

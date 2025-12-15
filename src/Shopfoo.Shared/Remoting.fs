@@ -12,7 +12,7 @@ type FullContext = {
     Token: AuthToken option
     Translations: AppTranslations
 } with
-    static member Default : FullContext = {
+    static member Default: FullContext = {
         Lang = Lang.English
         User = User.Anonymous
         Token = None
@@ -56,7 +56,9 @@ module ResponseBuilder =
     let plain<'a> (feat, user) =
         { new IResponseBuilder<'a, 'a> with
             member _.ApiError(error, ?key) =
-                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key) |> ServerError.ApiError |> Response.Error
+                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key)
+                |> ServerError.ApiError
+                |> Response.Error
 
             member _.Ok response = // ↩
                 Response.Ok response
@@ -65,7 +67,9 @@ module ResponseBuilder =
     let withTranslations<'a> (feat, user) (TranslationsOrEmpty translations) =
         { new IResponseBuilder<'a * Translations, 'a> with
             member _.ApiError(error, ?key) =
-                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key) |> ServerError.ApiError |> Response.Error
+                ApiError.FromError(error, User.errorDetailLevel feat user, ?key = key)
+                |> ServerError.ApiError
+                |> Response.Error
 
             member _.Ok response =
                 Response.Ok response |> Result.map (fun response -> response, translations)
@@ -93,7 +97,8 @@ module HomeApi =
 
 [<AutoOpen>]
 module ProductApi =
-    type Product = { SKU: string; Name: string }
+    open Shopfoo.Domain.Types.Products
+
     type GetProductsResponse = { Products: Product list }
 
     type ProductApi = {

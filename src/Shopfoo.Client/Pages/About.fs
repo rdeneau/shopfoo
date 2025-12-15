@@ -1,10 +1,17 @@
 ﻿module Shopfoo.Client.Pages.About
 
 open Feliz
+open Shopfoo.Client
+open Shopfoo.Shared.Remoting
 
 [<ReactComponent>]
-let AboutView () =
-    Html.div [ // ↩
+let AboutView (fullContext: ReactState<FullContext>) =
+    let translations = fullContext.Current.Translations
+
+    Html.section [
         prop.key "about-page"
-        prop.text "👉 This application is a demo project showcasing the SAFE functional architecture, with domain workflows based on pseudo algebraic effects."
+        prop.children [
+            Html.h1 [ prop.key "about-title"; prop.text translations.About.Title ]
+            Html.div [ prop.key "about-disclaimer"; prop.text $"👉 %s{translations.About.Disclaimer}" ]
+        ]
     ]

@@ -14,7 +14,7 @@ open Shopfoo.Shared.Remoting
 
 type Model = { DemoUsers: Remote<User list> }
 
-type Msg = // ↩
+type Msg =
     | HomeDataFetched of ApiResult<HomeIndexResponse * Translations>
     | Login of User
 
@@ -32,54 +32,41 @@ let private init (fullContext: FullContext) =
     { DemoUsers = Remote.Loading }, // ↩
     Cmd.loadHomeData (fullContext.PrepareQueryWithTranslations())
 
-let private update (fullContext: State<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update (fullContext: ReactState<FullContext>) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
-        { model with DemoUsers = Remote.Body data.DemoUsers }, // ↩
-        Cmd.ofEffect (fun _ -> fullContext.update _.FillTranslations(translations))
+        { model with DemoUsers = Remote.Loaded data.DemoUsers }, Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(translations))
 
     | Msg.HomeDataFetched(Error apiError) ->
-        { model with DemoUsers = Remote.LoadError apiError }, // ↩
-        Cmd.ofEffect (fun _ -> fullContext.update _.FillTranslations(apiError.Translations))
+        { model with DemoUsers = Remote.LoadError apiError }, Cmd.ofEffect (fun _ -> fullContext.Update _.FillTranslations(apiError.Translations))
 
     | Msg.Login user ->
-        model,
-        Cmd.batch [ // ↩
-            Cmd.ofEffect (fun _ -> fullContext.update (fun x -> { x with User = user }))
-            Cmd.navigatePage Page.ProductIndex
-        ]
+        model, Cmd.batch [ Cmd.ofEffect (fun _ -> fullContext.Update(fun x -> { x with User = user })); Cmd.navigatePage Page.ProductIndex ]
 
 [<ReactComponent>]
-let LoginView () =
-    let fullContext = ReactContexts.FullContext.Use()
-    let translations = fullContext.current.Translations
+let LoginView (fullContext: ReactState<FullContext>) =
+    let translations = fullContext.Current.Translations
 
     let model, dispatch =
-        React.useElmish (init fullContext.current, update fullContext, dependencies = [||])
+        React.useElmish (init fullContext.Current, update fullContext, dependencies = [||])
 
-    Daisy.fieldset [
-        prop.key "login-fieldset"
+    Html.section [
+        prop.key "login-page"
         prop.className "bg-base-200 border border-base-300 rounded-box p-4"
         prop.children [
-            Html.legend [ prop.key "login-legend"; prop.text "Login" ]
+            Html.h1 [ prop.key "login-title"; prop.text translations.Login.Title ]
 
-            Daisy.fieldsetLabel [ prop.key "users-label"; prop.text translations.Login.SelectDemoUser ]
             match model.DemoUsers with
             | Remote.Empty -> ()
-            | Remote.Loading ->
-                Daisy.skeleton [ // ↩
-                    prop.className "h-4 w-28"
-                    prop.key "login-skeleton"
-                ]
-
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-4 w-28"; prop.key "login-skeleton" ]
             | Remote.LoadError apiError ->
-                Daisy.alert [ // ↩
+                Daisy.alert [
                     alert.error
                     prop.key "load-error"
                     prop.text apiError.ErrorMessage
                 ]
 
-            | Remote.Body users ->
+            | Remote.Loaded users ->
                 let authUsers =
                     Map [
                         for user in users do
@@ -88,9 +75,14 @@ let LoginView () =
                             | User.Authorized(userName, _) -> userName, user
                     ]
 
-                Daisy.select [ // ↩
+                Daisy.select [
                     prop.key "users-select"
                     prop.children [
+                        Html.option [
+                            prop.disabled true
+                            prop.selected true
+                            prop.text translations.Login.SelectDemoUser
+                        ]
                         for userName in authUsers.Keys do
                             Html.option userName
                     ]

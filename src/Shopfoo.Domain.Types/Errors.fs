@@ -8,7 +8,10 @@ type ValidationError = { FieldPath: string; Message: string }
 module ValidationError =
     let ofField fieldPath errorMessage = { FieldPath = fieldPath; Message = errorMessage }
 
-    let relativeTo parentError validationError = { FieldPath = $"%s{parentError.FieldPath}.{validationError.FieldPath}"; Message = $"{validationError.Message}. %s{parentError.Message}." }
+    let relativeTo parentError validationError = {
+        FieldPath = $"%s{parentError.FieldPath}.{validationError.FieldPath}"
+        Message = $"{validationError.Message}. %s{parentError.Message}."
+    }
 
 type OperationNotAllowedError = { Operation: string; Reason: string }
 
