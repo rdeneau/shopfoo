@@ -1,11 +1,13 @@
 ﻿module Shopfoo.Client.View
 
-open System
 open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.Router
 open Feliz.UseElmish
+open Shopfoo.Client.Components.Lang
+open Shopfoo.Client.Components.Theme
+open Shopfoo.Client.Components.User
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
@@ -15,18 +17,6 @@ open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
-[<RequireQualifiedAccess>]
-type private ThemeGroup =
-    | Light
-    | Dark
-
-[<RequireQualifiedAccess>]
-type private Theme =
-    | Light
-    | Dark
-    | Corporate
-    | Business
-
 type private Msg =
     | UrlChanged of Page
     | ThemeChanged of Theme
@@ -34,22 +24,6 @@ type private Msg =
     | FillTranslations of Translations
     | Login of User
     | Logout
-
-type private LangModel = {
-    Lang: Lang
-    Label: string
-    Status: Remote<unit>
-}
-
-[<AutoOpen>]
-module private LangExtensions =
-    type Lang with
-        member this.ToModel(label) : LangModel = // ↩
-            {
-                Lang = this
-                Label = label
-                Status = Remote.Loaded()
-            }
 
 type private Model = {
     Page: Page
@@ -69,21 +43,6 @@ module private Cmd =
             Success = fun data -> ChangeLang(lang, Done(Ok data))
         }
 
-let private keyOf x = $"{x}".ToLowerInvariant()
-
-type private Theme with
-    member theme.ApplyOnHtml(?delay: TimeSpan) =
-        let setTheme () =
-            Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
-
-        let milliseconds =
-            match delay with
-            | Some timeSpan when timeSpan.Ticks > 0 -> int timeSpan.TotalMilliseconds
-            | _ -> 0
-
-        // Warning: setTheme works only when executed after the JS loop (React constraint?)
-        Fable.Core.JS.setTimeout setTheme milliseconds |> ignore
-
 let private init () =
     let currentPage = Router.currentPath () |> Page.parseFromUrlSegments
     let defaultTheme = Theme.Light
@@ -92,11 +51,7 @@ let private init () =
         Page = currentPage
         Theme = defaultTheme
         FullContext = FullContext.Default
-        Langs = [
-            Lang.English.ToModel "🇺🇸 English"
-            Lang.French.ToModel "🇫🇷 Français"
-            Lang.Latin.ToModel "🚩 Latin"
-        ]
+        Langs = LangModel.all
     },
     Cmd.batch [ // ↩
         Cmd.navigatePage currentPage
@@ -141,7 +96,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                     langModel
         ]
 
-        { model with FullContext = fullContext; Langs = langs }, Cmd.none // TODO: Toast success
+        { model with FullContext = fullContext; Langs = langs }, Cmd.none // [UI] TODO: Toast success
 
     | Msg.ChangeLang(lang, Done(Error apiError)) ->
         let langs = [
@@ -152,7 +107,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
                     langModel
         ]
 
-        { model with Langs = langs }, Cmd.none // TODO: Toast error
+        { model with Langs = langs }, Cmd.none // TODO: [UI] Toast error
 
     | Msg.FillTranslations translations -> // ↩
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
@@ -164,210 +119,6 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.Logout ->
         { model with Model.FullContext.User = User.Anonymous }, // ↩
         Cmd.navigatePage Page.Login
-
-// TODO: [UI] move each to a dedicated file in the new Components folder
-[<AutoOpen>]
-module private Components =
-    type ThemeMenu(currentTheme, dispatch) =
-        member _.group(themeGroup: ThemeGroup) =
-            Daisy.menuTitle [ // ↩
-                prop.key $"%s{(keyOf themeGroup)}-theme-group"
-                prop.text $"{themeGroup} Themes"
-            ]
-
-        member _.item(theme: Theme, emoji: string) =
-            let key = keyOf theme
-
-            Html.li [
-                prop.key $"{key}-theme"
-                prop.children [
-                    Html.a [
-                        prop.key $"{key}-theme-link"
-                        prop.className "whitespace-nowrap"
-                        prop.onClick (fun _ -> dispatch (Msg.ThemeChanged theme))
-                        prop.children [
-                            Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
-                            Html.span [
-                                prop.key $"{key}-theme-text"
-                                prop.text $"{theme}"
-                                prop.custom ("data-theme", key)
-                            ]
-                            Html.span [
-                                prop.key $"{key}-theme-tick"
-                                prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
-                                prop.text (if theme = currentTheme then "✓" else "")
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-
-    [<ReactComponent>]
-    let ThemeDropdown (key, theme, dispatch) =
-        Daisy.dropdown [
-            dropdown.hover
-            dropdown.end'
-            prop.key $"%s{key}-dropdown"
-            prop.className "flex-none"
-            prop.children [
-                Daisy.button.button [
-                    button.ghost
-                    prop.key "theme-button"
-                    prop.text "🌗"
-                ]
-                Daisy.dropdownContent [
-                    prop.key "theme-dropdown-content"
-                    prop.className "p-2 shadow menu bg-base-100 rounded-box"
-                    prop.tabIndex 0
-                    prop.children [
-                        Html.ul [
-                            prop.key "theme-dropdown-list"
-                            prop.children [
-                                let themeMenu = ThemeMenu(theme, dispatch)
-
-                                themeMenu.group ThemeGroup.Light
-                                themeMenu.item (Theme.Light, "🌞")
-                                themeMenu.item (Theme.Corporate, "🏢")
-
-                                themeMenu.group ThemeGroup.Dark
-                                themeMenu.item (Theme.Dark, "🌜")
-                                themeMenu.item (Theme.Business, "💼")
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-    type private CanClick = CanClick of bool
-
-    [<ReactComponent>]
-    let LangDropdown (key, currentLang, langs, dispatch) =
-        let langItem (lg: LangModel) =
-            let key = $"lang-%s{lg.Lang |> Lang.code}"
-
-            let langLi (CanClick canClick) statusElement =
-                Html.li [
-                    prop.key $"%s{key}-li"
-                    prop.children [
-                        Html.a [
-                            prop.key $"{key}-link"
-                            prop.className [
-                                "whitespace-nowrap"
-                                if not canClick then
-                                    "cursor-default"
-                                    "opacity-60"
-                            ]
-
-                            if canClick then
-                                prop.onClick (fun _ -> dispatch (Msg.ChangeLang(lg.Lang, Start)))
-                            else
-                                prop.ariaDisabled true
-
-                            prop.children [ // ↩
-                                Html.span [ prop.key $"{key}-label"; prop.text $"%s{lg.Label}" ]
-                                statusElement
-                            ]
-                        ]
-                    ]
-                ]
-
-            match lg.Status with
-            | Remote.Empty -> Html.none
-            | Remote.Loading ->
-                Daisy.loading [
-                    prop.key $"{key}-spinner"
-                    loading.spinner
-                    loading.xs
-                    color.textInfo
-                ]
-                |> langLi (CanClick false)
-
-            | Remote.Loaded() ->
-                let isCurrentLang = // ↩
-                    lg.Lang = currentLang
-
-                Html.span [
-                    prop.key $"{key}-status"
-                    prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
-                    prop.text (if isCurrentLang then "✓" else "")
-                ]
-                |> langLi (CanClick (not isCurrentLang))
-
-            | Remote.LoadError apiError ->
-                Daisy.tooltip [ // ↩
-                    tooltip.text $"Error: %s{apiError.ErrorMessage}"
-                    prop.key $"{key}-error-tooltip"
-                    prop.child (Daisy.status [ status.error; status.xl ])
-                ]
-                |> langLi (CanClick true)
-
-        Daisy.dropdown [
-            dropdown.hover
-            dropdown.end'
-            prop.key $"%s{key}-dropdown"
-            prop.className "flex-none"
-            prop.children [
-                Daisy.button.button [
-                    button.ghost
-                    prop.key "lang-button"
-                    prop.text (currentLang |> Lang.code)
-                ]
-                Daisy.dropdownContent [
-                    prop.key "lang-dropdown-content"
-                    prop.className "p-2 shadow menu bg-base-100 rounded-box"
-                    prop.tabIndex 0
-                    prop.children [
-                        Html.ul [
-                            prop.key "lang-dropdown-list"
-                            prop.children [ // ↩
-                                for langModel in langs do
-                                    langItem langModel
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
-
-    [<ReactComponent>]
-    let UserDropdown (key, userName: string, dispatch, translations: AppTranslations) =
-        Daisy.dropdown [
-            dropdown.hover
-            dropdown.end'
-            prop.key $"%s{key}-dropdown"
-            prop.className "flex-none"
-            prop.children [
-                Daisy.button.button [
-                    button.ghost
-                    prop.key "user-button"
-                    prop.text userName
-                ]
-                Daisy.dropdownContent [
-                    prop.key "user-dropdown-content"
-                    prop.className "p-2 shadow menu bg-base-100 rounded-box"
-                    prop.tabIndex 0
-                    prop.children [
-                        Html.ul [
-                            prop.key "user-dropdown-list"
-                            prop.children [
-                                Html.li [
-                                    prop.key "user-logout"
-                                    prop.children [
-                                        Html.a [
-                                            prop.key "user-logout-link"
-                                            prop.className "whitespace-nowrap"
-                                            prop.onClick (fun _ -> dispatch Msg.Logout)
-                                            prop.text translations.Home.Logout
-                                        ]
-                                    ]
-                                ]
-                            ]
-                        ]
-                    ]
-                ]
-            ]
-        ]
 
 [<ReactComponent>]
 let AppView () =
@@ -387,13 +138,13 @@ let AppView () =
                     prop.child (Html.a ("⚙️ Shopfoo", Page.Home))
                 ]
 
-                ThemeDropdown("nav-theme", model.Theme, dispatch)
-                LangDropdown("nav-lang", fullContext.Lang, model.Langs, dispatch)
+                ThemeDropdown("nav-theme", model.Theme, dispatch << Msg.ThemeChanged)
+                LangDropdown("nav-lang", fullContext.Lang, model.Langs, fun lang -> dispatch (Msg.ChangeLang(lang, Start)))
 
                 match fullContext.User with
                 | User.Anonymous -> ()
                 | User.Authorized(userName, _) -> // ↩
-                    UserDropdown("nav-user", userName, dispatch, translations)
+                    UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
 
                 // TODO: hide when loading (no translations)
                 Daisy.button.button [

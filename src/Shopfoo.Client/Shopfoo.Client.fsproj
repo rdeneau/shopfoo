@@ -9,6 +9,9 @@
         <Compile Include="Remoting.fs" />
         <Compile Include="Routing.fs" />
         <Compile Include="UI.fs" />
+        <Compile Include="Components\Lang.fs" />
+        <Compile Include="Components\Theme.fs" />
+        <Compile Include="Components\User.fs" />
         <Compile Include="Pages\About.fs" />
         <Compile Include="Pages\Login.fs" />
         <Compile Include="Pages\Product\Index.fs" />
