@@ -6,7 +6,7 @@ open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types
 
-type LangModel = {
+type LangMenu = {
     Lang: Lang
     Code: string
     Label: string
@@ -15,8 +15,8 @@ type LangModel = {
 }
 
 [<RequireQualifiedAccess>]
-module LangModel =
-    let private mk lang code label emoji : LangModel = {
+module LangMenu =
+    let private mk lang code label emoji : LangMenu = {
         Lang = lang
         Code = code
         Label = label
@@ -34,10 +34,10 @@ module LangModel =
 module private LangExtensions =
     type Lang with
         member lang.AsModel = // ↩
-            LangModel.all |> List.find (fun lg -> lg.Lang = lang)
+            LangMenu.all |> List.find (fun lg -> lg.Lang = lang)
 
-type private LangMenu(currentLang, onClick) =
-    member private _.li(key, lg: LangModel, canClick) =
+type private LangMenuElement(currentLang, onClick) =
+    member private _.li(key, lg: LangMenu, canClick) =
         fun statusElement ->
             Html.li [
                 prop.key $"%s{key}-li"
@@ -64,7 +64,7 @@ type private LangMenu(currentLang, onClick) =
                 ]
             ]
 
-    member this.item(lg: LangModel) =
+    member this.item(lg: LangMenu) =
         let key = $"lang-%s{lg.Code}"
 
         let isCurrentLang = // ↩
@@ -98,7 +98,7 @@ type private LangMenu(currentLang, onClick) =
             |> this.li (key, lg, canClick = true)
 
 [<ReactComponent>]
-let LangDropdown (key, currentLang: Lang, langs, onClick) =
+let LangDropdown (key, currentLang: Lang, menus, onClick) =
     Daisy.dropdown [
         dropdown.hover
         dropdown.end'
@@ -118,10 +118,10 @@ let LangDropdown (key, currentLang: Lang, langs, onClick) =
                     Html.ul [
                         prop.key "lang-dropdown-list"
                         prop.children [ // ↩
-                            let menu = LangMenu(currentLang, onClick)
+                            let menuElement = LangMenuElement(currentLang, onClick)
 
-                            for lg in langs do
-                                menu.item lg
+                            for menu in menus do
+                                menuElement.item menu
                         ]
                     ]
                 ]

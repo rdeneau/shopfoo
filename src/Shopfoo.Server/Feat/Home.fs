@@ -13,14 +13,6 @@ type GetAllowedTranslationsRequest = {
 
 type Api() =
     let translationPages = [
-        PageCode.Home,
-        [
-            TagCode "About", "About", "À propos"
-            TagCode "Login", "Login", "Connexion"
-            TagCode "Logout", "Logout", "Se déconnecter"
-            TagCode "Products", "Products", "Produits"
-        ]
-
         PageCode.About,
         [
             TagCode "Disclaimer",
@@ -28,6 +20,17 @@ type Api() =
             + "with domain workflows based on pseudo algebraic effects.",
             "Cette application est un projet démo illustrant l'architecture 'SAFE functional', "
             + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
+        ]
+
+        PageCode.Home,
+        [
+            TagCode "About", "About", "À propos"
+            TagCode "Login", "Login", "Connexion"
+            TagCode "Logout", "Logout", "Se déconnecter"
+            TagCode "Products", "Products", "Produits"
+
+            TagCode "ChangeLangError", "Switching to {0} failed: {1}", "Passage de la langue en {0} en erreur : {1}"
+            TagCode "ChangeLangSuccess", "Successful switch to English", "Passage de la langue en français réussi"
         ]
 
         PageCode.Login,
@@ -66,10 +69,13 @@ type Api() =
 
             let pages =
                 if pageCodes.Count = 0 then
-                    []
+                    Some []
                 else
-                    translationsByLang[request.lang] // ↩
-                    |> List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode)
+                    translationsByLang
+                    |> Map.tryFind request.lang
+                    |> Option.map (List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode))
 
-            return Ok { Pages = Map pages }
+            match pages with
+            | Some pages -> return Ok { Pages = Map pages }
+            | None -> return Error(DataError(DataRelatedError.DataNotFound(Id = string request.lang, Type = "")))
         }

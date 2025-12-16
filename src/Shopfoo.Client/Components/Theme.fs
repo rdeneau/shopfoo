@@ -3,6 +3,7 @@
 open System
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Client
 
 [<RequireQualifiedAccess>]
 type private ThemeGroup =
@@ -23,13 +24,8 @@ type Theme with
         let setTheme () =
             Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
 
-        let milliseconds =
-            match delay with
-            | Some timeSpan when timeSpan.Ticks > 0 -> int timeSpan.TotalMilliseconds
-            | _ -> 0
-
         // Warning: setTheme works only when executed after the JS loop (React constraint?)
-        Fable.Core.JS.setTimeout setTheme milliseconds |> ignore
+        setTheme |> JS.runAfter (defaultArg delay TimeSpan.Zero)
 
 type private ThemeMenu(currentTheme, onClick) =
     member _.group(themeGroup: ThemeGroup) =

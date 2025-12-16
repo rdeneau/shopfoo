@@ -1,7 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Home
 
 open Shopfoo.Domain.Types.Security
-open Shopfoo.Domain.Types.Translations
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
@@ -35,11 +34,8 @@ type GetTranslationsHandler(api: FeatApi) =
                     requested = pageCodes
                 }
 
-            let translations =
-                match translations with
-                | Ok translations -> translations
-                | Error _ -> Translations.Empty
-
             let response = ResponseBuilder.plain user
-            return response.Ok { Lang = request.Lang; Translations = translations }
+            match translations with
+                | Ok translations -> return response.Ok { Lang = request.Lang; Translations = translations }
+                | Error error -> return response.ApiError error
         }

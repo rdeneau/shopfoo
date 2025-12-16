@@ -131,6 +131,7 @@ module ErrorMessage =
     let inline private dataErrorMessage dataError =
         match dataError with
         | UpdateError error -> error
+        | DataNotFound(id, (null | "")) -> $"%s{id} not found"
         | DataNotFound(id, dataType) -> $"[%s{dataType}] %s{id} not found"
         | DeserializationIssue(content, targetType, exn) -> $"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}"
         | HttpApiError(apiName, status) -> $"Call to %s{apiName} API failed with %s{status.Explain()}"
