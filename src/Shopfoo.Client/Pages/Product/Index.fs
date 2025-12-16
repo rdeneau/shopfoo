@@ -5,6 +5,7 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
+open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
@@ -55,13 +56,7 @@ let IndexView (fullContext, fillTranslations) =
             match model.Products with
             | Remote.Empty -> ()
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
-            | Remote.LoadError apiError ->
-                Daisy.alert [
-                    alert.error
-                    prop.key "products-load-error"
-                    prop.text apiError.ErrorMessage // TODO: [Admin] display error detail to admin
-                ]
-
+            | Remote.LoadError apiError -> Alert.apiError "products-load-error" apiError fullContext.User
             | Remote.Loaded products ->
                 Daisy.table [
                     prop.key "products-table"
