@@ -60,13 +60,16 @@ type Api() =
 
     member _.GetAllowedTranslations(request: GetAllowedTranslationsRequest) : Async<Result<Translations, Error>> =
         async {
-            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
-
             let pageCodes = Set.intersect request.allowed request.requested
 
+            do! Async.Sleep(millisecondsDueTime = 100 + 50 * pageCodes.Count) // Simulate latency
+
             let pages =
-                translationsByLang[request.lang] // ↩
-                |> List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode)
+                if pageCodes.Count = 0 then
+                    []
+                else
+                    translationsByLang[request.lang] // ↩
+                    |> List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode)
 
             return Ok { Pages = Map pages }
         }

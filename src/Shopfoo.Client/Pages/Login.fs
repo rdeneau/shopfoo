@@ -19,7 +19,7 @@ type Msg =
 [<RequireQualifiedAccess>]
 module private Cmd =
     let loadHomeData (cmder: Cmder, request) =
-        cmder.ofApiCall {
+        cmder.ofApiRequest {
             Call = fun api -> api.Home.Index request
             Error = Error >> HomeDataFetched
             Success = Ok >> HomeDataFetched

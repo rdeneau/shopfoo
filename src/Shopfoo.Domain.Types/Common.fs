@@ -5,6 +5,7 @@ module Shopfoo.Domain.Types.Common
 type Lang =
     | English
     | French
+    | Latin
 
 [<RequireQualifiedAccess>]
 module Lang =
@@ -12,3 +13,4 @@ module Lang =
         function
         | Lang.English -> "en"
         | Lang.French -> "fr"
+        | Lang.Latin -> "la"

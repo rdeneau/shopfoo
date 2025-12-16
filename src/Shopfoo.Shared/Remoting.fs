@@ -92,9 +92,12 @@ type IApi = interface end
 module HomeApi =
     type HomeIndexResponse = { DemoUsers: User list }
 
+    type GetTranslationsRequest = { Lang: Lang; PageCodes: Set<PageCode> }
+    type GetTranslationsResponse = { Lang: Lang; Translations: Translations }
+
     type HomeApi = {
         Index: QueryWithTranslations<unit, HomeIndexResponse>
-        GetTranslations: Query<Set<PageCode>, Translations>
+        GetTranslations: Query<GetTranslationsRequest, GetTranslationsResponse>
     } with
         interface IApi
 

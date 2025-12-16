@@ -8,7 +8,7 @@ open Shopfoo.Shared.Remoting
 
 [<Sealed>]
 type GetTranslationsHandler(api: FeatApi) =
-    inherit SecureQueryHandler<Set<PageCode>, Translations>()
+    inherit SecureQueryHandler<GetTranslationsRequest, GetTranslationsResponse>()
 
     let features = [
         Feat.Home
@@ -23,11 +23,14 @@ type GetTranslationsHandler(api: FeatApi) =
                 feat, access
     ]
 
-    override _.Handle lang pageCodes user =
+    override _.Handle lang request user =
         async {
+            let pageCodes = // ↩
+                if request.Lang = lang then Set.empty else request.PageCodes
+
             let! translations =
                 api.Home.GetAllowedTranslations {
-                    lang = lang
+                    lang = request.Lang
                     allowed = pageCodes
                     requested = pageCodes
                 }
@@ -38,5 +41,5 @@ type GetTranslationsHandler(api: FeatApi) =
                 | Error _ -> Translations.Empty
 
             let response = ResponseBuilder.plain user
-            return response.Ok translations
+            return response.Ok { Lang = request.Lang; Translations = translations }
         }

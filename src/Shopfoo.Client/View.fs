@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Client.View
 
+open System
 open Elmish
 open Feliz
 open Feliz.DaisyUI
@@ -28,32 +29,60 @@ type private Theme =
 
 type private Msg =
     | UrlChanged of Page
-    | LangChanged of Lang
     | ThemeChanged of Theme
-    | TranslationsFetched of ApiResult<Translations>
+    | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
     | FillTranslations of Translations
     | Login of User
     | Logout
+
+type private LangModel = {
+    Lang: Lang
+    Label: string
+    Status: Remote<unit>
+}
+
+[<AutoOpen>]
+module private LangExtensions =
+    type Lang with
+        member this.ToModel(label) : LangModel = // ↩
+            {
+                Lang = this
+                Label = label
+                Status = Remote.Loaded()
+            }
 
 type private Model = {
     Page: Page
     Theme: Theme
     FullContext: FullContext
+    Langs: LangModel list
 }
 
 [<RequireQualifiedAccess>]
 module private Cmd =
-    let fetchTranslations (cmder: Cmder, request) =
-        cmder.ofApiCall {
+    let fetchTranslations (cmder: Cmder, request: Request<GetTranslationsRequest>) =
+        let lang = request.Body.Lang // Warning: `request.Lang` is the current lang, not the requested one
+
+        cmder.ofApiRequest {
             Call = fun api -> api.Home.GetTranslations request
-            Error = Error >> TranslationsFetched
-            Success = Ok >> TranslationsFetched
+            Error = fun err -> ChangeLang(lang, Done(Error err))
+            Success = fun data -> ChangeLang(lang, Done(Ok data))
         }
 
 let private keyOf x = $"{x}".ToLowerInvariant()
 
-let private setTheme theme =
-    Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
+type private Theme with
+    member theme.ApplyOnHtml(?delay: TimeSpan) =
+        let setTheme () =
+            Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
+
+        let milliseconds =
+            match delay with
+            | Some timeSpan when timeSpan.Ticks > 0 -> int timeSpan.TotalMilliseconds
+            | _ -> 0
+
+        // Warning: setTheme works only when executed after the JS loop (React constraint?)
+        Fable.Core.JS.setTimeout setTheme milliseconds |> ignore
 
 let private init () =
     let currentPage = Router.currentPath () |> Page.parseFromUrlSegments
@@ -63,6 +92,11 @@ let private init () =
         Page = currentPage
         Theme = defaultTheme
         FullContext = FullContext.Default
+        Langs = [
+            Lang.English.ToModel "🇺🇸 English"
+            Lang.French.ToModel "🇫🇷 Français"
+            Lang.Latin.ToModel "🚩 Latin"
+        ]
     },
     Cmd.batch [ // ↩
         Cmd.navigatePage currentPage
@@ -76,31 +110,62 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
     | Msg.ThemeChanged theme ->
         { model with Theme = theme }, // ↩
-        Cmd.ofEffect (fun _ -> Fable.Core.JS.setTimeout (fun () -> setTheme theme) 0 |> ignore)
+        Cmd.ofEffect (fun _ -> theme.ApplyOnHtml())
 
-    | Msg.LangChanged lang ->
-        let fullContext = { model.FullContext with Lang = lang }
+    | Msg.ChangeLang(lang, Start) ->
+        let langs = [
+            for langModel in model.Langs do
+                if langModel.Lang = lang then
+                    { langModel with Status = Remote.Loading }
+                else
+                    langModel
+        ]
 
-        { model with FullContext = fullContext }, // ↩
-        Cmd.fetchTranslations (fullContext.PrepareRequest fullContext.Translations.PopulatedPages)
+        { model with Langs = langs },
+        Cmd.fetchTranslations (
+            model.FullContext.PrepareRequest { // ↩
+                Lang = lang
+                PageCodes = model.FullContext.Translations.PopulatedPages
+            }
+        )
 
-    | Msg.TranslationsFetched(Ok translations) -> // ↩
-        { model with Model.FullContext.Translations = AppTranslations().Fill(translations) }, Cmd.none
+    | Msg.ChangeLang(lang, Done(Ok data)) ->
+        let translations = AppTranslations().Fill(data.Translations)
+        let fullContext = { model.FullContext with Lang = lang; Translations = translations }
 
-    | Msg.TranslationsFetched(Error apiError) -> // ↩
-        { model with Model.FullContext.Translations = AppTranslations().Fill(apiError.Translations) }, Cmd.none
+        let langs = [
+            for langModel in model.Langs do
+                if langModel.Lang = lang then
+                    { langModel with Status = Remote.Loaded() }
+                else
+                    langModel
+        ]
+
+        { model with FullContext = fullContext; Langs = langs }, Cmd.none // TODO: Toast success
+
+    | Msg.ChangeLang(lang, Done(Error apiError)) ->
+        let langs = [
+            for langModel in model.Langs do
+                if langModel.Lang = lang then
+                    { langModel with Status = Remote.LoadError apiError }
+                else
+                    langModel
+        ]
+
+        { model with Langs = langs }, Cmd.none // TODO: Toast error
 
     | Msg.FillTranslations translations -> // ↩
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
 
     | Msg.Login user ->
         { model with Model.FullContext.User = user }, // ↩
-        Cmd.navigatePage Page.ProductIndex
+        Cmd.navigatePage Page.ProductIndex // TODO: [Navigation] Navigate to product/index only if the current page is Login
 
     | Msg.Logout ->
         { model with Model.FullContext.User = User.Anonymous }, // ↩
         Cmd.navigatePage Page.Login
 
+// TODO: [UI] move each to a dedicated file in the new Components folder
 [<AutoOpen>]
 module private Components =
     type ThemeMenu(currentTheme, dispatch) =
@@ -174,29 +239,68 @@ module private Components =
             ]
         ]
 
-    [<ReactComponent>]
-    let LangDropdown (key, currentLang, dispatch) =
-        let langItem lang text =
-            let key = lang |> Lang.code
+    type private CanClick = CanClick of bool
 
-            Html.li [
-                prop.key $"%s{key}-lang"
-                prop.children [
-                    Html.a [
-                        prop.key $"{key}-lang-link"
-                        prop.className "whitespace-nowrap"
-                        prop.onClick (fun _ -> dispatch (Msg.LangChanged lang))
-                        prop.children [
-                            Html.span [ prop.key $"{key}-lang-text"; prop.text $"%s{text}" ]
-                            Html.span [
-                                prop.key $"{key}-lang-tick"
-                                prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
-                                prop.text (if lang = currentLang then "✓" else "")
+    [<ReactComponent>]
+    let LangDropdown (key, currentLang, langs, dispatch) =
+        let langItem (lg: LangModel) =
+            let key = $"lang-%s{lg.Lang |> Lang.code}"
+
+            let langLi (CanClick canClick) statusElement =
+                Html.li [
+                    prop.key $"%s{key}-li"
+                    prop.children [
+                        Html.a [
+                            prop.key $"{key}-link"
+                            prop.className [
+                                "whitespace-nowrap"
+                                if not canClick then
+                                    "cursor-default"
+                                    "opacity-60"
+                            ]
+
+                            if canClick then
+                                prop.onClick (fun _ -> dispatch (Msg.ChangeLang(lg.Lang, Start)))
+                            else
+                                prop.ariaDisabled true
+
+                            prop.children [ // ↩
+                                Html.span [ prop.key $"{key}-label"; prop.text $"%s{lg.Label}" ]
+                                statusElement
                             ]
                         ]
                     ]
                 ]
-            ]
+
+            match lg.Status with
+            | Remote.Empty -> Html.none
+            | Remote.Loading ->
+                Daisy.loading [
+                    prop.key $"{key}-spinner"
+                    loading.spinner
+                    loading.xs
+                    color.textInfo
+                ]
+                |> langLi (CanClick false)
+
+            | Remote.Loaded() ->
+                let isCurrentLang = // ↩
+                    lg.Lang = currentLang
+
+                Html.span [
+                    prop.key $"{key}-status"
+                    prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
+                    prop.text (if isCurrentLang then "✓" else "")
+                ]
+                |> langLi (CanClick (not isCurrentLang))
+
+            | Remote.LoadError apiError ->
+                Daisy.tooltip [ // ↩
+                    tooltip.text $"Error: %s{apiError.ErrorMessage}"
+                    prop.key $"{key}-error-tooltip"
+                    prop.child (Daisy.status [ status.error; status.xl ])
+                ]
+                |> langLi (CanClick true)
 
         Daisy.dropdown [
             dropdown.hover
@@ -217,8 +321,8 @@ module private Components =
                         Html.ul [
                             prop.key "lang-dropdown-list"
                             prop.children [ // ↩
-                                langItem Lang.English "English"
-                                langItem Lang.French "Français"
+                                for langModel in langs do
+                                    langItem langModel
                             ]
                         ]
                     ]
@@ -276,20 +380,22 @@ let AppView () =
             prop.key "app-nav"
             prop.className "bg-base-200 shadow-sm"
             prop.children [
+                // TODO: [UI] Breadcrumb in the navbar, replacing h1 in each page
                 Html.div [
-                    prop.key "nav-index"
+                    prop.key "nav-home"
                     prop.className "flex-1"
                     prop.child (Html.a ("⚙️ Shopfoo", Page.Home))
                 ]
 
                 ThemeDropdown("nav-theme", model.Theme, dispatch)
-                LangDropdown("nav-lang", fullContext.Lang, dispatch)
+                LangDropdown("nav-lang", fullContext.Lang, model.Langs, dispatch)
 
                 match fullContext.User with
                 | User.Anonymous -> ()
                 | User.Authorized(userName, _) -> // ↩
                     UserDropdown("nav-user", userName, dispatch, translations)
 
+                // TODO: hide when loading (no translations)
                 Daisy.button.button [
                     button.ghost
                     prop.key "nav-about"

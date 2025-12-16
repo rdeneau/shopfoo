@@ -19,7 +19,7 @@ type private Msg = // ↩
 [<RequireQualifiedAccess>]
 module private Cmd =
     let loadProducts (cmder: Cmder, request) =
-        cmder.ofApiCall {
+        cmder.ofApiRequest {
             Call = fun api -> api.Product.GetProducts request
             Error = Error >> ProductsFetched
             Success = Ok >> ProductsFetched
