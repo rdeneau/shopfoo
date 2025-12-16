@@ -8,13 +8,14 @@ open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
-type private Model = { Products: Remote<Product> }
+type private Model = { Product: Remote<Product> }
 
 type private Msg = // ↩
-    | ProductDetailsFetched of ApiResult<GetProductDetailsResponse>
+    | ProductDetailsFetched of ApiResult<GetProductDetailsResponse * Translations>
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -26,17 +27,23 @@ module private Cmd =
         }
 
 let private init (fullContext: FullContext) sku =
-    { Products = Remote.Loading }, // ↩
-    Cmd.loadProducts (fullContext.PrepareRequest sku)
+    { Product = Remote.Loading }, // ↩
+    Cmd.loadProducts (fullContext.PrepareQueryWithTranslations sku)
 
-let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update fillTranslations msg (model: Model) =
     match msg with
-    | Msg.ProductDetailsFetched(Ok { Product = Some product }) -> { model with Products = Remote.Loaded product }, Cmd.none
-    | Msg.ProductDetailsFetched(Ok { Product = None }) -> { model with Products = Remote.Empty }, Cmd.none
+    | Msg.ProductDetailsFetched(Ok(data, translations)) ->
+        let product =
+            match data.Product with
+            | Some product -> Remote.Loaded product
+            | None -> Remote.Empty
+
+        { model with Product = product }, // ↩
+        Cmd.ofEffect (fun _ -> fillTranslations translations)
 
     | Msg.ProductDetailsFetched(Error apiError) ->
-        { model with Products = Remote.LoadError apiError }, // ↩
-        Cmd.none
+        { model with Product = Remote.LoadError apiError }, // ↩
+        Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
 [<AutoOpen>]
 module private Component =
@@ -242,8 +249,10 @@ module private Section =
         ]
 
 [<ReactComponent>]
-let DetailsView (fullContext, sku: SKU) =
-    let model, dispatch = React.useElmish (init fullContext sku, update, [||])
+let DetailsView (fullContext, sku, fillTranslations) =
+    let model, dispatch =
+        React.useElmish (init fullContext sku, update fillTranslations, [||])
+
     let translations = fullContext.Translations
 
     Html.section [
@@ -269,7 +278,7 @@ let DetailsView (fullContext, sku: SKU) =
             ]
 
             // TODO: [Product] handle Remote<Product> (skeleton, details...) in Section.ProductCatalogInfo
-            match model.Products with
+            match model.Product with
             | Remote.Empty -> () // TODO: [Product] display a 'not found'
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
             | Remote.LoadError apiError ->

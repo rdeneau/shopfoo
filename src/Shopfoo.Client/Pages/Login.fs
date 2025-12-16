@@ -29,7 +29,7 @@ let private init (fullContext: FullContext) =
     { DemoUsers = Remote.Loading }, // ↩
     Cmd.loadHomeData (fullContext.PrepareQueryWithTranslations())
 
-let private update (fillTranslations: Translations -> unit) (login: User -> unit) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update fillTranslations loginUser msg model =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
         { model with DemoUsers = Remote.Loaded data.DemoUsers }, // ↩
@@ -40,12 +40,12 @@ let private update (fillTranslations: Translations -> unit) (login: User -> unit
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
     | Msg.Login user -> // ↩
-        model, Cmd.ofEffect (fun _ -> login user)
+        model, Cmd.ofEffect (fun _ -> loginUser user)
 
 [<ReactComponent>]
-let LoginView (fullContext, fillTranslations, login) =
+let LoginView (fullContext, fillTranslations, loginUser) =
     let model, dispatch =
-        React.useElmish (init fullContext, update fillTranslations login, dependencies = [||])
+        React.useElmish (init fullContext, update fillTranslations loginUser, dependencies = [||])
 
     let translations = fullContext.Translations
 

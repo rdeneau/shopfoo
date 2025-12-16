@@ -30,7 +30,7 @@ let private init (fullContext: FullContext) =
     { Products = Remote.Loading }, // ↩
     Cmd.loadProducts (fullContext.PrepareQueryWithTranslations())
 
-let private update (fillTranslations: Translations -> unit) (msg: Msg) (model: Model) : Model * Cmd<Msg> =
+let private update fillTranslations msg (model: Model) =
     match msg with
     | Msg.ProductsFetched(Ok(data, translations)) ->
         { model with Products = Remote.Loaded data.Products }, // ↩

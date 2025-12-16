@@ -20,6 +20,6 @@ type ProductApiBuilder(api: FeatApi) =
             GetProductsHandler(api, AuthorizedPageCodes) // ↩
             |> Security.authorizeHandler (Claims.single Feat.Catalog Access.View)
         GetProductDetails =
-            GetProductDetailsHandler(api) // ↩
+            GetProductDetailsHandler(api, AuthorizedPageCodes) // ↩
             |> Security.authorizeHandler (Claims.single Feat.Catalog Access.View)
     }

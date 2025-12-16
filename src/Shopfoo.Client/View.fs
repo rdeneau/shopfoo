@@ -103,8 +103,10 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
 
     | Msg.Login user ->
-        { model with Model.FullContext.User = user }, // ↩
-        Cmd.navigatePage Page.ProductIndex // TODO: [Navigation] Navigate to product/index only if the current page is Login
+        { model with Model.FullContext.User = user },
+        match model.Page with
+        | Page.Login -> Cmd.navigatePage Page.ProductIndex
+        | _ -> Cmd.none
 
     | Msg.Logout ->
         { model with Model.FullContext.User = User.Anonymous }, // ↩
@@ -146,14 +148,17 @@ let AppView () =
             ]
         ]
 
+    let fillTranslations = dispatch << Msg.FillTranslations
+    let loginUser = dispatch << Msg.Login
+
     let page =
         match fullContext.User, model.Page with
         | _, Page.About -> Pages.About.AboutView(fullContext)
-        | User.Anonymous, _ -> Pages.Login.LoginView(fullContext, dispatch << Msg.FillTranslations, dispatch << Msg.Login)
+        | User.Anonymous, _ -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | User.Authorized _, Page.Home
         | User.Authorized _, Page.Login
-        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, dispatch << Msg.FillTranslations)
-        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku)
+        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
+        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations)
 
     React.router [
         router.pathMode

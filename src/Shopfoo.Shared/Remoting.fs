@@ -110,7 +110,7 @@ module ProductApi =
 
     type ProductApi = {
         GetProducts: QueryWithTranslations<unit, GetProductsResponse>
-        GetProductDetails: Query<SKU, GetProductDetailsResponse>
+        GetProductDetails: QueryWithTranslations<SKU, GetProductDetailsResponse>
     } with
         interface IApi
 

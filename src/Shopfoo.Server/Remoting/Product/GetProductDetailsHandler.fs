@@ -6,14 +6,21 @@ open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
 
 [<Sealed>]
-type GetProductDetailsHandler(api: FeatApi) =
-    inherit SecureQueryHandler<SKU, GetProductDetailsResponse>()
+type GetProductDetailsHandler(api: FeatApi, authorizedPageCodes) =
+    inherit SecureQueryDataAndTranslationsHandler<SKU, GetProductDetailsResponse>()
 
-    override _.Handle _ sku user =
+    override _.Handle lang request user =
         async {
-            let! result = api.Catalog.GetProductDetails(sku)
+            let! result = api.Catalog.GetProductDetails(request.Query)
 
-            let response = ResponseBuilder.plain user
+            let! translations =
+                api.Home.GetAllowedTranslations {
+                    lang = lang
+                    allowed = authorizedPageCodes
+                    requested = request.TranslationPages
+                }
+
+            let response = ResponseBuilder.withTranslations user translations
 
             return
                 match result with
