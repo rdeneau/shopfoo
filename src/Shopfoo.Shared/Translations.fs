@@ -114,10 +114,30 @@ module TranslationPages =
 
     type Product internal (?translations) =
         inherit Base(PageCode.Product, ?translations = translations)
+
+        member this.Actions = this.Get "Actions"
         member this.CatalogInfo = this.Get "CatalogInfo"
         member this.Description = this.Get "Description"
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
+
+        member this.Price = this.Get "Price"
+
+        member this.PriceAction =
+            this.WithPrefix "PriceAction."
+            <| fun this -> {|
+                Increase = this.Get "Increase"
+                Decrease = this.Get "Decrease"
+                Unavailable = this.Get "Unavailable"
+                FreeShipping = this.Get "FreeShipping"
+            |}
+
+        member this.Stock = this.Get "Stock"
+
+        member this.StockAction =
+            this.WithPrefix "StockAction."
+            <| fun this -> {| InventoryAdjustment = this.Get "InventoryAdjustment" |}
+
         member this.Save = this.Get "Save"
         member this.SaveOk(SKU sku) = this.Format("SaveOk", sku)
         member this.SaveError(SKU sku, error: string) = this.Format("SaveError", sku, error)

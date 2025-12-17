@@ -2,6 +2,7 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Shared.Remoting
 
 type private Action = {
     Key: string
@@ -97,28 +98,29 @@ let private ActionsDropdown key (value: Value) (actions: Action list) =
     ]
 
 [<ReactComponent>]
-let ActionsForm =
+let ActionsForm key (fullContext: FullContext) =
+    let translations = fullContext.Translations
+
     Daisy.fieldset [
-        prop.key "product-actions-fieldset"
+        prop.key $"%s{key}-fieldset"
         prop.className "bg-base-200 border border-base-300 rounded-box p-4"
         prop.children [
             Html.legend [
                 prop.key "product-actions-legend"
                 prop.className "text-sm"
-                prop.text "⚡ Actions"
+                prop.text $"⚡ %s{translations.Product.Actions}"
             ]
 
-            Daisy.fieldsetLabel [ prop.key "price-label"; prop.text "Price" ]
+            Daisy.fieldsetLabel [ prop.key "price-label"; prop.text translations.Product.Price ]
             ActionsDropdown "price" (Value.Euros 85.00m) [
-                Action.Emoji("↗️", "increase", "Increase Price", fun () -> ()) // TODO
-                Action.Emoji("↘️", "decrease", "Decrease Price", fun () -> ()) // TODO
-                Action.Emoji("🚫", "unavailable", "Unavailable", fun () -> ()) // TODO
-                Action.Emoji("📦", "free-shipping", "Free Shipping", fun () -> ()) // TODO
+                Action.Emoji("↗️", "increase", translations.Product.PriceAction.Increase, fun () -> ()) // TODO
+                Action.Emoji("↘️", "decrease", translations.Product.PriceAction.Decrease, fun () -> ()) // TODO
+                Action.Emoji("🚫", "unavailable", translations.Product.PriceAction.Unavailable, fun () -> ()) // TODO
             ]
 
-            Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text "Stock" ]
+            Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
             ActionsDropdown "stock" (Value.Natural 17) [
-                Action.Emoji("✏️", "inventory-adjustment", "Inventory Adjustment", fun () -> ()) // TODO
+                Action.Emoji("✏️", "inventory-adjustment", translations.Product.StockAction.InventoryAdjustment, fun () -> ()) // TODO
             ]
         ]
     ]

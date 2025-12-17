@@ -53,10 +53,20 @@ let private translationPages = [
 
     PageCode.Product,
     [
+        TagCode "Actions", "Actions", "Actions"
         TagCode "CatalogInfo", "Catalog Info", "Info Catalogue"
         TagCode "Description", "Description", "Description"
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
+
+        TagCode "Price", "Price", "Prix"
+        TagCode "PriceAction.Increase", "Increase price", "Augmenter le prix"
+        TagCode "PriceAction.Decrease", "Decrease price", "Réduire le prix"
+        TagCode "PriceAction.Unavailable", "Unavailable", "Rendre indisponible"
+
+        TagCode "Stock", "Stock", "Stock"
+        TagCode "StockAction.InventoryAdjustment", "Inventory adjustment", "Ajuster suite à inventaire"
+
         TagCode "Save", "Save", "Enregistrer"
         TagCode "SaveOk", "Product {0} saved successfully", "Enregistrement réussi du produit {0}"
         TagCode "SaveError", "Failed to save the product {0}: {1}", "Erreur lors de l'enregistrement du produit {0} : {1}"

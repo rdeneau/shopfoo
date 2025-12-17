@@ -72,14 +72,14 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
         Cmd.ofEffect (fun _ ->
             let optionalError =
                 match result with
-                | Ok() -> None
                 | Error error -> Some error
+                | Ok() -> None
 
             onSaveProduct (product, optionalError)
         )
 
 [<ReactComponent>]
-let CatalogInfoForm (key, fullContext, sku, fillTranslations, onSaveProduct) =
+let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
     let model, dispatch =
         React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
@@ -95,137 +95,134 @@ let CatalogInfoForm (key, fullContext, sku, fillTranslations, onSaveProduct) =
             prop.className "bg-base-300"
     ]
 
-    Html.section [
-        prop.key $"%s{key}-section"
-        prop.children [
-            match model.Product with
-            | Remote.Empty ->
-                Daisy.alert [
-                    alert.error
-                    prop.key "product-not-found"
-                    prop.children [
-                        Html.span [
-                            prop.key "pnf-icon"
-                            prop.text "⛓️‍💥"
-                            prop.className "text-lg mr-1"
-                        ]
-                        Html.span [
-                            prop.key "pnf-content"
-                            prop.children [
-                                Html.span [ prop.key "pnf-text"; prop.text (translations.Home.ErrorNotFound translations.Home.Product) ]
-                                Html.code [ prop.key "pnf-sku"; prop.text $" %s{sku.Value} " ]
-                            ]
+    React.fragment [
+        match model.Product with
+        | Remote.Empty ->
+            Daisy.alert [
+                alert.error
+                prop.key "product-not-found"
+                prop.children [
+                    Html.span [
+                        prop.key "pnf-icon"
+                        prop.text "⛓️‍💥"
+                        prop.className "text-lg mr-1"
+                    ]
+                    Html.span [
+                        prop.key "pnf-content"
+                        prop.children [
+                            Html.span [ prop.key "pnf-text"; prop.text (translations.Home.ErrorNotFound translations.Home.Product) ]
+                            Html.code [ prop.key "pnf-sku"; prop.text $" %s{sku.Value} " ]
                         ]
                     ]
                 ]
+            ]
 
-            | Remote.Loading -> Daisy.skeleton [ prop.className "h-64 w-full"; prop.key "products-skeleton" ]
-            | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
+        | Remote.Loading -> Daisy.skeleton [ prop.className "h-64 w-full"; prop.key "products-skeleton" ]
+        | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
-            | Remote.Loaded product ->
-                Daisy.fieldset [
-                    prop.key "product-details-fieldset"
-                    prop.className "bg-base-200 border border-base-300 rounded-box p-4"
-                    prop.children [
-                        Html.legend [
-                            prop.key "product-details-legend"
-                            prop.className "text-sm"
-                            prop.text $"🗂️ %s{translations.Product.CatalogInfo}"
-                        ]
+        | Remote.Loaded product ->
+            Daisy.fieldset [
+                prop.key $"%s{key}-fieldset"
+                prop.className "bg-base-200 border border-base-300 rounded-box p-4"
+                prop.children [
+                    Html.legend [
+                        prop.key "product-details-legend"
+                        prop.className "text-sm"
+                        prop.text $"🗂️ %s{translations.Product.CatalogInfo}"
+                    ]
 
-                        Html.div [
-                            prop.key "image-grid"
-                            prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
-                            prop.children [
-                                Html.div [
-                                    prop.key "image-input-div"
-                                    prop.children [
-                                        Daisy.fieldsetLabel [ prop.key "image-label"; prop.text translations.Product.ImageUrl ]
-                                        Daisy.input [
-                                            prop.key "image-input-column"
-                                            prop.className "mb-4 w-full"
-                                            prop.placeholder translations.Product.ImageUrl
-                                            prop.value product.ImageUrl
-                                            yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
-                                        ]
+                    Html.div [
+                        prop.key "image-grid"
+                        prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
+                        prop.children [
+                            Html.div [
+                                prop.key "image-input-div"
+                                prop.children [
+                                    Daisy.fieldsetLabel [ prop.key "image-label"; prop.text translations.Product.ImageUrl ]
+                                    Daisy.input [
+                                        prop.key "image-input-column"
+                                        prop.className "mb-4 w-full"
+                                        prop.placeholder translations.Product.ImageUrl
+                                        prop.value product.ImageUrl
+                                        yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
+                                    ]
 
-                                        Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
-                                        Daisy.input [
-                                            prop.key "name-input"
-                                            prop.className "mb-4 w-full"
-                                            prop.placeholder translations.Product.Name
-                                            prop.value product.Name
-                                            yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
-                                        ]
+                                    Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
+                                    Daisy.input [
+                                        prop.key "name-input"
+                                        prop.className "mb-4 w-full"
+                                        prop.placeholder translations.Product.Name
+                                        prop.value product.Name
+                                        yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
                                     ]
                                 ]
-                                Html.div [
-                                    prop.key "image-preview-column"
-                                    prop.children [
-                                        Html.img [
-                                            prop.key "image-preview"
-                                            prop.src product.ImageUrl
-                                            prop.width 115
-                                            prop.height 62
-                                        ]
+                            ]
+                            Html.div [
+                                prop.key "image-preview-column"
+                                prop.children [
+                                    Html.img [
+                                        prop.key "image-preview"
+                                        prop.src product.ImageUrl
+                                        prop.width 115
+                                        prop.height 62
                                     ]
                                 ]
                             ]
                         ]
+                    ]
 
-                        Daisy.fieldsetLabel [ prop.key "description-label"; prop.text translations.Product.Description ]
-                        Daisy.textarea [
-                            prop.key "description-textarea"
-                            prop.className "h-21 mb-4 w-full"
-                            prop.placeholder translations.Product.Description
-                            prop.value product.Description
-                            yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
-                        ]
+                    Daisy.fieldsetLabel [ prop.key "description-label"; prop.text translations.Product.Description ]
+                    Daisy.textarea [
+                        prop.key "description-textarea"
+                        prop.className "h-21 mb-4 w-full"
+                        prop.placeholder translations.Product.Description
+                        prop.value product.Description
+                        yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
+                    ]
 
-                        match catalogAccess with
-                        | None
-                        | Some View -> ()
-                        | Some Edit ->
-                            Daisy.button.button [
-                                button.primary
-                                prop.className "justify-self-start"
-                                prop.key "save-product-button"
+                    match catalogAccess with
+                    | None
+                    | Some View -> ()
+                    | Some Edit ->
+                        Daisy.button.button [
+                            button.primary
+                            prop.className "justify-self-start"
+                            prop.key "save-product-button"
 
-                                prop.children [
-                                    Html.text translations.Product.Save
-
-                                    match model.SaveDate with
-                                    | Remote.Empty -> ()
-                                    | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
-                                    | Remote.LoadError apiError ->
-                                        Daisy.tooltip [
-                                            tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
-                                            tooltip.right
-                                            tooltip.error
-                                            prop.text "❗"
-                                            prop.key "save-product-error-tooltip"
-                                        ]
-                                    | Remote.Loaded dateTime ->
-                                        Daisy.tooltip [
-                                            tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
-                                            tooltip.right
-                                            tooltip.success
-                                            prop.key "save-product-ok-tooltip"
-                                            prop.children [
-                                                Html.span [
-                                                    prop.key "save-product-ok-text"
-                                                    prop.text "✓"
-                                                    prop.className "font-bold text-green-500"
-                                                ]
-                                            ]
-                                        ]
-                                ]
+                            prop.children [
+                                Html.text translations.Product.Save
 
                                 match model.SaveDate with
-                                | Remote.Loading -> prop.disabled true
-                                | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
+                                | Remote.Empty -> ()
+                                | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
+                                | Remote.LoadError apiError ->
+                                    Daisy.tooltip [
+                                        tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
+                                        tooltip.right
+                                        tooltip.error
+                                        prop.text "❗"
+                                        prop.key "save-product-error-tooltip"
+                                    ]
+                                | Remote.Loaded dateTime ->
+                                    Daisy.tooltip [
+                                        tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
+                                        tooltip.right
+                                        tooltip.success
+                                        prop.key "save-product-ok-tooltip"
+                                        prop.children [
+                                            Html.span [
+                                                prop.key "save-product-ok-text"
+                                                prop.text "✓"
+                                                prop.className "font-bold text-green-500"
+                                            ]
+                                        ]
+                                    ]
                             ]
-                    ]
+
+                            match model.SaveDate with
+                            | Remote.Loading -> prop.disabled true
+                            | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
+                        ]
                 ]
-        ]
+            ]
     ]

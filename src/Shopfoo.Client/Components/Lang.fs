@@ -25,7 +25,7 @@ module LangMenu =
     }
 
     let all = [
-        mk Lang.English "en" "English" "🇺🇸"
+        mk Lang.English "en" "English" "🇬🇧"
         mk Lang.French "fr" "Français" "🇫🇷"
         mk Lang.Latin "la" "Latin" "🚩"
     ]
