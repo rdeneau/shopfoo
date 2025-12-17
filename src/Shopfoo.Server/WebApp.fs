@@ -12,7 +12,9 @@ open Shopfoo.Shared
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 
-let errorHandler (logger: ILogger) (FirstException exn) (routeInfo: RouteInfo<HttpContext>) =
+type private WebApp = WebApp
+
+let private errorHandler (logger: ILogger<WebApp>) (FirstException exn) (routeInfo: RouteInfo<HttpContext>) =
     logger.LogError(exn, $"Error at %s{routeInfo.path} on method %s{routeInfo.methodName}")
 
     // Propagate to the client the exception (1) that we could have thrown (2)
@@ -26,7 +28,7 @@ let errorHandler (logger: ILogger) (FirstException exn) (routeInfo: RouteInfo<Ht
         Propagate(ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail()))
     | _ -> Ignore
 
-let apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
+let private apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
     Remoting.createApi ()
     |> Remoting.withErrorHandler (errorHandler logger)
     |> Remoting.withRouteBuilder Route.builder
@@ -36,8 +38,8 @@ let apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
 let webApp (api: Remoting.RootApi) : HttpHandler =
     choose [
         choose [ // ↩
-            Require.services<ILogger> (apiHttpHandler api.Home)
-            Require.services<ILogger> (apiHttpHandler api.Product)
+            Require.services<ILogger<WebApp>> (apiHttpHandler api.Home)
+            Require.services<ILogger<WebApp>> (apiHttpHandler api.Product)
         ]
         htmlFile "public/index.html"
     ]

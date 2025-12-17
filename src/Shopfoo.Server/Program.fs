@@ -4,6 +4,7 @@ open Giraffe
 open Microsoft.AspNetCore.Builder
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
+open Microsoft.Extensions.Logging
 open Shopfoo.Server.DependencyInjection
 
 let private configureServices (services: IServiceCollection) =
@@ -25,6 +26,9 @@ let private configureApp (app: WebApplication) =
 
 let private builderOptions = WebApplicationOptions(WebRootPath = "public")
 let private builder = WebApplication.CreateBuilder(builderOptions)
+
+builder.Logging.AddSimpleConsole() |> ignore
+
 configureServices builder.Services
 
 let app = builder.Build()
