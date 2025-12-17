@@ -6,6 +6,7 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.Router
 open Feliz.UseElmish
+open Shopfoo.Client.Components.AppNav
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
 open Shopfoo.Client.Components.TimedToast
@@ -118,34 +119,15 @@ let AppView () =
     let fullContext = model.FullContext
     let translations = fullContext.Translations
 
-    let navigation =
-        Daisy.navbar [
-            prop.key "app-nav"
-            prop.className "bg-base-200 shadow-sm"
-            prop.children [
-                // TODO: [UI] Breadcrumb in the navbar, replacing h1 in each page
-                Html.div [
-                    prop.key "nav-home"
-                    prop.className "flex-1"
-                    prop.child (Html.a ("⚙️ Shopfoo", Page.Home))
-                ]
+    let navbar =
+        AppNavBar "app-nav" model.Page translations [
+            ThemeDropdown("nav-theme", model.Theme, dispatch << Msg.ThemeChanged)
+            LangDropdown("nav-lang", fullContext.Lang, model.LangMenus, fun lang -> dispatch (Msg.ChangeLang(lang, Start)))
 
-                ThemeDropdown("nav-theme", model.Theme, dispatch << Msg.ThemeChanged)
-                LangDropdown("nav-lang", fullContext.Lang, model.LangMenus, fun lang -> dispatch (Msg.ChangeLang(lang, Start)))
-
-                match fullContext.User with
-                | User.Anonymous -> ()
-                | User.Authorized(userName, _) -> // ↩
-                    UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
-
-                if not translations.IsEmpty then
-                    Daisy.button.button [
-                        button.ghost
-                        prop.key "nav-about"
-                        prop.text translations.Home.About
-                        prop.onClick (fun _ -> Router.navigatePage Page.About)
-                    ]
-            ]
+            match fullContext.User with
+            | User.Anonymous -> ()
+            | User.Authorized(userName, _) -> // ↩
+                UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
         ]
 
     let fillTranslations = dispatch << Msg.FillTranslations
@@ -164,7 +146,7 @@ let AppView () =
         router.pathMode
         router.onUrlChanged (Page.parseFromUrlSegments >> UrlChanged >> dispatch)
         router.children [
-            navigation
+            navbar
             Html.div [
                 prop.key "app-content"
                 prop.className "px-4 py-2"

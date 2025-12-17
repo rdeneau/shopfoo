@@ -4,9 +4,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
-open Shopfoo.Client
 open Shopfoo.Client.Remoting
-open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
@@ -258,25 +256,6 @@ let DetailsView (fullContext, sku, fillTranslations) =
     Html.section [
         prop.key "product-details-page"
         prop.children [
-            Daisy.breadcrumbs [
-                prop.key "product-details-title"
-                prop.child (
-                    Html.ul [
-                        Html.li [
-                            prop.key "products-link"
-                            prop.className "cursor-pointer"
-                            prop.text translations.Home.Products
-                            prop.onClick (fun _ -> Router.navigatePage Page.ProductIndex)
-                        ]
-                        Html.li [
-                            prop.key "product-sku"
-                            prop.className "font-semibold"
-                            prop.text sku.Value
-                        ]
-                    ]
-                )
-            ]
-
             // TODO: [Product] handle Remote<Product> (skeleton, details...) in Section.ProductCatalogInfo
             match model.Product with
             | Remote.Empty -> () // TODO: [Product] display a 'not found'

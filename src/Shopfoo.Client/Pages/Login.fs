@@ -29,7 +29,7 @@ let private init (fullContext: FullContext) =
     { DemoUsers = Remote.Loading }, // ↩
     Cmd.loadHomeData (fullContext.PrepareQueryWithTranslations())
 
-let private update fillTranslations loginUser msg model =
+let private update fillTranslations loginUser msg (model: Model) =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
         { model with DemoUsers = Remote.Loaded data.DemoUsers }, // ↩
@@ -73,15 +73,15 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                             | User.Authorized(userName, _) -> userName, user
                     ]
 
-                Daisy.breadcrumbs [
-                    prop.key "login-title"
-                    prop.child (Html.ul [ Html.li [ prop.key "login-title-text"; prop.text translations.Home.Login ] ])
-                ]
-
-                Html.div [
-                    prop.key "login-page-box"
+                Daisy.fieldset [
+                    prop.key "login-fieldset"
                     prop.className "bg-base-200 border border-base-300 rounded-box p-4"
-                    prop.child (
+                    prop.children [
+                        Html.legend [
+                            prop.key "login-legend"
+                            prop.className "text-sm"
+                            prop.text $"🔐 %s{translations.Home.Login}"
+                        ]
                         Daisy.select [
                             prop.key "users-select"
                             prop.children [
@@ -101,7 +101,7 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                             prop.value ""
                             prop.onChange (fun userName -> dispatch (Msg.Login authUsers[userName]))
                         ]
-                    )
+                    ]
                 ]
         ]
     ]

@@ -18,6 +18,7 @@ type PageUrl = {
     member this.WithQueryParam(name: string, value: string) = // ↩
         { this with Query = (name, value) :: this.Query }
 
+[<RequireQualifiedAccess>]
 type Page =
     | About
     | Home

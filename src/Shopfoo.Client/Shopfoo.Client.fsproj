@@ -10,6 +10,7 @@
         <Compile Include="Routing.fs" />
         <Compile Include="UI.fs" />
         <Compile Include="Components\Alert.fs" />
+        <Compile Include="Components\AppNav.fs" />
         <Compile Include="Components\Lang.fs" />
         <Compile Include="Components\Theme.fs" />
         <Compile Include="Components\User.fs" />

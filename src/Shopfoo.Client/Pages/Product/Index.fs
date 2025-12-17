@@ -48,11 +48,6 @@ let IndexView (fullContext, fillTranslations) =
     Html.section [
         prop.key "products-page"
         prop.children [
-            Daisy.breadcrumbs [
-                prop.key "products-title"
-                prop.child (Html.ul [ Html.li [ prop.key "products-title-text"; prop.text translations.Home.Products ] ])
-            ]
-
             match model.Products with
             | Remote.Empty -> ()
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]

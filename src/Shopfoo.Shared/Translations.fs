@@ -1,7 +1,6 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
-open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =
@@ -62,7 +61,9 @@ module TranslationPages =
         member this.Logout = this.Get "Logout"
         member this.Products = this.Get "Products"
 
-        member this.ChangeLangError(langLabel: string, error: string) = this.Format("ChangeLangError", langLabel, error)
+        member this.ChangeLangError(langLabel: string, error: string) =
+            this.Format("ChangeLangError", langLabel, error)
+
         member this.ChangeLangSuccess = this.Get "ChangeLangSuccess"
 
     type Login internal (?translations) =
