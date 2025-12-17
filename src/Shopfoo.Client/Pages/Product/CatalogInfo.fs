@@ -181,11 +181,7 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) 
 
                                 match model.SaveDate with
                                 | Remote.Empty -> ()
-                                | Remote.Loading ->
-                                    Daisy.loading [
-                                        loading.spinner
-                                        prop.key "save-product-spinner"
-                                    ]
+                                | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
                                 | Remote.LoadError apiError ->
                                     Daisy.tooltip [
                                         tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))

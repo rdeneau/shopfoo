@@ -32,6 +32,11 @@ type User =
     | Anonymous
     | Authorized of userName: string * claims: Claims
 
+let (|CanNotAccess|_|) feat user =
+    match user with
+    | User.Authorized(_, claims) when claims.ContainsKey(feat) -> None
+    | _ -> Some()
+
 type AuthToken = AuthToken of string
 
 type AuthError =

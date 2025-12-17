@@ -10,5 +10,4 @@ open System.Collections.Generic
 /// <param name="getKey">Determine the key for each item.</param>
 /// <param name="items">Items to put in the dictionary</param>
 let dictionaryBy getKey items =
-    dict [ for item in items -> getKey item, item ]
-    |> Dictionary
+    dict [ for item in items -> getKey item, item ] |> Dictionary
