@@ -35,7 +35,8 @@ type GetTranslationsHandler(api: FeatApi) =
                 }
 
             let response = ResponseBuilder.plain user
+
             match translations with
-                | Ok translations -> return response.Ok { Lang = request.Lang; Translations = translations }
-                | Error error -> return response.ApiError error
+            | Ok translations -> return response.Ok { Lang = request.Lang; Translations = translations }
+            | Error error -> return response.ApiError error
         }

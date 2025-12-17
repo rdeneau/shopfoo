@@ -33,6 +33,7 @@ type Api() =
                     + "shows how to bring greater professionalism and discipline to application architecture and design."
                 ImageUrl = "https://m.media-amazon.com/images/I/71stxGw9JgL._SY385_.jpg"
             }
+
             {
                 SKU = "0321125215"
                 Name = "Domain-Driven Design: Tackling Complexity in the Heart of Software"
@@ -42,6 +43,7 @@ type Api() =
                     + "clearly formulated, a philosophy has developed as an undercurrent in the object community, which I call 'domain-driven design'."
                 ImageUrl = "https://m.media-amazon.com/images/I/81ykBjVaUjL._SY425_.jpg"
             }
+
             {
                 SKU = "9781680502541"
                 Name = "Domain Modeling Made Functional: Tackle Software Complexity with Domain-Driven Design and F#"
@@ -54,6 +56,7 @@ type Api() =
                     + "that is business-focused, flexible, and high quality."
                 ImageUrl = "https://m.media-amazon.com/images/I/91THtohxBjL._SY385_.jpg"
             }
+
             {
                 SKU = "9780596107130"
                 Name = "JavaScript: The Good Parts"
@@ -64,6 +67,7 @@ type Api() =
                     + "truly extensible and efficient code."
                 ImageUrl = "https://m.media-amazon.com/images/I/91YlBt-bCHL._SY385_.jpg"
             }
+
             {
                 SKU = "0135957052"
                 Name = "The Pragmatic Programmer: Your Journey to Mastery"
