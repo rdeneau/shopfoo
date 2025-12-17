@@ -1,5 +1,7 @@
 ﻿module Shopfoo.Domain.Types.Security
 
+open Shopfoo.Common
+
 type Access =
     | View
     | Edit
@@ -32,15 +34,19 @@ type User =
     | Anonymous
     | LoggedIn of userName: string * claims: Claims
 
-let (|UserCanAccess|_|) feat user =
-    match user with
-    | User.LoggedIn(_, claims) when claims.ContainsKey(feat) -> Some()
-    | _ -> None
+    member user.AccessTo feat =
+        match user with
+        | User.LoggedIn(_, claims) -> claims |> Map.tryFind feat
+        | _ -> None
 
-let (|UserCanNotAccess|_|) feat user =
-    match user with
-    | UserCanAccess feat -> None
-    | _ -> Some()
+    member user.CanAccess feat =
+        user.AccessTo feat |> Option.isSome
+
+let (|UserCanAccess|_|) feat (user: User) = // ↩
+    user.CanAccess feat |> Option.ofBool
+
+let (|UserCanNotAccess|_|) feat (user: User) =
+    not (user.CanAccess feat) |> Option.ofBool
 
 type AuthToken = AuthToken of string
 

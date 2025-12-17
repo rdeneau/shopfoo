@@ -8,6 +8,7 @@ open Feliz.UseElmish
 open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
@@ -83,6 +84,16 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) 
         React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
     let translations = fullContext.Translations
+    let catalogAccess = fullContext.User.AccessTo Feat.Catalog
+
+    let propOnChangeOrReadonly (onChange: string -> unit) = [
+        match catalogAccess with
+        | Some Edit -> // ↩
+            prop.onChange onChange
+        | _ ->
+            prop.readOnly true
+            prop.className "bg-base-300"
+    ]
 
     Html.section [
         prop.key $"%s{key}-section"
@@ -132,19 +143,19 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) 
                                         Daisy.fieldsetLabel [ prop.key "image-label"; prop.text translations.Product.ImageUrl ]
                                         Daisy.input [
                                             prop.key "image-input-column"
-                                            prop.placeholder translations.Product.ImageUrl
                                             prop.className "mb-4 w-full"
-                                            prop.onChange (fun imageUrl -> dispatch (ProductChanged { product with ImageUrl = imageUrl }))
+                                            prop.placeholder translations.Product.ImageUrl
                                             prop.value product.ImageUrl
+                                            yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
                                         ]
 
                                         Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
                                         Daisy.input [
                                             prop.key "name-input"
-                                            prop.placeholder translations.Product.Name
                                             prop.className "mb-4 w-full"
-                                            prop.onChange (fun name -> dispatch (ProductChanged { product with Name = name }))
+                                            prop.placeholder translations.Product.Name
                                             prop.value product.Name
+                                            yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
                                         ]
                                     ]
                                 ]
@@ -165,51 +176,55 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) 
                         Daisy.fieldsetLabel [ prop.key "description-label"; prop.text translations.Product.Description ]
                         Daisy.textarea [
                             prop.key "description-textarea"
-                            prop.placeholder translations.Product.Description
                             prop.className "h-21 mb-4 w-full"
-                            prop.onChange (fun description -> dispatch (ProductChanged { product with Description = description }))
+                            prop.placeholder translations.Product.Description
                             prop.value product.Description
+                            yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
                         ]
 
-                        Daisy.button.button [
-                            button.primary
-                            prop.className "justify-self-start"
-                            prop.key "save-product-button"
+                        match catalogAccess with
+                        | None
+                        | Some View -> ()
+                        | Some Edit ->
+                            Daisy.button.button [
+                                button.primary
+                                prop.className "justify-self-start"
+                                prop.key "save-product-button"
 
-                            prop.children [
-                                Html.text translations.Product.Save
+                                prop.children [
+                                    Html.text translations.Product.Save
 
-                                match model.SaveDate with
-                                | Remote.Empty -> ()
-                                | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
-                                | Remote.LoadError apiError ->
-                                    Daisy.tooltip [
-                                        tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
-                                        tooltip.right
-                                        tooltip.error
-                                        prop.text "❗"
-                                        prop.key "save-product-error-tooltip"
-                                    ]
-                                | Remote.Loaded dateTime ->
-                                    Daisy.tooltip [
-                                        tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
-                                        tooltip.right
-                                        tooltip.success
-                                        prop.key "save-product-ok-tooltip"
-                                        prop.children [
-                                            Html.span [
-                                                prop.key "save-product-ok-text"
-                                                prop.text "✓"
-                                                prop.className "font-bold text-green-500"
+                                    match model.SaveDate with
+                                    | Remote.Empty -> ()
+                                    | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
+                                    | Remote.LoadError apiError ->
+                                        Daisy.tooltip [
+                                            tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
+                                            tooltip.right
+                                            tooltip.error
+                                            prop.text "❗"
+                                            prop.key "save-product-error-tooltip"
+                                        ]
+                                    | Remote.Loaded dateTime ->
+                                        Daisy.tooltip [
+                                            tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
+                                            tooltip.right
+                                            tooltip.success
+                                            prop.key "save-product-ok-tooltip"
+                                            prop.children [
+                                                Html.span [
+                                                    prop.key "save-product-ok-text"
+                                                    prop.text "✓"
+                                                    prop.className "font-bold text-green-500"
+                                                ]
                                             ]
                                         ]
-                                    ]
-                            ]
+                                ]
 
-                            match model.SaveDate with
-                            | Remote.Loading -> prop.disabled true
-                            | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
-                        ]
+                                match model.SaveDate with
+                                | Remote.Loading -> prop.disabled true
+                                | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
+                            ]
                     ]
                 ]
         ]
