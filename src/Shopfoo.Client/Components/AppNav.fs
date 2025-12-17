@@ -34,6 +34,7 @@ type private Nav(currentPage, translations: AppTranslations) =
 
     member nav.Home = nav.page (Page.Home, "🛍️ Shopfoo")
     member nav.About = nav.page (Page.About, translate _.Home.About)
+    member nav.Admin = nav.page (Page.Admin, translate _.Home.Admin)
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
     member nav.Products = nav.page (Page.ProductIndex, translate _.Home.Products)
 
@@ -60,6 +61,7 @@ let AppNavBar key currentPage translations children =
                             | Page.Home
                             | Page.NotFound _ -> ()
                             | Page.About -> nav.About
+                            | Page.Admin -> nav.Admin
                             | Page.Login -> nav.Login
                             | Page.ProductIndex -> nav.Products
                             | Page.ProductDetail sku ->
@@ -71,13 +73,5 @@ let AppNavBar key currentPage translations children =
             ]
 
             yield! children
-
-            if not translations.IsEmpty then
-                Daisy.button.button [
-                    button.ghost
-                    prop.key "nav-about"
-                    prop.text translations.Home.About
-                    prop.onClick (fun _ -> Router.navigatePage Page.About)
-                ]
         ]
     ]

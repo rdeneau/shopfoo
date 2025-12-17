@@ -16,6 +16,7 @@
         <Compile Include="Components\User.fs" />
         <Compile Include="Components\Toast.fs" />
         <Compile Include="Pages\About.fs" />
+        <Compile Include="Pages\Admin.fs" />
         <Compile Include="Pages\Login.fs" />
         <Compile Include="Pages\NotFound.fs" />
         <Compile Include="Pages\Product\CatalogInfo.fs" />

@@ -8,11 +8,14 @@ open Shopfoo.Shared.Remoting
 [<ReactComponent>]
 let NotFoundView (fullContext: FullContext, url) =
     let translations = fullContext.Translations
+
     // ℹ️ For simplicity's sake, translations for this page are retrieved at startup, on the Login page.
     // ⚠️ If this page is refreshed, the translations will no longer be available!
     // 👉 In this case, we force to redirect to the Login page.
-    if translations.IsEmpty then
-        React.useEffectOnce (fun () -> Router.navigatePage Page.Login)
+    React.useEffectOnce (fun () ->
+        if translations.IsEmpty then
+            Router.navigatePage Page.Login
+    )
 
     Daisy.alert [
         alert.error
@@ -27,8 +30,7 @@ let NotFoundView (fullContext: FullContext, url) =
                 prop.key "pnf-content"
                 prop.children [
                     Html.span [ prop.key "pnf-text"; prop.text (translations.Home.ErrorNotFound translations.Home.Page) ]
-                    Html.br []
-                    Html.code [ prop.key "pnf-sku"; prop.text $"%s{url}" ]
+                    Html.code [ prop.key "pnf-sku"; prop.text $" %s{url} " ]
                 ]
             ]
         ]

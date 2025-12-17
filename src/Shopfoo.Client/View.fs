@@ -130,24 +130,24 @@ let AppView () =
         // Requested page consistent with the authentication but subject to an access check
         | Page.ProductIndex, User.LoggedIn _
         | Page.ProductDetail _, User.LoggedIn _ -> model.Page, Some Feat.Catalog
+        | Page.Admin, User.LoggedIn _ -> model.Page, Some Feat.Admin
 
         // Default page when logged in
         | Page.Home, User.LoggedIn _
         | Page.Login, User.LoggedIn _ -> Page.ProductIndex, Some Feat.Catalog
 
-        // Authentication needed prior to the access check -> display the login page inline, without redirection
+        // Authentication needed prior to the access check
+        // -> Display the login page inline, without redirection.
+        | Page.Admin, User.Anonymous
         | Page.Home, User.Anonymous
         | Page.ProductIndex, User.Anonymous
         | Page.ProductDetail _, User.Anonymous -> Page.Login, None
 
-    React.useEffectOnce (fun () ->
+    React.useEffect (fun () ->
         match featAccessToCheck with
-        | None -> ()
-        | Some feat ->
-            match fullContext.User with
-            | UserCanNotAccess feat -> Router.navigatePage (Page.CurrentNotFound())
-            | _ -> ()
-        )
+        | Some feat when not (fullContext.User.CanAccess feat) -> Router.navigatePage (Page.CurrentNotFound())
+        | _ -> ()
+    )
 
     let fillTranslations = dispatch << Msg.FillTranslations
     let loginUser = dispatch << Msg.Login
@@ -157,6 +157,7 @@ let AppView () =
         match pageToDisplayInline with
         | Page.Home -> Html.text "[Bug] Home page has no own view!?"
         | Page.About -> Pages.About.AboutView(fullContext)
+        | Page.Admin -> Pages.Admin.AdminView(fullContext)
         | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
         | Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
@@ -171,6 +172,22 @@ let AppView () =
             | User.Anonymous -> ()
             | User.LoggedIn(userName, _) -> // ↩
                 UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
+
+            if not translations.IsEmpty then
+                Daisy.button.button [
+                    button.ghost
+                    prop.key "nav-about"
+                    prop.text translations.Home.About
+                    prop.onClick (fun _ -> Router.navigatePage Page.About)
+                ]
+
+                if fullContext.User.CanAccess Feat.Admin then
+                    Daisy.button.button [
+                        button.ghost
+                        prop.key "nav-admin"
+                        prop.text translations.Home.Admin
+                        prop.onClick (fun _ -> Router.navigatePage Page.Admin)
+                    ]
         ]
 
     React.router [

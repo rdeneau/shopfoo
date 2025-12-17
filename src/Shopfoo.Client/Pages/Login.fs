@@ -98,7 +98,7 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                                                 Html.th [ prop.key "users-th-feat-catalog"; prop.text $"🗂️ %s{translations.Login.Feat.Catalog}" ]
                                                 Html.th [ prop.key "users-th-feat-sales"; prop.text $"🛒 %s{translations.Login.Feat.Sales}" ]
                                                 Html.th [ prop.key "users-th-feat-warehouse"; prop.text $"🏬 %s{translations.Login.Feat.Warehouse}" ]
-                                                Html.th [ prop.key "users-th-feat-admin"; prop.text $"🔑 %s{translations.Login.Feat.Admin}" ]
+                                                Html.th [ prop.key "users-th-feat-admin"; prop.text $"⚙️ %s{translations.Login.Feat.Admin}" ]
                                             ]
                                         ]
                                     )

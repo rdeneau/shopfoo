@@ -55,9 +55,14 @@ module TranslationPages =
 
         member this.About = this.Get "About"
         member this.AboutDisclaimer = this.Get "AboutDisclaimer"
+
+        member this.Admin = this.Get "Admin"
+        member this.AdminDisclaimer = this.Get "AdminDisclaimer"
+
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
         member this.Page = this.Get "Page"
+
         member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
 

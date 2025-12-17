@@ -21,6 +21,7 @@ type PageUrl = {
 [<RequireQualifiedAccess>]
 type Page =
     | About
+    | Admin
     | Home
     | Login
     | NotFound of url: string
@@ -30,6 +31,7 @@ type Page =
     member this.Key =
         match this with
         | Page.About -> "about"
+        | Page.Admin -> "admin"
         | Page.Home -> "home"
         | Page.Login -> "login"
         | Page.NotFound _ -> "not-found"
@@ -47,15 +49,17 @@ module Page =
         function
         | [] -> Page.Home
         | [ "about" ] -> Page.About
+        | [ "admin" ] -> Page.Admin
         | [ "login" ] -> Page.Login
         | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
         | [ "product" ] -> Page.ProductIndex
         | [ "product"; sku ] -> Page.ProductDetail sku
-        | segments -> Page.NotFound (Router.formatPath(segments))
+        | segments -> Page.NotFound(Router.formatPath (segments))
 
 let (|PageUrl|) =
     function
     | Page.About -> PageUrl.WithSegments("about")
+    | Page.Admin -> PageUrl.WithSegments("admin")
     | Page.Home -> PageUrl.Root
     | Page.Login -> PageUrl.WithSegments("login")
     | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
