@@ -38,9 +38,17 @@ let private translationPages = [
 
     PageCode.Login,
     [
-        TagCode "SelectDemoUser", // ↩
-        "Select a demo user",
-        "Sélectionner un utilisateur de démo"
+        TagCode "Access.Edit", "Edit", "Édition"
+        TagCode "Access.View", "View", "Affichage"
+
+        TagCode "Feat.Admin", "Admin", "Admin"
+        TagCode "Feat.About", "About", "À propos"
+        TagCode "Feat.Catalog", "Catalog", "Catalogue"
+        TagCode "Feat.Sales", "Sales", "Ventes"
+        TagCode "Feat.Warehouse", "Warehouse", "Entrepôt"
+
+        TagCode "SelectDemoUser", "Select a demo user based on his/her rights", "Sélectionner un utilisateur de démo selon ses droits" // ↩
+        TagCode "User", "User", "Utilisateur"
     ]
 
     PageCode.Product,

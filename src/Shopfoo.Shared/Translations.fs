@@ -82,14 +82,33 @@ module TranslationPages =
 
         member this.ThemeGroup =
             this.WithPrefix "ThemeGroup."
-            <| fun this -> {|
-                Dark = this.Get "Dark" // ↩
+            <| fun this -> {| // ↩
+                Dark = this.Get "Dark"
                 Light = this.Get "Light"
             |}
 
     type Login internal (?translations) =
         inherit Base(PageCode.Login, ?translations = translations)
+
+        member this.Access =
+            this.WithPrefix "Access."
+            <| fun this -> {| // ↩
+                Edit = this.Get "Edit"
+                View = this.Get "View"
+            |}
+
+        member this.Feat =
+            this.WithPrefix "Feat."
+            <| fun this -> {|
+                About = this.Get "About"
+                Admin = this.Get "Admin"
+                Catalog = this.Get "Catalog"
+                Sales = this.Get "Sales"
+                Warehouse = this.Get "Warehouse"
+            |}
+
         member this.SelectDemoUser = this.Get "SelectDemoUser"
+        member this.User = this.Get "User"
 
     type Product internal (?translations) =
         inherit Base(PageCode.Product, ?translations = translations)
