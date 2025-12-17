@@ -36,6 +36,10 @@ let (|UserCanAccess|_|) feat user =
     match user with
     | User.LoggedIn(_, claims) when claims.ContainsKey(feat) -> Some()
     | _ -> None
+
+let (|UserCanNotAccess|_|) feat user =
+    match user with
+    | UserCanAccess feat -> None
     | _ -> Some()
 
 type AuthToken = AuthToken of string

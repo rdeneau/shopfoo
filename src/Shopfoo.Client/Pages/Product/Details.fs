@@ -3,6 +3,9 @@
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client.Pages.Product.CatalogInfo
+open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types.Security
+open Shopfoo.Shared.Remoting
 
 [<AutoOpen>]
 module private Component =
@@ -136,20 +139,25 @@ module private Section =
         ]
 
 [<ReactComponent>]
-let DetailsView (fullContext, sku, fillTranslations, onSaveProduct) =
-    Html.section [
-        prop.key "product-details-page"
-        prop.className "grid grid-cols-4 gap-4"
-        prop.children [
-            Html.div [
-                prop.key "index-page-product-details"
-                prop.className "col-span-3"
-                prop.children [ CatalogInfoSection("catalog-info", fullContext, sku, fillTranslations, onSaveProduct) ]
-            ]
-            Html.div [
-                prop.key "index-page-product-actions"
-                prop.className "col-span-1"
-                prop.children Section.ProductActions
+let DetailsView (fullContext: FullContext, sku, fillTranslations, onSaveProduct) =
+    match fullContext.User with
+    | UserCanNotAccess Feat.Catalog ->
+        React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
+        Html.none
+    | _ ->
+        Html.section [
+            prop.key "product-details-page"
+            prop.className "grid grid-cols-4 gap-4"
+            prop.children [
+                Html.div [
+                    prop.key "index-page-product-details"
+                    prop.className "col-span-3"
+                    prop.children [ CatalogInfoSection("catalog-info", fullContext, sku, fillTranslations, onSaveProduct) ]
+                ]
+                Html.div [
+                    prop.key "index-page-product-actions"
+                    prop.className "col-span-1"
+                    prop.children Section.ProductActions
+                ]
             ]
         ]
-    ]

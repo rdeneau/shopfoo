@@ -36,6 +36,9 @@ type Page =
         | Page.ProductIndex -> "product"
         | Page.ProductDetail sku -> $"product-{sku}"
 
+    static member CurrentNotFound() =
+        Router.currentUrl () |> Router.format |> Page.NotFound
+
 [<RequireQualifiedAccess>]
 module Page =
     let defaultPage = Page.Login
