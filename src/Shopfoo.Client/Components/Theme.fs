@@ -43,7 +43,14 @@ type private ThemeMenu(currentTheme, onClick) =
                 Html.a [
                     prop.key $"{key}-theme-link"
                     prop.className "whitespace-nowrap"
-                    prop.onClick (fun _ -> onClick theme)
+                    prop.onClick (fun _ ->
+                        onClick theme
+
+                        // Remove the focus to fix the menu hiding on mouse out
+                        match Browser.Dom.document.activeElement with
+                        | :? Browser.Types.HTMLElement as el -> el.blur ()
+                        | _ -> ()
+                    )
                     prop.children [
                         Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
                         Html.span [
