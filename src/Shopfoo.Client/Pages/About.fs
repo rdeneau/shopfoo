@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Client.Pages.About
 
+open System
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client
@@ -12,7 +13,7 @@ let AboutView (fullContext: FullContext) =
 
     // Navigate to the Login page to load translations
     if translations.IsEmpty then
-        Router.navigatePage Page.Login
+        JS.runAfter TimeSpan.Zero (fun () -> Router.navigatePage Page.Login)
 
     Html.section [
         prop.key "about-page"
