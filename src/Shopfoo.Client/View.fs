@@ -109,7 +109,8 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.ThemeChanged theme -> { model with Theme = theme }, Cmd.ofEffect (fun _ -> theme.ApplyOnHtml())
     | Msg.UrlChanged page -> { model with Page = page }, Cmd.none
 
-    | Msg.ToastOn toast -> { model with Toast = Some toast }, Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)
+    | Msg.ToastOn toast -> { model with Toast = Some toast }, Cmd.none
+    // `Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)` is not needed because the ToastOff is done with the Toast onDismiss
     | Msg.ToastOff -> { model with Toast = None }, Cmd.none
 
 [<ReactComponent>]
@@ -157,18 +158,20 @@ let AppView () =
                 let langMenu = // ↩
                     model.LangMenus |> List.find (fun menu -> menu.Lang = lang)
 
-                let timedToast (error: ApiError option) =
+                let langToast (error: ApiError option) =
                     let alertType, text =
                         match error with
                         | None -> alert.success, translations.Home.ChangeLangSuccess
                         | Some apiError -> alert.error, translations.Home.ChangeLangError(langMenu.Label, apiError.ErrorMessage)
 
-                    Toast.Toast $"app-toast-{DateTime.Now.Ticks}" (Html.text text) [ alertType ] ignore
+                    let onDismiss () = dispatch Msg.ToastOff
+
+                    Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" (Html.text text) [ alertType ] onDismiss
 
                 match langMenu.Status with
                 | Remote.Empty -> ()
                 | Remote.Loading -> ()
-                | Remote.Loaded() -> timedToast None
-                | Remote.LoadError apiError -> timedToast (Some apiError)
+                | Remote.Loaded() -> langToast None
+                | Remote.LoadError apiError -> langToast (Some apiError)
         ]
     ]
