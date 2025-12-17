@@ -7,6 +7,7 @@
   <ItemGroup>
     <Content Include="paket.references" />
     <Compile Include="Data\Translations.fs" />
+    <Compile Include="Data\Users.fs" />
     <Compile Include="Api.fs" />
   </ItemGroup>
   <ItemGroup>

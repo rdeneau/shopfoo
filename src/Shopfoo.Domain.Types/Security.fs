@@ -5,8 +5,8 @@ type Access =
     | Edit
 
 type Feat =
+    | About
     | Admin
-    | Home
     | Catalog
     | Sales
     | Warehouse

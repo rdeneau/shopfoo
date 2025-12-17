@@ -1,6 +1,5 @@
 ﻿namespace Shopfoo.Server.Remoting.Home
 
-open Shopfoo.Domain.Types.Security
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
@@ -8,19 +7,6 @@ open Shopfoo.Shared.Remoting
 [<Sealed>]
 type GetTranslationsHandler(api: FeatApi) =
     inherit SecureQueryHandler<GetTranslationsRequest, GetTranslationsResponse>()
-
-    let features = [
-        Feat.Home
-        Feat.Catalog
-        Feat.Sales
-        Feat.Warehouse
-    ]
-
-    let allFeaturesWithAccess accesses = [
-        for feat in features do
-            for access in accesses do
-                feat, access
-    ]
 
     override _.Handle lang request user =
         async {

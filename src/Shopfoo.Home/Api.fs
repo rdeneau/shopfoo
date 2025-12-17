@@ -2,6 +2,7 @@
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
+open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Home.Data
 
@@ -14,6 +15,7 @@ type GetAllowedTranslationsRequest = {
 [<Interface>]
 type IHomeApi =
     abstract member GetAllowedTranslations: request: GetAllowedTranslationsRequest -> Async<Result<Translations, Error>>
+    abstract member GetDemoUsers: unit -> Async<Result<User list, Error>>
 
 type internal Api() =
     interface IHomeApi with
@@ -35,6 +37,8 @@ type internal Api() =
                 | Some pages -> return Ok { Pages = Map pages }
                 | None -> return Error(DataError(DataRelatedError.DataNotFound(Id = string request.lang, Type = "")))
             }
+
+        member _.GetDemoUsers() = async { return Ok Users.forDemo }
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection
