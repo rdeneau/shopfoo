@@ -1,30 +1,20 @@
 ﻿module Shopfoo.Client.Pages.About
 
-open System
 open Feliz
-open Feliz.DaisyUI
-open Shopfoo.Client
 open Shopfoo.Client.Routing
 open Shopfoo.Shared.Remoting
 
 [<ReactComponent>]
 let AboutView (fullContext: FullContext) =
     let translations = fullContext.Translations
-
-    // Navigate to the Login page to load translations
+    // ℹ️ For simplicity's sake, translations for this page are retrieved at startup, on the Login page.
+    // ⚠️ If this page is refreshed, the translations will no longer be available!
+    // 👉 In this case, we force to redirect to the Login page.
     if translations.IsEmpty then
-        JS.runAfter TimeSpan.Zero (fun () -> Router.navigatePage Page.Login)
+        React.useEffectOnce (fun () -> Router.navigatePage Page.Login)
 
     Html.section [
         prop.key "about-page"
-        prop.children [
-            Daisy.breadcrumbs [
-                prop.key "about-title"
-                prop.child (Html.ul [ Html.li [ prop.key "about-title-text"; prop.text translations.Home.About ] ])
-            ]
-            Html.div [ // ↩
-                prop.key "about-disclaimer"
-                prop.text $"👉 %s{translations.About.Disclaimer}"
-            ]
-        ]
+        prop.className "text-sm"
+        prop.text $"ℹ️ %s{translations.About.Disclaimer}"
     ]
