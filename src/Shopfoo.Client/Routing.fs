@@ -23,6 +23,7 @@ type Page =
     | About
     | Home
     | Login
+    | NotFound of url: string
     | ProductIndex
     | ProductDetail of sku: string
 
@@ -31,6 +32,7 @@ type Page =
         | Page.About -> "about"
         | Page.Home -> "home"
         | Page.Login -> "login"
+        | Page.NotFound _ -> "not-found"
         | Page.ProductIndex -> "product"
         | Page.ProductDetail sku -> $"product-{sku}"
 
@@ -43,15 +45,17 @@ module Page =
         | [] -> Page.Home
         | [ "about" ] -> Page.About
         | [ "login" ] -> Page.Login
+        | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
         | [ "product" ] -> Page.ProductIndex
         | [ "product"; sku ] -> Page.ProductDetail sku
-        | segments -> failwith $"Url not supported: %A{segments}"
+        | segments -> Page.NotFound (Router.formatPath(segments))
 
 let (|PageUrl|) =
     function
     | Page.About -> PageUrl.WithSegments("about")
     | Page.Home -> PageUrl.Root
     | Page.Login -> PageUrl.WithSegments("login")
+    | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
     | Page.ProductIndex -> PageUrl.WithSegments("product")
     | Page.ProductDetail sku -> PageUrl.WithSegments("product", sku)
 

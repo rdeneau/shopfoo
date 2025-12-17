@@ -140,6 +140,7 @@ let AppView () =
     let page =
         match fullContext.User, model.Page with
         | _, Page.About -> Pages.About.AboutView(fullContext)
+        | _, Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
         | User.Anonymous, _ -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | User.Authorized _, Page.Home
         | User.Authorized _, Page.Login

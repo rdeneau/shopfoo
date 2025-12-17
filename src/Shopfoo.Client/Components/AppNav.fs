@@ -57,7 +57,8 @@ let AppNavBar key currentPage translations children =
                         prop.children [
                             nav.Home
                             match currentPage with
-                            | Page.Home -> ()
+                            | Page.Home
+                            | Page.NotFound _ -> ()
                             | Page.About -> nav.About
                             | Page.Login -> nav.Login
                             | Page.ProductIndex -> nav.Products

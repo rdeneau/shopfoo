@@ -20,7 +20,7 @@ module TranslationPages =
         let tagMap =
             translations.Pages |> Map.tryFind pageCode |> Option.defaultValue Map.empty
 
-        member val PageCode = pageCode
+        member val internal PageCode = pageCode
 
         // `internal` marks here members shared with child classes, in the absence of `protected` keyword in F#
         member val internal Count = tagMap.Count
@@ -60,6 +60,7 @@ module TranslationPages =
         member this.About = this.Get "About"
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
+        member this.Page = this.Get "Page"
         member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
 

@@ -1,0 +1,35 @@
+﻿module Shopfoo.Client.Pages.NotFound
+
+open Feliz
+open Feliz.DaisyUI
+open Shopfoo.Client.Routing
+open Shopfoo.Shared.Remoting
+
+[<ReactComponent>]
+let NotFoundView (fullContext: FullContext, url) =
+    let translations = fullContext.Translations
+    // ℹ️ For simplicity's sake, translations for this page are retrieved at startup, on the Login page.
+    // ⚠️ If this page is refreshed, the translations will no longer be available!
+    // 👉 In this case, we force to redirect to the Login page.
+    if translations.IsEmpty then
+        React.useEffectOnce (fun () -> Router.navigatePage Page.Login)
+
+    Daisy.alert [
+        alert.error
+        prop.key "product-not-found"
+        prop.children [
+            Html.span [
+                prop.key "pnf-icon"
+                prop.text "⛓️‍💥"
+                prop.className "text-lg mr-1"
+            ]
+            Html.span [
+                prop.key "pnf-content"
+                prop.children [
+                    Html.span [ prop.key "pnf-text"; prop.text (translations.Home.ErrorNotFound translations.Home.Page) ]
+                    Html.br []
+                    Html.code [ prop.key "pnf-sku"; prop.text $"%s{url}" ]
+                ]
+            ]
+        ]
+    ]

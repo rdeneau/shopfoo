@@ -19,6 +19,7 @@ let private translationPages = [
         TagCode "About", "About", "À propos"
         TagCode "Login", "Login", "Connexion"
         TagCode "Logout", "Logout", "Se déconnecter"
+        TagCode "Page", "Page", "Page"
         TagCode "Product", "Product", "Produit"
         TagCode "Products", "Products", "Produits"
 
