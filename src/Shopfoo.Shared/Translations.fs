@@ -66,6 +66,22 @@ module TranslationPages =
 
         member this.ChangeLangSuccess = this.Get "ChangeLangSuccess"
 
+        member this.Theme =
+            this.WithPrefix "Theme."
+            <| fun this -> {|
+                Dark = this.Get "Dark"
+                Light = this.Get "Light"
+                Business = this.Get "Business"
+                Corporate = this.Get "Corporate"
+            |}
+
+        member this.ThemeGroup =
+            this.WithPrefix "ThemeGroup."
+            <| fun this -> {|
+                Dark = this.Get "Dark" // ↩
+                Light = this.Get "Light"
+            |}
+
     type Login internal (?translations) =
         inherit Base(PageCode.Login, ?translations = translations)
         member this.SelectDemoUser = this.Get "SelectDemoUser"

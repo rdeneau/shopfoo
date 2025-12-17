@@ -31,6 +31,14 @@ type Api() =
 
             TagCode "ChangeLangError", "Switching to {0} failed: {1}", "Passage de la langue en {0} en erreur : {1}"
             TagCode "ChangeLangSuccess", "Successful switch to English", "Passage de la langue en français réussi"
+
+            TagCode "Theme.Dark", "Dark", "Sombre (Dark)"
+            TagCode "Theme.Light", "Light", "Clair (Light)"
+            TagCode "Theme.Business", "Business", "Affaires (Business)"
+            TagCode "Theme.Corporate", "Corporate", "Entreprise (Corporate)"
+
+            TagCode "ThemeGroup.Dark", "Dark themes", "Thèmes sombres"
+            TagCode "ThemeGroup.Light", "Light themes", "Thèmes clairs"
         ]
 
         PageCode.Login,

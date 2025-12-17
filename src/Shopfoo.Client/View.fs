@@ -121,7 +121,7 @@ let AppView () =
 
     let navbar =
         AppNavBar "app-nav" model.Page translations [
-            ThemeDropdown("nav-theme", model.Theme, dispatch << Msg.ThemeChanged)
+            ThemeDropdown("nav-theme", model.Theme, translations, dispatch << Msg.ThemeChanged)
             LangDropdown("nav-lang", fullContext.Lang, model.LangMenus, fun lang -> dispatch (Msg.ChangeLang(lang, Start)))
 
             match fullContext.User with

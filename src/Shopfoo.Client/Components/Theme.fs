@@ -4,18 +4,21 @@ open System
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client
+open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
 type private ThemeGroup =
-    | Light
     | Dark
+    | Light
 
 [<RequireQualifiedAccess>]
 type Theme =
-    | Light
     | Dark
-    | Corporate
+    | Light
     | Business
+    | Corporate
+
+type private Emoji = Emoji of string
 
 let private keyOf x = $"{x}".ToLowerInvariant()
 
@@ -28,13 +31,13 @@ type Theme with
         setTheme |> JS.runAfter (defaultArg delay TimeSpan.Zero)
 
 type private ThemeMenu(currentTheme, onClick) =
-    member _.group(themeGroup: ThemeGroup) =
+    member _.group (themeGroup: ThemeGroup) (text: string) =
         Daisy.menuTitle [ // ↩
-            prop.key $"%s{(keyOf themeGroup)}-theme-group"
-            prop.text $"{themeGroup} Themes"
+            prop.key $"%s{keyOf themeGroup}-theme-group"
+            prop.text text
         ]
 
-    member _.item(theme: Theme, emoji: string) =
+    member _.item (theme: Theme) (Emoji emoji) (text: string) =
         let key = keyOf theme
 
         Html.li [
@@ -55,7 +58,7 @@ type private ThemeMenu(currentTheme, onClick) =
                         Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
                         Html.span [
                             prop.key $"{key}-theme-text"
-                            prop.text $"{theme}"
+                            prop.text text
                             prop.custom ("data-theme", key)
                         ]
                         Html.span [
@@ -69,38 +72,41 @@ type private ThemeMenu(currentTheme, onClick) =
         ]
 
 [<ReactComponent>]
-let ThemeDropdown (key, theme, onClick) =
-    Daisy.dropdown [
-        dropdown.hover
-        dropdown.end'
-        prop.key $"%s{key}-dropdown"
-        prop.className "flex-none"
-        prop.children [
-            Daisy.button.button [
-                button.ghost
-                prop.key "theme-button"
-                prop.text "🌗"
-            ]
-            Daisy.dropdownContent [
-                prop.key "theme-dropdown-content"
-                prop.className "p-2 shadow menu bg-base-100 rounded-box"
-                prop.tabIndex 0
-                prop.children [
-                    Html.ul [
-                        prop.key "theme-dropdown-list"
-                        prop.children [
-                            let themeMenu = ThemeMenu(theme, onClick)
+let ThemeDropdown (key, theme, translations: AppTranslations, onClick) =
+    if translations.IsEmpty then
+        Html.none
+    else
+        Daisy.dropdown [
+            dropdown.hover
+            dropdown.end'
+            prop.key $"%s{key}-dropdown"
+            prop.className "flex-none"
+            prop.children [
+                Daisy.button.button [
+                    button.ghost
+                    prop.key "theme-button"
+                    prop.text "🌗"
+                ]
+                Daisy.dropdownContent [
+                    prop.key "theme-dropdown-content"
+                    prop.className "p-2 shadow menu bg-base-100 rounded-box"
+                    prop.tabIndex 0
+                    prop.children [
+                        Html.ul [
+                            prop.key "theme-dropdown-list"
+                            prop.children [
+                                let themeMenu = ThemeMenu(theme, onClick)
 
-                            themeMenu.group ThemeGroup.Light
-                            themeMenu.item (Theme.Light, "🌞")
-                            themeMenu.item (Theme.Corporate, "🏢")
+                                themeMenu.group ThemeGroup.Light translations.Home.ThemeGroup.Light
+                                themeMenu.item Theme.Light (Emoji "🌞") translations.Home.Theme.Light
+                                themeMenu.item Theme.Corporate (Emoji "🏢") translations.Home.Theme.Corporate
 
-                            themeMenu.group ThemeGroup.Dark
-                            themeMenu.item (Theme.Dark, "🌜")
-                            themeMenu.item (Theme.Business, "💼")
+                                themeMenu.group ThemeGroup.Dark translations.Home.ThemeGroup.Dark
+                                themeMenu.item Theme.Dark (Emoji "🌜") translations.Home.Theme.Dark
+                                themeMenu.item Theme.Business (Emoji "💼") translations.Home.Theme.Business
+                            ]
                         ]
                     ]
                 ]
             ]
         ]
-    ]
