@@ -120,6 +120,48 @@ let AppView () =
     let fullContext = model.FullContext
     let translations = fullContext.Translations
 
+    let pageToDisplayInline, featAccessToCheck =
+        match model.Page, fullContext.User with
+        // Requested page consistent with the authentication
+        | Page.About, _
+        | Page.NotFound _, _
+        | Page.Login, User.Anonymous -> model.Page, None
+
+        // Requested page consistent with the authentication but subject to an access check
+        | Page.ProductIndex, User.LoggedIn _
+        | Page.ProductDetail _, User.LoggedIn _ -> model.Page, Some Feat.Catalog
+
+        // Default page when logged in
+        | Page.Home, User.LoggedIn _
+        | Page.Login, User.LoggedIn _ -> Page.ProductIndex, Some Feat.Catalog
+
+        // Authentication needed prior to the access check -> display the login page inline, without redirection
+        | Page.Home, User.Anonymous
+        | Page.ProductIndex, User.Anonymous
+        | Page.ProductDetail _, User.Anonymous -> Page.Login, None
+
+    React.useEffectOnce (fun () ->
+        match featAccessToCheck with
+        | None -> ()
+        | Some feat ->
+            match fullContext.User with
+            | UserCanNotAccess feat -> Router.navigatePage (Page.CurrentNotFound())
+            | _ -> ()
+        )
+
+    let fillTranslations = dispatch << Msg.FillTranslations
+    let loginUser = dispatch << Msg.Login
+    let onSaveProduct = dispatch << Msg.ToastOn << Toast.Product
+
+    let pageView =
+        match pageToDisplayInline with
+        | Page.Home -> Html.text "[Bug] Home page has no own view!?"
+        | Page.About -> Pages.About.AboutView(fullContext)
+        | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
+        | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
+        | Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
+        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, onSaveProduct)
+
     let navbar =
         AppNavBar "app-nav" model.Page translations [
             ThemeDropdown("nav-theme", model.Theme, translations, dispatch << Msg.ThemeChanged)
@@ -131,22 +173,6 @@ let AppView () =
                 UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
         ]
 
-    let fillTranslations = dispatch << Msg.FillTranslations
-    let loginUser = dispatch << Msg.Login
-
-    let onSaveProduct (product, error) =
-        dispatch (Msg.ToastOn(Toast.Product(product, error)))
-
-    let page =
-        match fullContext.User, model.Page with
-        | _, Page.About -> Pages.About.AboutView(fullContext)
-        | _, Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
-        | User.Anonymous, _ -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
-        | User.Authorized _, Page.Home
-        | User.Authorized _, Page.Login
-        | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
-        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, onSaveProduct)
-
     React.router [
         router.pathMode
         router.onUrlChanged (Page.parseFromUrlSegments >> UrlChanged >> dispatch)
@@ -155,7 +181,7 @@ let AppView () =
             Html.div [
                 prop.key "app-content"
                 prop.className "px-4 py-2"
-                prop.children page
+                prop.children pageView
             ]
             match model.Toast with
             | None -> ()
