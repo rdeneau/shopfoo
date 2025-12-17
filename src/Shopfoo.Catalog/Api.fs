@@ -29,11 +29,10 @@ type internal Api() =
             async {
                 do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
 
-                match Products.repository.TryGetValue(product.SKU) with
-                | true, product ->
+                if Products.repository.ContainsKey(product.SKU) then
                     Products.repository[product.SKU] <- product
                     return Ok()
-                | false, _ -> // ↩
+                else
                     return Error(DataError(DataNotFound(Id = product.SKU.Value, Type = nameof Product)))
             }
 
