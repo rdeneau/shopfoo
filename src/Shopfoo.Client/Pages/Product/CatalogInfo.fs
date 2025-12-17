@@ -79,7 +79,7 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
         )
 
 [<ReactComponent>]
-let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) =
+let CatalogInfoForm (key, fullContext, sku, fillTranslations, onSaveProduct) =
     let model, dispatch =
         React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
