@@ -8,9 +8,9 @@ nuget Fable.Remoting.Giraffe
 nuget Feliz.DaisyUI
 nuget Feliz.Router
 nuget Feliz.UseElmish
-nuget Giraffe.GoodRead
-
 nuget FsToolkit.ErrorHandling.TaskResult
+nuget Giraffe.GoodRead
+nuget Microsoft.Extensions.DependencyInjection
 
 group Build
     source https://api.nuget.org/v3/index.json

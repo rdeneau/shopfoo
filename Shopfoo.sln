@@ -1,5 +1,10 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".paket", ".paket", "{317EE02D-163B-4274-A8FF-D2E6E236E967}"
+	ProjectSection(SolutionItems) = preProject
+		paket.dependencies = paket.dependencies
+	EndProjectSection
+EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Client", "src\Shopfoo.Client\Shopfoo.Client.fsproj", "{7C716DBC-68B5-462F-9E3D-F9D2D30E480F}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Server", "src\Shopfoo.Server\Shopfoo.Server.fsproj", "{1C122FE9-9252-4E8D-9EDD-2838BF0439DE}"
@@ -26,6 +31,10 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Domain.Types", "src\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj", "{7FB14A7B-C3FD-4598-A3AD-91DC8FEA75D2}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Common", "src\Shopfoo.Common\Shopfoo.Common.fsproj", "{F4759A4D-BC71-479E-BFAD-B71AFE5D0ADA}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Feat", "Feat", "{D6868961-CC02-4121-97AC-CACB282F1AC1}"
+EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Catalog", "src\Shopfoo.Catalog\Shopfoo.Catalog.fsproj", "{47CA82A7-D814-44AA-94BD-28776091B3C9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -57,6 +66,10 @@ Global
 		{F4759A4D-BC71-479E-BFAD-B71AFE5D0ADA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F4759A4D-BC71-479E-BFAD-B71AFE5D0ADA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F4759A4D-BC71-479E-BFAD-B71AFE5D0ADA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{47CA82A7-D814-44AA-94BD-28776091B3C9}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{47CA82A7-D814-44AA-94BD-28776091B3C9}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{47CA82A7-D814-44AA-94BD-28776091B3C9}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{47CA82A7-D814-44AA-94BD-28776091B3C9}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{99315B2D-96A5-48E8-9285-0FEAE277AE4E} = {9B3F13D5-FBC9-4FDE-ADEA-9F68EBBA89BC}
@@ -67,5 +80,7 @@ Global
 		{E264AE7C-45A3-4C82-A82E-724A32AFC859} = {42DEC35F-49F2-4EB7-B7CA-6647D95AAF97}
 		{7FB14A7B-C3FD-4598-A3AD-91DC8FEA75D2} = {8962939F-E5C4-4CE5-914E-B7B1E9FFEC6B}
 		{F4759A4D-BC71-479E-BFAD-B71AFE5D0ADA} = {8962939F-E5C4-4CE5-914E-B7B1E9FFEC6B}
+		{D6868961-CC02-4121-97AC-CACB282F1AC1} = {3B92B074-165C-40AB-A588-C7933193DDE7}
+		{47CA82A7-D814-44AA-94BD-28776091B3C9} = {D6868961-CC02-4121-97AC-CACB282F1AC1}
 	EndGlobalSection
 EndGlobal

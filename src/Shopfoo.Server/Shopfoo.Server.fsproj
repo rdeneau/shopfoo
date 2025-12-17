@@ -6,7 +6,6 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="Feat\Catalog.fs" />
     <Compile Include="Feat\Home.fs" />
     <Compile Include="Remoting\FeatApi.fs" />
     <Compile Include="Remoting\Security.fs" />
@@ -23,6 +22,7 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\Shopfoo.Catalog\Shopfoo.Catalog.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
     <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
   </ItemGroup>
