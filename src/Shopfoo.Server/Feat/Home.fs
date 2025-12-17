@@ -27,10 +27,12 @@ type Api() =
             TagCode "About", "About", "À propos"
             TagCode "Login", "Login", "Connexion"
             TagCode "Logout", "Logout", "Se déconnecter"
+            TagCode "Product", "Product", "Produit"
             TagCode "Products", "Products", "Produits"
 
             TagCode "ChangeLangError", "Switching to {0} failed: {1}", "Passage de la langue en {0} en erreur : {1}"
-            TagCode "ChangeLangSuccess", "Successful switch to English", "Passage de la langue en français réussi"
+            TagCode "ChangeLangSuccess", "Successful switch to English", "Passage au français réussi"
+            TagCode "ErrorNotFound", "{0} not found:", "{0} non trouvé :"
 
             TagCode "Theme.Dark", "Dark", "Sombre (Dark)"
             TagCode "Theme.Light", "Light", "Clair (Light)"

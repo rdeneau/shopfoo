@@ -12,10 +12,19 @@ open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Model = { Products: Remote<Product list> }
-
 type private Msg = // ↩
     | ProductsFetched of ApiResult<GetProductsResponse * Translations>
+
+type private Model = { Products: Remote<Product list> }
+
+[<RequireQualifiedAccess>]
+module private Product =
+    let notFound: Product = {
+        SKU = SKU "99999"
+        Name = "❗"
+        Description = "Fake product to demo how the page handles a product not found"
+        ImageUrl = ""
+    }
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -33,7 +42,7 @@ let private init (fullContext: FullContext) =
 let private update fillTranslations msg (model: Model) =
     match msg with
     | Msg.ProductsFetched(Ok(data, translations)) ->
-        { model with Products = Remote.Loaded data.Products }, // ↩
+        { model with Products = Remote.Loaded(data.Products @ [ Product.notFound ]) }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations translations)
 
     | Msg.ProductsFetched(Error apiError) ->

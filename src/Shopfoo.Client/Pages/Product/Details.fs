@@ -4,6 +4,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
@@ -258,14 +259,28 @@ let DetailsView (fullContext, sku, fillTranslations) =
         prop.children [
             // TODO: [Product] handle Remote<Product> (skeleton, details...) in Section.ProductCatalogInfo
             match model.Product with
-            | Remote.Empty -> () // TODO: [Product] display a 'not found'
-            | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
-            | Remote.LoadError apiError ->
+            | Remote.Empty ->
                 Daisy.alert [
                     alert.error
-                    prop.key "product-load-error"
-                    prop.text apiError.ErrorMessage // TODO: [Admin] display error detail to admin
+                    prop.key "product-not-found"
+                    prop.children [
+                        Html.span [
+                            prop.key "pnf-icon"
+                            prop.text "⛓️‍💥"
+                            prop.className "text-lg mr-1"
+                        ]
+                        Html.span [
+                            prop.key "pnf-content"
+                            prop.children [
+                                Html.span [ prop.key "pnf-text"; prop.text (translations.Home.ErrorNotFound translations.Home.Product) ]
+                                Html.code [ prop.key "pnf-sku"; prop.text $" %s{sku.Value} " ]
+                            ]
+                        ]
+                    ]
                 ]
+
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
+            | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
             | Remote.Loaded product ->
                 Html.div [

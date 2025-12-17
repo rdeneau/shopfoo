@@ -59,12 +59,15 @@ module TranslationPages =
         member this.About = this.Get "About"
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
+        member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
 
-        member this.ChangeLangError(langLabel: string, error: string) =
-            this.Format("ChangeLangError", langLabel, error)
+        member this.ChangeLangError(lang: string, error: string) =
+            this.Format("ChangeLangError", lang, error)
 
         member this.ChangeLangSuccess = this.Get "ChangeLangSuccess"
+
+        member this.ErrorNotFound(what: string) = this.Format("ErrorNotFound", what)
 
         member this.Theme =
             this.WithPrefix "Theme."

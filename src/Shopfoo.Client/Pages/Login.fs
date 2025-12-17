@@ -4,7 +4,6 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
-open Shopfoo.Client
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -56,8 +55,6 @@ let LoginView (fullContext, fillTranslations, loginUser) =
             | Remote.Empty -> ()
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "login-skeleton" ]
             | Remote.LoadError apiError ->
-                Daisy.breadcrumbs [ prop.key "login-title"; prop.child (Html.ul [ Html.li [ prop.key "login-title-text"; prop.text "Login" ] ]) ]
-
                 Daisy.alert [
                     alert.error
                     prop.key "load-error"

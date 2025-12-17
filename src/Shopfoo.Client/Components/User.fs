@@ -14,7 +14,7 @@ let UserDropdown (key, userName: string, translations: AppTranslations, onClick)
                     prop.key "user-logout-link"
                     prop.className "whitespace-nowrap"
                     prop.onClick (fun _ -> onClick ())
-                    prop.text translations.Home.Logout
+                    prop.text $"🔓  %s{translations.Home.Logout}"
                 ]
             ]
         ]
