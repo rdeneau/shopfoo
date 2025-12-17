@@ -1,4 +1,3 @@
-open Fake
 open Fake.Core
 open Fake.IO
 open Fake.IO.FileSystemOperators
@@ -7,7 +6,7 @@ open Fake.Core.TargetOperators
 open BuildHelpers
 open BuildTools
 
-initializeContext()
+initializeContext ()
 
 let publishPath = Path.getFullName "publish"
 let srcPath = Path.getFullName "src"
@@ -16,49 +15,67 @@ let serverSrcPath = srcPath </> "Shopfoo.Server"
 let appPublishPath = publishPath </> "app"
 
 // Targets
-let clean proj = [ proj </> "bin"; proj </> "obj"; proj </> ".fable-build" ] |> Shell.cleanDirs
-
-Target.create "Clean" (fun _ ->
-    serverSrcPath |> clean
-    clientSrcPath |> clean
-)
-
-Target.create "InstallClient" (fun _ ->
-    printfn "Node version:"
-    run Tools.node "--version" clientSrcPath
-    printfn "Yarn version:"
-    run Tools.yarn "--version" clientSrcPath
-    run Tools.yarn "install --frozen-lockfile" clientSrcPath
-)
-
-Target.create "Publish" (fun _ ->
-    [ appPublishPath ] |> Shell.cleanDirs
-    let publishArgs = sprintf "publish -c Release -o \"%s\"" appPublishPath
-    run Tools.dotnet publishArgs serverSrcPath
-    [ appPublishPath </> "appsettings.Development.json" ] |> File.deleteAll
-
-    run Tools.dotnet "fable clean --yes" ""
-    run Tools.yarn "build" ""
-)
-
-Target.create "Run" (fun _ ->
-    Environment.setEnvironVar "ASPNETCORE_ENVIRONMENT" "Development"
+let clean proj =
     [
-        "server", Tools.dotnet "watch run" serverSrcPath
-        "client", Tools.yarn "start" ""
+        proj </> "bin"
+        proj </> "obj"
+        proj </> ".fable-build"
     ]
-    |> runParallel
-)
+    |> Shell.cleanDirs
+
+Target.create
+    "Clean"
+    (fun _ ->
+        serverSrcPath |> clean
+        clientSrcPath |> clean
+    )
+
+Target.create
+    "InstallClient"
+    (fun _ ->
+        printfn "Node version:"
+        run Tools.node "--version" clientSrcPath
+        printfn "Yarn version:"
+        run Tools.yarn "--version" clientSrcPath
+        run Tools.yarn "install --frozen-lockfile" clientSrcPath
+    )
+
+Target.create
+    "Publish"
+    (fun _ ->
+        [ appPublishPath ] |> Shell.cleanDirs
+        let publishArgs = $"publish -c Release -o \"%s{appPublishPath}\""
+        run Tools.dotnet publishArgs serverSrcPath
+        [ appPublishPath </> "appsettings.Development.json" ] |> File.deleteAll
+
+        run Tools.dotnet "fable clean --yes" ""
+        run Tools.yarn "build" ""
+    )
+
+Target.create
+    "Run"
+    (fun _ ->
+        Environment.setEnvironVar "ASPNETCORE_ENVIRONMENT" "Development"
+
+        runParallel [
+            "server", Tools.dotnet "watch run" serverSrcPath // ↩
+            "client", Tools.yarn "start" ""
+        ]
+    )
+
+Target.create
+    "Server"
+    (fun _ ->
+        Environment.setEnvironVar "ASPNETCORE_ENVIRONMENT" "Development"
+        runParallel [ "server", Tools.dotnet "watch run --no-restore" serverSrcPath ]
+    )
 
 let dependencies = [
-    "InstallClient"
-        ==> "Clean"
-        ==> "Publish"
-
-    "InstallClient"
-        ==> "Clean"
-        ==> "Run"
+    "InstallClient" ==> "Clean" ==> "Publish"
+    "InstallClient" ==> "Clean" ==> "Run"
+    "Server"
 ]
 
 [<EntryPoint>]
-let main args = runOrDefault "Run" args
+let main args = // ↩
+    runOrDefault "Run" args
