@@ -82,3 +82,10 @@ type Remote<'a> =
     | Loading
     | LoadError of ApiError
     | Loaded of 'a
+
+[<RequireQualifiedAccess>]
+module Remote =
+    let ofResult (result: Result<'a, _>) =
+        match result with
+        | Ok value -> Remote.Loaded value
+        | Error error -> Remote.LoadError error

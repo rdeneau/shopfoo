@@ -1,6 +1,7 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
+open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =
@@ -65,7 +66,7 @@ module TranslationPages =
         member this.ChangeLangError(lang: string, error: string) =
             this.Format("ChangeLangError", lang, error)
 
-        member this.ChangeLangSuccess = this.Get "ChangeLangSuccess"
+        member this.ChangeLangOk = this.Get "ChangeLangOk"
 
         member this.ErrorNotFound(what: string) = this.Format("ErrorNotFound", what)
 
@@ -96,6 +97,8 @@ module TranslationPages =
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
         member this.Save = this.Get "Save"
+        member this.SaveOk(SKU sku) = this.Format("SaveOk", sku)
+        member this.SaveError(SKU sku, error: string) = this.Format("SaveError", sku, error)
 
 open TranslationPages
 

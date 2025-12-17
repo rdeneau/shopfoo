@@ -136,7 +136,7 @@ module private Section =
         ]
 
 [<ReactComponent>]
-let DetailsView (fullContext, sku, fillTranslations) =
+let DetailsView (fullContext, sku, fillTranslations, onSaveProduct) =
     Html.section [
         prop.key "product-details-page"
         prop.className "grid grid-cols-4 gap-4"
@@ -144,7 +144,7 @@ let DetailsView (fullContext, sku, fillTranslations) =
             Html.div [
                 prop.key "index-page-product-details"
                 prop.className "col-span-3"
-                prop.children [ CatalogInfoSection("catalog-info", fullContext, sku, fillTranslations) ]
+                prop.children [ CatalogInfoSection("catalog-info", fullContext, sku, fillTranslations, onSaveProduct) ]
             ]
             Html.div [
                 prop.key "index-page-product-actions"

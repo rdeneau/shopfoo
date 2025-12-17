@@ -19,7 +19,10 @@ type ProductApiBuilder(api: FeatApi) =
         GetProducts =
             GetProductsHandler(api, AuthorizedPageCodes) // ↩
             |> Security.authorizeHandler (Claims.single Feat.Catalog Access.View)
-        GetProductDetails =
+        GetProduct =
             GetProductDetailsHandler(api, AuthorizedPageCodes) // ↩
             |> Security.authorizeHandler (Claims.single Feat.Catalog Access.View)
+        SaveProduct =
+            SaveProductHandler(api) // ↩
+            |> Security.authorizeHandler (Claims.single Feat.Catalog Access.Edit)
     }

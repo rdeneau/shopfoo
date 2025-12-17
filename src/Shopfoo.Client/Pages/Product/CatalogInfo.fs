@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Client.Pages.Product.CatalogInfo
 
+open System
 open Elmish
 open Feliz
 open Feliz.DaisyUI
@@ -10,26 +11,34 @@ open Shopfoo.Domain.Types.Products
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Model = { Product: Remote<Product> }
+type private Model = { Product: Remote<Product>; SaveDate: Remote<DateTime> }
 
-type private Msg = // ↩
-    | ProductDetailsFetched of ApiResult<GetProductDetailsResponse * Translations>
+type private Msg =
+    | ProductDetailsFetched of ApiResult<GetProductResponse * Translations>
     | ProductChanged of Product
+    | SaveProduct of Product * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
 module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.GetProductDetails request
+            Call = fun api -> api.Product.GetProduct request
             Error = Error >> ProductDetailsFetched
             Success = Ok >> ProductDetailsFetched
         }
 
+    let saveProduct (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Product.SaveProduct request
+            Error = fun err -> SaveProduct(request.Body, Done(Error err))
+            Success = fun () -> SaveProduct(request.Body, Done(Ok()))
+        }
+
 let private init (fullContext: FullContext) sku =
-    { Product = Remote.Loading }, // ↩
+    { Product = Remote.Loading; SaveDate = Remote.Empty }, // ↩
     Cmd.loadProducts (fullContext.PrepareQueryWithTranslations sku)
 
-let private update fillTranslations (msg: Msg) (model: Model) =
+let private update fillTranslations onSaveProduct (fullContext: FullContext) (msg: Msg) (model: Model) =
     match msg with
     | ProductDetailsFetched(Ok(data, translations)) ->
         let product =
@@ -44,19 +53,40 @@ let private update fillTranslations (msg: Msg) (model: Model) =
         { model with Product = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
-    | ProductChanged product -> { model with Product = Remote.Loaded product }, Cmd.none
+    | ProductChanged product -> // ↩
+        { model with Product = Remote.Loaded product }, Cmd.none
+
+    | SaveProduct(product, Start) ->
+        { model with SaveDate = Remote.Loading }, // ↩
+        Cmd.saveProduct (fullContext.PrepareRequest product)
+
+    | SaveProduct(product, Done result) ->
+        {
+            model with
+                SaveDate =
+                    result // ↩
+                    |> Result.map (fun () -> DateTime.Now)
+                    |> Remote.ofResult
+        },
+        Cmd.ofEffect (fun _ ->
+            let optionalError =
+                match result with
+                | Ok() -> None
+                | Error error -> Some error
+
+            onSaveProduct (product, optionalError)
+        )
 
 [<ReactComponent>]
-let CatalogInfoSection (key, fullContext, sku, fillTranslations) =
+let CatalogInfoSection (key, fullContext, sku, fillTranslations, onSaveProduct) =
     let model, dispatch =
-        React.useElmish (init fullContext sku, update fillTranslations, [||])
+        React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
     let translations = fullContext.Translations
 
     Html.section [
         prop.key $"%s{key}-section"
         prop.children [
-            // TODO: [Product] handle Remote<Product> (skeleton, details...) in Section.ProductCatalogInfo
             match model.Product with
             | Remote.Empty ->
                 Daisy.alert [
@@ -78,7 +108,7 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations) =
                     ]
                 ]
 
-            | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
+            | Remote.Loading -> Daisy.skeleton [ prop.className "h-64 w-full"; prop.key "products-skeleton" ]
             | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
             | Remote.Loaded product ->
@@ -145,8 +175,44 @@ let CatalogInfoSection (key, fullContext, sku, fillTranslations) =
                             button.primary
                             prop.className "justify-self-start"
                             prop.key "save-product-button"
-                            prop.text translations.Product.Save
-                            prop.onClick (fun _ -> ()) // TODO
+
+                            prop.children [
+                                Html.text translations.Product.Save
+
+                                match model.SaveDate with
+                                | Remote.Empty -> ()
+                                | Remote.Loading ->
+                                    Daisy.loading [
+                                        loading.spinner
+                                        prop.key "save-product-spinner"
+                                    ]
+                                | Remote.LoadError apiError ->
+                                    Daisy.tooltip [
+                                        tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
+                                        tooltip.right
+                                        tooltip.error
+                                        prop.text "❗"
+                                        prop.key "save-product-error-tooltip"
+                                    ]
+                                | Remote.Loaded dateTime ->
+                                    Daisy.tooltip [
+                                        tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
+                                        tooltip.right
+                                        tooltip.success
+                                        prop.key "save-product-ok-tooltip"
+                                        prop.children [
+                                            Html.span [
+                                                prop.key "save-product-ok-text"
+                                                prop.text "✓"
+                                                prop.className "font-bold text-green-500"
+                                            ]
+                                        ]
+                                    ]
+                            ]
+
+                            match model.SaveDate with
+                            | Remote.Loading -> prop.disabled true
+                            | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
                         ]
                     ]
                 ]

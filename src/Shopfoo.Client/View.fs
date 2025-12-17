@@ -22,8 +22,9 @@ open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
-type private Toast = // ↩
+type private Toast =
     | Lang of Lang
+    | Product of Product * ApiError option
 
 type private Msg =
     | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
@@ -133,6 +134,9 @@ let AppView () =
     let fillTranslations = dispatch << Msg.FillTranslations
     let loginUser = dispatch << Msg.Login
 
+    let onSaveProduct (product, error) =
+        dispatch (Msg.ToastOn(Toast.Product(product, error)))
+
     let page =
         match fullContext.User, model.Page with
         | _, Page.About -> Pages.About.AboutView(fullContext)
@@ -140,7 +144,7 @@ let AppView () =
         | User.Authorized _, Page.Home
         | User.Authorized _, Page.Login
         | User.Authorized _, Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
-        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations)
+        | User.Authorized _, Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, onSaveProduct)
 
     React.router [
         router.pathMode
@@ -161,8 +165,8 @@ let AppView () =
                 let langToast (error: ApiError option) =
                     let alertType, text =
                         match error with
-                        | None -> alert.success, translations.Home.ChangeLangSuccess
-                        | Some apiError -> alert.error, translations.Home.ChangeLangError(langMenu.Label, apiError.ErrorMessage)
+                        | None -> alert.success, translations.Home.ChangeLangOk
+                        | Some err -> alert.error, translations.Home.ChangeLangError(langMenu.Label, err.ErrorMessage)
 
                     let onDismiss () = dispatch Msg.ToastOff
 
@@ -175,5 +179,17 @@ let AppView () =
                 | Remote.Loading -> ()
                 | Remote.Loaded() -> langToast None
                 | Remote.LoadError apiError -> langToast (Some apiError)
+
+            | Some(Toast.Product(product, error)) ->
+                let alertType, text =
+                    match error with
+                    | None -> alert.success, translations.Product.SaveOk(product.SKU)
+                    | Some err -> alert.error, translations.Product.SaveError(product.SKU, err.ErrorMessage)
+
+                let onDismiss () = dispatch Msg.ToastOff
+
+                Toast.Toast $"toast-product-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+                    Html.text text
+                ]
         ]
     ]

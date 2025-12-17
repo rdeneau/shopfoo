@@ -30,8 +30,8 @@ type Api() =
             TagCode "Product", "Product", "Produit"
             TagCode "Products", "Products", "Produits"
 
+            TagCode "ChangeLangOk", "Successful switch to English", "Passage au français réussi"
             TagCode "ChangeLangError", "Switching to {0} failed: {1}", "Passage de la langue en {0} en erreur : {1}"
-            TagCode "ChangeLangSuccess", "Successful switch to English", "Passage au français réussi"
             TagCode "ErrorNotFound", "{0} not found:", "{0} non trouvé :"
 
             TagCode "Theme.Dark", "Dark", "Sombre (Dark)"
@@ -57,6 +57,8 @@ type Api() =
             TagCode "ImageUrl", "Image Url", "Url de l'image"
             TagCode "Name", "Name", "Nom"
             TagCode "Save", "Save", "Enregistrer"
+            TagCode "SaveOk", "Product {0} saved successfully", "Enregistrement réussi du produit {0}"
+            TagCode "SaveError", "Failed to save the product {0}: {1}", "Erreur lors de l'enregistrement du produit {0} : {1}"
         ]
     ]
 
