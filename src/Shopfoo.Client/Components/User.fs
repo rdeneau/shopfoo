@@ -5,7 +5,7 @@ open Feliz.DaisyUI
 open Shopfoo.Shared.Translations
 
 [<ReactComponent>]
-let UserDropdown (key, userName: string, translations: AppTranslations, onClick) =
+let UserDropdown key (userName: string) (translations: AppTranslations) onClick =
     let logoutMenu =
         Html.li [
             prop.key "user-logout"

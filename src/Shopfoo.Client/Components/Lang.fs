@@ -105,7 +105,7 @@ type private LangMenuElement(currentLang, onClick) =
             |> this.li (key, lg, canClick = true)
 
 [<ReactComponent>]
-let LangDropdown (key, currentLang: Lang, menus, onClick) =
+let LangDropdown key (currentLang: Lang) menus onClick =
     Daisy.dropdown [
         dropdown.hover
         dropdown.end'

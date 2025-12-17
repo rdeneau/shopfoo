@@ -151,7 +151,10 @@ let AppView () =
 
     let fillTranslations = dispatch << Msg.FillTranslations
     let loginUser = dispatch << Msg.Login
+    let logout () = dispatch Logout
     let onSaveProduct = dispatch << Msg.ToastOn << Toast.Product
+    let onThemeChanged = dispatch << Msg.ThemeChanged
+    let startChangeLang lang = dispatch (Msg.ChangeLang(lang, Start))
 
     let pageView =
         match pageToDisplayInline with
@@ -165,13 +168,12 @@ let AppView () =
 
     let navbar =
         AppNavBar "app-nav" model.Page translations [
-            ThemeDropdown("nav-theme", model.Theme, translations, dispatch << Msg.ThemeChanged)
-            LangDropdown("nav-lang", fullContext.Lang, model.LangMenus, fun lang -> dispatch (Msg.ChangeLang(lang, Start)))
+            LangDropdown "nav-lang" fullContext.Lang model.LangMenus startChangeLang
+            ThemeDropdown "nav-theme" model.Theme translations onThemeChanged
 
             match fullContext.User with
             | User.Anonymous -> ()
-            | User.LoggedIn(userName, _) -> // ↩
-                UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
+            | User.LoggedIn(userName, _) -> UserDropdown "nav-user" userName translations logout
 
             if not translations.IsEmpty then
                 Daisy.button.button [

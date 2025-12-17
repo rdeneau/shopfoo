@@ -72,7 +72,7 @@ type private ThemeMenu(currentTheme, onClick) =
         ]
 
 [<ReactComponent>]
-let ThemeDropdown (key, theme, translations: AppTranslations, onClick) =
+let ThemeDropdown key theme (translations: AppTranslations) onClick =
     if translations.IsEmpty then
         Html.none
     else
