@@ -30,11 +30,12 @@ module Claims =
 [<RequireQualifiedAccess>]
 type User =
     | Anonymous
-    | Authorized of userName: string * claims: Claims
+    | LoggedIn of userName: string * claims: Claims
 
-let (|CanNotAccess|_|) feat user =
+let (|UserCanAccess|_|) feat user =
     match user with
-    | User.Authorized(_, claims) when claims.ContainsKey(feat) -> None
+    | User.LoggedIn(_, claims) when claims.ContainsKey(feat) -> Some()
+    | _ -> None
     | _ -> Some()
 
 type AuthToken = AuthToken of string

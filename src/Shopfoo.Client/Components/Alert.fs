@@ -17,7 +17,7 @@ let apiError (key: string) (apiError: ApiError) (user: User) =
 
     let errorDetail =
         match apiError.ErrorDetail, user with
-        | Some errorDetail, User.Authorized(_, claims) when claims.ContainsKey Feat.Admin ->
+        | Some errorDetail, User.LoggedIn(_, claims) when claims.ContainsKey Feat.Admin ->
             let lines = // ↩
                 errorDetail.Exception.Split([| '\n' |]) |> Array.toList
 

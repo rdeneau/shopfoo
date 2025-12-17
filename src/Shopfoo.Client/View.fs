@@ -127,7 +127,7 @@ let AppView () =
 
             match fullContext.User with
             | User.Anonymous -> ()
-            | User.Authorized(userName, _) -> // ↩
+            | User.LoggedIn(userName, _) -> // ↩
                 UserDropdown("nav-user", userName, translations, (fun () -> dispatch Logout))
         ]
 

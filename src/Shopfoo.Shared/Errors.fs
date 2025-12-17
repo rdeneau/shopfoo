@@ -7,7 +7,7 @@ open Shopfoo.Domain.Types.Translations
 module internal User =
     let errorDetailLevel user =
         match user with
-        | User.Authorized(_, claims) when claims |> Map.containsKey Feat.Admin -> ErrorDetailLevel.Admin
+        | User.LoggedIn(_, claims) when claims |> Map.containsKey Feat.Admin -> ErrorDetailLevel.Admin
         | _ -> ErrorDetailLevel.NoDetail
 
 type ErrorDetail = { Exception: string }
