@@ -8,8 +8,7 @@ open Shopfoo.Shared.Remoting
 [<Sealed>]
 type HomeApiBuilder(api: FeatApi) =
     static let AuthorizedPageCodes =
-        Set [
-            PageCode.About
+        Set [ // ↩
             PageCode.Home
             PageCode.Login
         ]

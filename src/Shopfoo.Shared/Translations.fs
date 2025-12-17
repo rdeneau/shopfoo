@@ -50,14 +50,11 @@ module TranslationPages =
 
             useNesting newBase
 
-    type About internal (?translations) =
-        inherit Base(PageCode.About, ?translations = translations)
-        member this.Disclaimer = this.Get "Disclaimer"
-
     type Home internal (?translations) =
         inherit Base(PageCode.Home, ?translations = translations)
 
         member this.About = this.Get "About"
+        member this.AboutDisclaimer = this.Get "AboutDisclaimer"
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
         member this.Page = this.Get "Page"
@@ -125,7 +122,6 @@ open TranslationPages
 type private Section =
     | Section of string
 
-    static member About = Section(nameof About)
     static member Home = Section(nameof Home)
     static member Login = Section(nameof Login)
     static member Product = Section(nameof Product)
@@ -133,15 +129,13 @@ type private Section =
 type AppTranslations
     private
     (
-        about: About, // ↩
-        home: Home,
+        home: Home, // ↩
         login: Login,
         product: Product,
         ?translations
     ) =
     let sections = [
-        Section.About, about :> Base
-        Section.Home, home
+        Section.Home, home :> Base
         Section.Login, login
         Section.Product, product
     ]
@@ -154,9 +148,8 @@ type AppTranslations
         |> Seq.map _.PageCode
         |> Set
 
-    new() = AppTranslations(About(), Home(), Login(), Product())
+    new() = AppTranslations(Home(), Login(), Product())
 
-    member val About = about
     member val Home = home
     member val Login = login
     member val Product = product
@@ -174,7 +167,6 @@ type AppTranslations
                 page
 
         AppTranslations(
-            recreatePageIfNeeded about (fun () -> About translations),
             recreatePageIfNeeded home (fun () -> Home translations),
             recreatePageIfNeeded login (fun () -> Login translations),
             recreatePageIfNeeded product (fun () -> Product translations),

@@ -5,18 +5,18 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Translations
 
 let private translationPages = [
-    PageCode.About,
-    [
-        TagCode "Disclaimer",
-        "This application is a demo project showcasing the SAFE functional architecture, "
-        + "with domain workflows based on pseudo algebraic effects.",
-        "Cette application est un projet démo illustrant l'architecture 'SAFE functional', "
-        + "avec des 'domain workflows' basé sur des pseudos effets algébriques."
-    ]
-
     PageCode.Home,
     [
         TagCode "About", "About", "À propos"
+        TagCode "AboutDisclaimer",
+        "This application is a demo project showcasing the SAFE functional architecture, with domain workflows based on pseudo algebraic effects.",
+        "Cette application est un projet démo illustrant l'architecture 'SAFE functional', avec des 'domain workflows' basé sur des pseudos effets algébriques."
+
+        TagCode "Admin", "Admin", "Administration"
+        TagCode "AdminDisclaimer",
+        "This page is only used to verify the user access. Refresh the page, log in with a non-admin user, and check the redirection to the NotFound page.",
+        "Cette page n'a d'autre intérêt que de servir à vérifier les droits d'accès utilisateur. Pour cela, rafraîchir la page, se connecter avec un utilisateur non admin et vérifier la redirection vers la page NotFound."
+
         TagCode "Login", "Login", "Connexion"
         TagCode "Logout", "Logout", "Se déconnecter"
         TagCode "Page", "Page", "Page"

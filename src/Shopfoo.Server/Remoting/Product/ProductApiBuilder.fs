@@ -9,7 +9,6 @@ open Shopfoo.Shared.Remoting
 type ProductApiBuilder(api: FeatApi) =
     static let AuthorizedPageCodes =
         Set [
-            PageCode.About
             PageCode.Home
             PageCode.Login
             PageCode.Product
