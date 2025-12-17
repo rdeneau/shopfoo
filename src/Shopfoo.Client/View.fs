@@ -6,10 +6,10 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.Router
 open Feliz.UseElmish
+open Shopfoo.Client.Components
 open Shopfoo.Client.Components.AppNav
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
-open Shopfoo.Client.Components.TimedToast
 open Shopfoo.Client.Components.User
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
@@ -21,20 +21,26 @@ open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
+[<RequireQualifiedAccess>]
+type private Toast = // ↩
+    | Lang of Lang
+
 type private Msg =
-    | UrlChanged of Page
-    | ThemeChanged of Theme
     | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
     | FillTranslations of Translations
     | Login of User
     | Logout
+    | ThemeChanged of Theme
+    | UrlChanged of Page
+    | ToastOn of Toast
+    | ToastOff
 
 type private Model = {
     Page: Page
     Theme: Theme
     FullContext: FullContext
     LangMenus: LangMenu list
-    ChangeLangToast: Lang option
+    Toast: Toast option
 }
 
 [<RequireQualifiedAccess>]
@@ -57,7 +63,7 @@ let private init () =
         Theme = defaultTheme
         FullContext = FullContext.Default
         LangMenus = LangMenu.all
-        ChangeLangToast = None
+        Toast = None
     },
     Cmd.batch [ // ↩
         Cmd.navigatePage currentPage
@@ -74,31 +80,18 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     ]
 
     match msg with
-    | Msg.UrlChanged page -> // ↩
-        { model with Page = page }, Cmd.none
-
-    | Msg.ThemeChanged theme ->
-        { model with Theme = theme }, // ↩
-        Cmd.ofEffect (fun _ -> theme.ApplyOnHtml())
-
     | Msg.ChangeLang(lang, Start) ->
-        { model with LangMenus = updateLangStatus lang Remote.Loading; ChangeLangToast = None },
+        { model with LangMenus = updateLangStatus lang Remote.Loading; Toast = None },
         Cmd.fetchTranslations ( // ↩
             model.FullContext.PrepareRequest { Lang = lang; PageCodes = model.FullContext.Translations.PopulatedPages }
         )
 
     | Msg.ChangeLang(lang, Done(Ok data)) ->
-        {
-            model with
-                Model.FullContext.Lang = lang
-                Model.FullContext.Translations = AppTranslations().Fill(data.Translations)
-                LangMenus = updateLangStatus lang (Remote.Loaded())
-                ChangeLangToast = Some lang
-        },
-        Cmd.none
+        let fullContext = { model.FullContext with Lang = lang; Translations = AppTranslations().Fill(data.Translations) }
+        { model with FullContext = fullContext; LangMenus = updateLangStatus lang (Remote.Loaded()) }, Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
 
     | Msg.ChangeLang(lang, Done(Error apiError)) ->
-        { model with LangMenus = updateLangStatus lang (Remote.LoadError apiError); ChangeLangToast = Some lang }, Cmd.none
+        { model with LangMenus = updateLangStatus lang (Remote.LoadError apiError) }, Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
 
     | Msg.FillTranslations translations -> // ↩
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
@@ -112,6 +105,12 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.Logout ->
         { model with Model.FullContext.User = User.Anonymous }, // ↩
         Cmd.navigatePage Page.Login
+
+    | Msg.ThemeChanged theme -> { model with Theme = theme }, Cmd.ofEffect (fun _ -> theme.ApplyOnHtml())
+    | Msg.UrlChanged page -> { model with Page = page }, Cmd.none
+
+    | Msg.ToastOn toast -> { model with Toast = Some toast }, Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)
+    | Msg.ToastOff -> { model with Toast = None }, Cmd.none
 
 [<ReactComponent>]
 let AppView () =
@@ -152,9 +151,9 @@ let AppView () =
                 prop.className "px-4 py-2"
                 prop.children page
             ]
-            match model.ChangeLangToast with
+            match model.Toast with
             | None -> ()
-            | Some lang ->
+            | Some(Toast.Lang lang) ->
                 let langMenu = // ↩
                     model.LangMenus |> List.find (fun menu -> menu.Lang = lang)
 
@@ -164,7 +163,7 @@ let AppView () =
                         | None -> alert.success, translations.Home.ChangeLangSuccess
                         | Some apiError -> alert.error, translations.Home.ChangeLangError(langMenu.Label, apiError.ErrorMessage)
 
-                    TimedToast $"app-toast-{DateTime.Now.Ticks}" (Html.text text) [ alertType ] ignore
+                    Toast.Toast $"app-toast-{DateTime.Now.Ticks}" (Html.text text) [ alertType ] ignore
 
                 match langMenu.Status with
                 | Remote.Empty -> ()

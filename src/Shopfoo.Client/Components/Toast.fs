@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Components.TimedToast
+﻿module Shopfoo.Client.Components.Toast
 
 open System
 open Fable.Core
@@ -6,11 +6,10 @@ open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client
 
-let private oneSecond = TimeSpan.FromMilliseconds(1000)
-let private duration = 3. * oneSecond
+let Timeout = TimeSpan.FromMilliseconds(3000)
 
 [<ReactComponent>]
-let TimedToast key content alertProps onDismiss =
+let Toast key content alertProps onDismiss =
     let isVisible, toggle = React.useState true
 
     React.useEffectOnce (fun () ->
@@ -20,7 +19,7 @@ let TimedToast key content alertProps onDismiss =
                     toggle false
                     onDismiss ()
                 )
-                (int duration.TotalMilliseconds)
+                (int Timeout.TotalMilliseconds)
 
         { new IDisposable with
             member _.Dispose() = JS.clearTimeout hidingTimeoutId
