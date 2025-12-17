@@ -1,4 +1,5 @@
-﻿module Shopfoo.Client.Components.Toast
+﻿[<RequireQualifiedAccess>]
+module Shopfoo.Client.Components.Toast
 
 open System
 open Fable.Core
@@ -6,15 +7,15 @@ open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client
 
-let Timeout = TimeSpan.FromMilliseconds(3000)
+let private Timeout = TimeSpan.FromMilliseconds(3000)
 
 [<ReactComponent>]
-let Toast key content alertProps onDismiss =
+let Toast key alertProps onDismiss children =
     let isVisible, toggle = React.useState true
 
     React.useEffectOnce (fun () ->
         let hidingTimeoutId =
-            JS.setTimeout // ↩
+            JS.setTimeout
                 (fun _ ->
                     toggle false
                     onDismiss ()
@@ -37,7 +38,7 @@ let Toast key content alertProps onDismiss =
                 Daisy.alert [
                     prop.key $"%s{key}-toast-alert"
                     yield! alertProps
-                    prop.child content
+                    prop.children (elems = children)
                 ]
             )
         ]

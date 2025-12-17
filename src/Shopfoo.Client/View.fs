@@ -166,7 +166,9 @@ let AppView () =
 
                     let onDismiss () = dispatch Msg.ToastOff
 
-                    Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" (Html.text text) [ alertType ] onDismiss
+                    Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+                        Html.text text
+                    ]
 
                 match langMenu.Status with
                 | Remote.Empty -> ()
