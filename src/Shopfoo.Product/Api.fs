@@ -4,38 +4,31 @@ open Shopfoo.Catalog.Data
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Products
+open Shopfoo.Effects.Dependencies
+open Shopfoo.Product.Workflows
+open Shopfoo.Product.Workflows.Instructions
 
 [<Interface>]
 type ICatalogApi =
     abstract member GetProducts: unit -> Async<Result<Product list, Error>>
     abstract member GetProduct: sku: SKU -> Async<Result<Product option, Error>>
-    abstract member SaveProduct: product: Product -> Async<Result<unit, Error>>
+    abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
-type internal Api() =
+type internal Api(interpreterFactory: IInterpreterFactory) =
+    let interpret =
+        interpreterFactory.Create(ProductDomain)
+
+    let runEffect (productEffect: IProductEffect<_>) =
+        match productEffect.Instruction with
+        | SaveProduct command -> interpret.Command(command, Products.Client.saveProduct)
+
+    let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args =
+        interpret.Workflow runEffect workflow args
+
     interface ICatalogApi with
-        member _.GetProducts() =
-            async {
-                do! Async.Sleep(millisecondsDueTime = 500) // Simulate latency
-                return Ok(Products.repository.Values |> Seq.toList)
-            }
-
-        member _.GetProduct(sku) =
-            async {
-                do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
-                let product = Products.repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
-                return Ok product
-            }
-
-        member _.SaveProduct(product) =
-            async {
-                do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
-
-                if Products.repository.ContainsKey(product.SKU) then
-                    Products.repository[product.SKU] <- product
-                    return Ok()
-                else
-                    return Error(DataError(DataNotFound(Id = product.SKU.Value, Type = nameof Product)))
-            }
+        member _.GetProducts() = Products.Client.getProducts()
+        member _.GetProduct(sku) = Products.Client.getProduct sku
+        member val SaveProduct = interpretWorkflow (SaveProductWorkflow())
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection
