@@ -4,6 +4,15 @@
     <OutputType>Exe</OutputType>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shopfoo.Product\Shopfoo.Product.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Home\Shopfoo.Home.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
+  </ItemGroup>
   <ItemGroup>
     <Content Include="paket.references" />
     <Compile Include="Remoting\FeatApi.fs" />
@@ -19,12 +28,6 @@
     <Compile Include="WebApp.fs" />
     <Compile Include="DependencyInjection.fs" />
     <Compile Include="Program.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Shopfoo.Product\Shopfoo.Product.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Home\Shopfoo.Home.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

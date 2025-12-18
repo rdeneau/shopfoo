@@ -1,40 +1,43 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net9.0</TargetFramework>
-    </PropertyGroup>
-    <ItemGroup>
-        <Content Include="paket.references" />
-        <Compile Include="Server.fs" />
-        <Compile Include="Remoting.fs" />
-        <Compile Include="Routing.fs" />
-        <Compile Include="UI.fs" />
-        <Compile Include="Components\Alert.fs" />
-        <Compile Include="Components\AppNav.fs" />
-        <Compile Include="Components\Lang.fs" />
-        <Compile Include="Components\Theme.fs" />
-        <Compile Include="Components\User.fs" />
-        <Compile Include="Components\Toast.fs" />
-        <Compile Include="Pages\About.fs" />
-        <Compile Include="Pages\Admin.fs" />
-        <Compile Include="Pages\Login.fs" />
-        <Compile Include="Pages\NotFound.fs" />
-        <Compile Include="Pages\Product\Actions.fs" />
-        <Compile Include="Pages\Product\CatalogInfo.fs" />
-        <Compile Include="Pages\Product\Details.fs" />
-        <Compile Include="Pages\Product\Index.fs" />
-        <Compile Include="View.fs" />
-        <Compile Include="App.fs" />
-        <Content Include="index.html" />
-        <Content Include="..\..\package.json">
-          <Link>package.json</Link>
-        </Content>
-        <Content Include="..\..\yarn.lock">
-          <Link>yarn.lock</Link>
-        </Content>
-    </ItemGroup>
-    <ItemGroup>
-        <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
-    </ItemGroup>
-    <Import Project="..\..\.paket\Paket.Restore.targets" />
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Content Include="paket.references" />
+    <Compile Include="Server.fs" />
+    <Compile Include="Remoting.fs" />
+    <Compile Include="Routing.fs" />
+    <Compile Include="UI.fs" />
+    <Compile Include="Components\Alert.fs" />
+    <Compile Include="Components\AppNav.fs" />
+    <Compile Include="Components\Lang.fs" />
+    <Compile Include="Components\Theme.fs" />
+    <Compile Include="Components\User.fs" />
+    <Compile Include="Components\Toast.fs" />
+    <Compile Include="Pages\About.fs" />
+    <Compile Include="Pages\Admin.fs" />
+    <Compile Include="Pages\Login.fs" />
+    <Compile Include="Pages\NotFound.fs" />
+    <Compile Include="Pages\Product\Actions.fs" />
+    <Compile Include="Pages\Product\CatalogInfo.fs" />
+    <Compile Include="Pages\Product\Details.fs" />
+    <Compile Include="Pages\Product\Index.fs" />
+    <Compile Include="View.fs" />
+    <Compile Include="App.fs" />
+    <Content Include="index.html" />
+    <Content Include="..\..\package.json">
+      <Link>package.json</Link>
+    </Content>
+    <Content Include="..\..\yarn.lock">
+      <Link>yarn.lock</Link>
+    </Content>
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

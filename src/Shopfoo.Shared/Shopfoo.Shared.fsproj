@@ -3,14 +3,17 @@
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
+  </ItemGroup>
   <ItemGroup>
     <Compile Include="Errors.fs" />
     <Compile Include="Translations.fs" />
     <Compile Include="Remoting.fs" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
