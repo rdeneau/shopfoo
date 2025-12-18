@@ -97,6 +97,28 @@ module Option =
         | false -> Some s
         | true -> None
 
+[<RequireQualifiedAccess>]
+module Result =
+    let bindError fError (xR: Result<'x, 'e1>) : Result<'x, 'e2> =
+        match xR with
+        | Ok x -> Ok x
+        | Error err -> fError err
+
+    let inline ignore xR = Result.map ignore xR
+
+    let mapOption (f: 'a -> Result<'b, 'e>) (opt: 'a option) : Result<'b option, 'e> =
+        match opt with
+        | None -> Ok None
+        | Some a ->
+            match f a with
+            | Ok value -> Ok(Some value)
+            | Error errorValue -> Error errorValue
+
+    let tryGetError (xR: Result<'x, 'e>) =
+        match xR with
+        | Ok _ -> None
+        | Error e -> Some e
+
 [<AutoOpen>]
 module ActivePatterns =
     let (|Between|_|) min max value =
@@ -205,6 +227,18 @@ module Environment =
         let (</>) x y = Path.Combine(x, y)
 
 #endif
+
+[<AutoOpen>]
+module Exception =
+    open System.Reflection
+
+    let inline reraisePreserveStackTrace (e: Exception) =
+        let remoteStackTraceString =
+            typeof<exn>
+                .GetField("_remoteStackTraceString", BindingFlags.Instance ||| BindingFlags.NonPublic)
+
+        remoteStackTraceString.SetValue(e, e.StackTrace + Environment.NewLine)
+        raise e
 
 [<RequireQualifiedAccess>]
 module Regex =

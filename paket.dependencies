@@ -10,7 +10,7 @@ nuget Feliz.Router
 nuget Feliz.UseElmish
 nuget FsToolkit.ErrorHandling.TaskResult
 nuget Giraffe.GoodRead
-nuget Microsoft.Extensions.DependencyInjection
+nuget Microsoft.Extensions.Logging
 
 group Build
     source https://api.nuget.org/v3/index.json
