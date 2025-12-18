@@ -1,80 +1,118 @@
 ﻿module Shopfoo.Domain.Types.Errors
 
 open System
+open System.Runtime.CompilerServices
 open Shopfoo.Common
 
 [<AutoOpen>]
+module Validation =
+    type Validation<'t, 'e> = Result<'t, 'e list>
+
+    let toValidation (result: Result<'t, 'e>) : Validation<'t, 'e> =
+        result |> Result.mapError List.singleton
+
+    type ValidationBuilder() =
+        member _.BindReturn(x: Validation<'t, 'e>, f: 't -> 'u) = Result.map f x
+
+        member _.MergeSources(x: Validation<'t, 'e>, y: Validation<'u, 'e>) =
+            match (x, y) with
+            | Ok v1, Ok v2 -> Ok(v1, v2) // Merge both values in a pair
+            | Error e1, Error e2 -> Error(e1 @ e2) // Merge errors into a single list
+            | Error e, _
+            | _, Error e -> Error e // Short-circuit on single error source
+
+    let validation = ValidationBuilder()
+
+[<AutoOpen>]
 module Guards =
-  type GuardClauseError =
-    { EntityName: string
-      ErrorMessage: string }
+    type GuardClauseError = { EntityName: string; ErrorMessage: string }
 
-  type Guard(entityName: string) =
-    member val EntityName = entityName
+    type GuardCriterion =
+        | MaxLength of int
+        | MinLength of int
+        | NotEmpty
 
-    member inline this.Error errorMessage =
-        let guardClauseError: GuardClauseError =
-            { EntityName = this.EntityName
-              ErrorMessage = errorMessage }
+    type Guard(entityName: string) =
+        member val EntityName = entityName
 
-        Error guardClauseError
+        member inline this.Error errorMessage =
+            let guardClauseError: GuardClauseError = { EntityName = this.EntityName; ErrorMessage = errorMessage }
 
-    member this.IsBoolean(value) =
-        match value with
-        | String.Bool b -> Ok b
-        | _ -> this.Error $"should be a boolean but was {prettyPrintString value}"
+            Error guardClauseError
 
-    member this.IsDateTime(value) =
-        match value with
-        | String.DateTime value -> Ok value
-        | _ -> this.Error $"should be a DateTime but was {prettyPrintString value}"
+        member this.IsBoolean(value) =
+            match value with
+            | String.Bool b -> Ok b
+            | _ -> this.Error $"should be a boolean but was {prettyPrintString value}"
 
-    member this.IsDecimal(value) =
-        match value with
-        | String.Decimal value -> Ok value
-        | _ -> this.Error $"should be a decimal but was {prettyPrintString value}"
+        member this.IsDateTime(value) =
+            match value with
+            | String.DateTime value -> Ok value
+            | _ -> this.Error $"should be a DateTime but was {prettyPrintString value}"
 
-    member this.IsInteger(value) =
-        match value with
-        | String.Int value -> Ok value
-        | _ -> this.Error $"should be an integer but was {prettyPrintString value}"
+        member this.IsDecimal(value) =
+            match value with
+            | String.Decimal value -> Ok value
+            | _ -> this.Error $"should be a decimal but was {prettyPrintString value}"
 
-    member this.IsNotEmpty(value, ?allowEmpty) =
-        match value, allowEmpty with
-        | String.NotEmpty, _
-        | _, Some true -> Ok value
-        | _ -> this.Error $"should not be empty but was {prettyPrintString value}"
+        member this.IsInteger(value) =
+            match value with
+            | String.Int value -> Ok value
+            | _ -> this.Error $"should be an integer but was {prettyPrintString value}"
 
-    member this.IsNotEmptyGuid(value) =
-        match value with
-        | _ when value = Guid.Empty -> this.Error "should not be an empty guid"
-        | _ -> Ok value
+        member this.IsNotEmpty(value, ?allowEmpty) =
+            match value, allowEmpty with
+            | String.NotEmpty, _
+            | _, Some true -> Ok value
+            | _ -> this.Error $"should not be empty but was {prettyPrintString value}"
 
-    member inline this.IsPositive(value) =
-        match value with
-        | IsPositive -> Ok value
-        | _ -> this.Error $"should be positive but was {value}"
+        member this.IsNotEmptyGuid(value) =
+            match value with
+            | _ when value = Guid.Empty -> this.Error "should not be an empty guid"
+            | _ -> Ok value
 
-    member inline this.IsPositiveOrZero(value) =
-        match value with
-        | IsPositive -> Ok value
-        | IsZero -> Ok value
-        | _ -> this.Error $"should be positive or zero but was {value}"
+        member inline this.IsPositive(value) =
+            match value with
+            | IsPositive -> Ok value
+            | _ -> this.Error $"should be positive but was {value}"
 
-    member this.HasExactlyOneElement(sequence) =
-        match Seq.tryExactlyOne sequence with
-        | Some value -> Ok value
-        | None -> this.Error $"should have exactly one element but had {Seq.length sequence}"
+        member inline this.IsPositiveOrZero(value) =
+            match value with
+            | IsPositive -> Ok value
+            | IsZero -> Ok value
+            | _ -> this.Error $"should be positive or zero but was {value}"
 
-    member this.NotSupported(value) =
-        this.Error $"{prettyPrintObject value} is not supported"
+        member this.HasExactlyOneElement(sequence) =
+            match Seq.tryExactlyOne sequence with
+            | Some value -> Ok value
+            | None -> this.Error $"should have exactly one element but had {Seq.length sequence}"
 
-    member this.Satisfies(value, condition, error) =
-        match condition with
-        | true -> Ok value
-        | false -> this.Error error
+        member this.NotSupported(value) =
+            this.Error $"{prettyPrintObject value} is not supported"
 
-    member this.Satisfies(condition, error) = this.Satisfies((), condition, error)
+        member this.Satisfies(value, condition, error) =
+            match condition with
+            | true -> Ok value
+            | false -> this.Error error
+
+        member this.Satisfies(condition, error) = // ↩
+            this.Satisfies((), condition, error)
+
+        member this.Satisfies(value, criteria) =
+            let len = (String.trimWhiteSpace value).Length
+
+            let issues = [
+                for criterion in criteria do
+                    match criterion with
+                    | MaxLength maxlen when len > maxlen -> $"%i{maxlen} character long max"
+                    | MinLength minlen when len < minlen -> $"%i{minlen} character long min"
+                    | NotEmpty when len = 0 -> "not empty"
+                    | _ -> ()
+            ]
+
+            match issues with
+            | [] -> Ok value
+            | _ -> this.Error $"""'%s{value}' should be a string %s{issues |> String.concat ", "}, trailing whitespaces excluded"""
 
 type OperationNotAllowedError = { Operation: string; Reason: string }
 
@@ -86,22 +124,24 @@ type DataRelatedError =
 type Error =
     | Bug of exn
     | DataError of DataRelatedError
-    | GuardClause of GuardClauseError
     | OperationNotAllowed of OperationNotAllowedError
+    | GuardClause of GuardClauseError
+    | Validation of GuardClauseError list
 
 [<AutoOpen>]
 module Helpers =
     let bug exn = Bug exn |> Error
 
     let operationNotAllowed operation reason =
-        { Operation = operation
-          Reason = reason }
-        |> Error
+        { Operation = operation; Reason = reason } |> Error
 
     let dataException exn = Error(DataException exn)
 
     let liftDataRelatedError result = Result.mapError DataError result
     let liftGuardClause result = Result.mapError GuardClause result
+
+    let liftGuardClauses (validation: Validation<'a, GuardClauseError>) =
+        validation |> Result.mapError Validation
 
     let liftOperationNotAllowed result =
         Result.mapError OperationNotAllowed result
@@ -120,6 +160,15 @@ module Helpers =
         function
         | FirstExceptions(exn :: _)
         | exn -> exn
+
+type GuardExtensions =
+    [<Extension>]
+    static member LiftError(guardResult: Result<'a, GuardClauseError>) : Result<unit, Error> =
+        guardResult |> Result.ignore |> liftGuardClause
+
+    [<Extension>]
+    static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> =
+        guardResult |> toValidation
 
 #if !FABLE_COMPILER
 
@@ -158,21 +207,28 @@ module ErrorCategory =
         | DataError(DataException _) -> "Data Error: Query Issue"
         | DataError(DataNotFound _) -> "Data Error: Not Found"
         | DataError(DeserializationIssue _) -> "Data Error: Deserialization Issue"
-        | GuardClause _ -> "Guard Clause"
         | OperationNotAllowed _ -> "Operation Not Allowed"
+        | GuardClause _ -> "Guard Clause"
+        | Validation _ -> "Validation"
 
 [<RequireQualifiedAccess>]
 type ErrorDetailLevel =
     | NoDetail
     | Admin
 
-type ErrorMessage =
-    { Message: string
-      InnerMessage: string option }
+type ErrorMessage = {
+    Message: string
+    InnerMessage: string option
+} with
+    static member Create(message: string, ?innerMessage) = { Message = message; InnerMessage = innerMessage }
 
-    static member Create(message: string, ?innerMessage) =
-        { Message = message
-          InnerMessage = innerMessage }
+    static member Combine(errorMessages) = {
+        Message = errorMessages |> List.map _.Message |> String.concat "\n"
+        InnerMessage =
+            match errorMessages |> List.choose _.InnerMessage with
+            | [] -> None
+            | xs -> Some(xs |> String.concat "\n")
+    }
 
     member this.FullMessage =
         match this.InnerMessage with
@@ -181,17 +237,14 @@ type ErrorMessage =
 
 [<RequireQualifiedAccess>]
 module ErrorMessage =
-    let empty =
-        ErrorMessage.Create(String.empty)
+    let empty = ErrorMessage.Create(String.empty)
 
     let private innerExceptionMessage (exn: exn) =
 #if FABLE_COMPILER
         // System.Exception.get_InnerException is not supported by Fable
         None
 #else
-        exn.InnerException
-        |> Option.ofObj
-        |> Option.map _.Message
+        exn.InnerException |> Option.ofObj |> Option.map _.Message
 #endif
 
     let inline ofBug (exn: exn) =
@@ -199,6 +252,9 @@ module ErrorMessage =
 
     let inline private ofException (exn: exn) =
         ErrorMessage.Create(exn.Message, ?innerMessage = innerExceptionMessage exn)
+
+    let inline private ofGuardClause { EntityName = name; ErrorMessage = message } =
+        ErrorMessage.Create $"Guard %s{name}: %s{message}"
 
     let inline private ofOperationNotAllowed { Operation = op; Reason = reason } =
         ErrorMessage.Create $"Operation [%s{op}] is not allowed. Reason: %s{reason}"
@@ -208,14 +264,19 @@ module ErrorMessage =
         | DataException exn -> ofException exn
         | DataNotFound(id, (String.NotEmpty as typeName)) -> ErrorMessage.Create $"[%s{typeName}] %s{id} not found"
         | DataNotFound(id, _) -> ErrorMessage.Create $"%s{id} not found"
-        | DeserializationIssue(content, targetType, exn) -> ErrorMessage.Create($"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}", ?innerMessage = innerExceptionMessage exn)
+        | DeserializationIssue(content, targetType, exn) ->
+            ErrorMessage.Create(
+                $"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}",
+                ?innerMessage = innerExceptionMessage exn
+            )
 
     let ofError =
         function
         | Bug(FirstException exn) -> ofBug exn
         | DataError err -> ofDataError err
-        | GuardClause err -> ErrorMessage.Create $"Guard {err.EntityName}: {err.ErrorMessage}"
         | OperationNotAllowed err -> ofOperationNotAllowed err
+        | GuardClause err -> ofGuardClause err
+        | Validation errors -> errors |> List.map ofGuardClause |> ErrorMessage.Combine
 
 type ErrorType =
     | Business

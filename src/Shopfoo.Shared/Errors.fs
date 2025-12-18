@@ -51,9 +51,9 @@ and ApiError = {
         match error with
         | Bug exn -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
         | DataError _
-        | GuardClause _
         | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
-        // For ValidationError, use ApiErrorBuilder.Business.Build...
+        | GuardClause _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | Validation _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
 
     static member FromException(FirstException exn, user: User) =
         ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))
