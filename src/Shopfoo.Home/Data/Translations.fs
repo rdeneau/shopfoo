@@ -31,6 +31,10 @@ let private translationPages = [
         TagCode "Theme.Light", "Light", "Clair (Light)"
         TagCode "Theme.Business", "Business", "Affaires (Business)"
         TagCode "Theme.Corporate", "Corporate", "Entreprise (Corporate)"
+        TagCode "Theme.Garden", "Garden", "Jardin (Garden)"
+        TagCode "Theme.Night", "Night", "Nuit (Night)"
+        TagCode "Theme.Nord", "Nord", "Nord"
+        TagCode "Theme.Dim", "Dim", "Dim"
 
         TagCode "ThemeGroup.Dark", "Dark themes", "Thèmes sombres"
         TagCode "ThemeGroup.Light", "Light themes", "Thèmes clairs"

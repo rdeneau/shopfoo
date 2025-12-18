@@ -80,6 +80,10 @@ module TranslationPages =
                 Light = this.Get "Light"
                 Business = this.Get "Business"
                 Corporate = this.Get "Corporate"
+                Garden = this.Get "Garden"
+                Night = this.Get "Night"
+                Nord = this.Get "Nord"
+                Dim = this.Get "Dim"
             |}
 
         member this.ThemeGroup =

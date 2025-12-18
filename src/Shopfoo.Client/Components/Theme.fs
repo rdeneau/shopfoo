@@ -17,6 +17,10 @@ type Theme =
     | Light
     | Business
     | Corporate
+    | Garden
+    | Night
+    | Nord
+    | Dim
 
 type private Emoji = Emoji of string
 
@@ -40,6 +44,14 @@ type private ThemeMenu(currentTheme, onClick) =
     member _.item (theme: Theme) (Emoji emoji) (text: string) =
         let key = keyOf theme
 
+        let badge color =
+            Daisy.badge [
+                badge.xs
+                prop.key $"eg-%s{color}"
+                prop.className $"bg-%s{color} text-%s{color}-content mr-0.5"
+                prop.text (color.Replace("base-", "").[0..0].ToUpperInvariant())
+            ]
+
         Html.li [
             prop.key $"{key}-theme"
             prop.children [
@@ -58,12 +70,22 @@ type private ThemeMenu(currentTheme, onClick) =
                         Html.span [ prop.key $"{key}-theme-emoji"; prop.text emoji ]
                         Html.span [
                             prop.key $"{key}-theme-text"
-                            prop.text text
+                            prop.className "flex-1"
                             prop.custom ("data-theme", key)
+                            prop.children [
+                                badge "primary"
+                                badge "secondary"
+                                badge "accent"
+                                badge "neutral"
+                                badge "base-300"
+                                badge "base-200"
+                                Html.text " "
+                                Html.span [ prop.key "tm-text"; prop.text text ]
+                            ]
                         ]
                         Html.span [
                             prop.key $"{key}-theme-tick"
-                            prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
+                            prop.className "font-bold text-green-500 min-w-[1em]"
                             prop.text (if theme = currentTheme then "✓" else "")
                         ]
                     ]
@@ -100,10 +122,14 @@ let ThemeDropdown key theme (translations: AppTranslations) onClick =
                                 themeMenu.group ThemeGroup.Light translations.Home.ThemeGroup.Light
                                 themeMenu.item Theme.Light (Emoji "🌞") translations.Home.Theme.Light
                                 themeMenu.item Theme.Corporate (Emoji "🏢") translations.Home.Theme.Corporate
+                                themeMenu.item Theme.Garden (Emoji "🧑‍🌾") translations.Home.Theme.Garden
+                                themeMenu.item Theme.Nord (Emoji "⛰️") translations.Home.Theme.Nord
 
                                 themeMenu.group ThemeGroup.Dark translations.Home.ThemeGroup.Dark
-                                themeMenu.item Theme.Dark (Emoji "🌜") translations.Home.Theme.Dark
+                                themeMenu.item Theme.Dark (Emoji "🌚") translations.Home.Theme.Dark
                                 themeMenu.item Theme.Business (Emoji "💼") translations.Home.Theme.Business
+                                themeMenu.item Theme.Night (Emoji "🌃") translations.Home.Theme.Night
+                                themeMenu.item Theme.Dim (Emoji "🔅") translations.Home.Theme.Dim
                             ]
                         ]
                     ]
