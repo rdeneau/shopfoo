@@ -1,4 +1,4 @@
-﻿module Shopfoo.Effects.DependencyInjection
+﻿module Shopfoo.Effects.Dependencies
 
 open System.Diagnostics
 open Microsoft.Extensions.DependencyInjection

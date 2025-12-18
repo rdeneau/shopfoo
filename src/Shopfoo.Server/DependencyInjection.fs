@@ -2,7 +2,7 @@
 
 open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Catalog.DependencyInjection
-open Shopfoo.Effects.DependencyInjection
+open Shopfoo.Effects.Dependencies
 open Shopfoo.Home.DependencyInjection
 
 type IServiceCollection with

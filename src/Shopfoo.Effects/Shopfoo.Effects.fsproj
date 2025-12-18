@@ -15,7 +15,7 @@
     <Compile Include="Program.fs" />
     <Compile Include="Interpreter.fs" />
     <Compile Include="Metrics.fs" />
-    <Compile Include="DependencyInjection.fs" />
+    <Compile Include="Dependencies.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
