@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Shared.Errors
 
+open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -22,15 +23,17 @@ type ApiErrorBuilder private (errorType) =
     static member Business = ApiErrorBuilder(ErrorType.Business)
     static member Technical = ApiErrorBuilder(ErrorType.Technical)
 
-    member this.Build(message, ?key, ?detail, ?translations) : ApiError = {
+    member this.Build(message, ?category, ?key, ?detail, ?translations) : ApiError = {
+        ErrorCategory = defaultArg category String.empty
         ErrorMessage = message
-        ErrorKey = key
         ErrorType = errorType
+        ErrorKey = key
         ErrorDetail = detail
         Translations = defaultArg translations Translations.Empty
     }
 
 and ApiError = {
+    ErrorCategory: string
     ErrorMessage: string
     ErrorType: ErrorType
     ErrorKey: TranslationKey option
@@ -38,13 +41,19 @@ and ApiError = {
     Translations: Translations
 } with
     static member FromError(error, level, ?key, ?translations) =
-        let errorMessage = ErrorMessage.ofError error level
+        let errorMessage = ErrorMessage.ofError(error).FullMessage
+
+        let errorCategory =
+            match level with
+            | ErrorDetailLevel.NoDetail -> String.empty
+            | ErrorDetailLevel.Admin -> ErrorCategory.ofError error
 
         match error with
+        | Bug exn -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
         | DataError _
-        | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, ?key = key, ?translations = translations)
-        | ValidationError _ -> ApiErrorBuilder.Business.Build(errorMessage, ?key = key, ?translations = translations)
-        | Bug exn -> ApiErrorBuilder.Technical.Build(errorMessage, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
+        | GuardClause _
+        | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        // For ValidationError, use ApiErrorBuilder.Business.Build...
 
     static member FromException(FirstException exn, user: User) =
         ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))

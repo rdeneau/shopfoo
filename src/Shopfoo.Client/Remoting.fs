@@ -1,6 +1,7 @@
 ﻿module Shopfoo.Client.Remoting
 
 open Elmish
+open Fable.Remoting.Client
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
@@ -48,12 +49,17 @@ type Cmder = {
 
         let onResponse result =
             match result with
-            | Ok response -> args.Success(response)
             | Error(ServerError.ApiError apiError) -> args.Error(apiError)
+            | Ok response -> args.Success(response)
             | Error(ServerError.AuthError authError) -> args.Error(ApiError.ForAuthenticationError(authError))
 
-        let onException exn =
-            args.Error(ApiError.FromException(exn, this.User))
+        let onException (exn: exn) =
+            let apiError =
+                match exn with
+                | :? ProxyRequestException as exn -> ApiErrorBuilder.Technical.Build(exn.Message, detail = { Exception = exn.ResponseText })
+                | _ -> ApiError.FromException(exn, this.User)
+
+            args.Error(apiError)
 
         cmdOfAsyncEither args.Call api onResponse onException
 

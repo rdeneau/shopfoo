@@ -3,172 +3,220 @@
 open System
 open Shopfoo.Common
 
-type ValidationError = { FieldPath: string; Message: string }
+[<AutoOpen>]
+module Guards =
+  type GuardClauseError =
+    { EntityName: string
+      ErrorMessage: string }
 
-module ValidationError =
-    let ofField fieldPath errorMessage = { FieldPath = fieldPath; Message = errorMessage }
+  type Guard(entityName: string) =
+    member val EntityName = entityName
 
-    let relativeTo parentError validationError = {
-        FieldPath = $"%s{parentError.FieldPath}.{validationError.FieldPath}"
-        Message = $"{validationError.Message}. %s{parentError.Message}."
-    }
+    member inline this.Error errorMessage =
+        let guardClauseError: GuardClauseError =
+            { EntityName = this.EntityName
+              ErrorMessage = errorMessage }
+
+        Error guardClauseError
+
+    member this.IsBoolean(value) =
+        match value with
+        | String.Bool b -> Ok b
+        | _ -> this.Error $"should be a boolean but was {prettyPrintString value}"
+
+    member this.IsDateTime(value) =
+        match value with
+        | String.DateTime value -> Ok value
+        | _ -> this.Error $"should be a DateTime but was {prettyPrintString value}"
+
+    member this.IsDecimal(value) =
+        match value with
+        | String.Decimal value -> Ok value
+        | _ -> this.Error $"should be a decimal but was {prettyPrintString value}"
+
+    member this.IsInteger(value) =
+        match value with
+        | String.Int value -> Ok value
+        | _ -> this.Error $"should be an integer but was {prettyPrintString value}"
+
+    member this.IsNotEmpty(value, ?allowEmpty) =
+        match value, allowEmpty with
+        | String.NotEmpty, _
+        | _, Some true -> Ok value
+        | _ -> this.Error $"should not be empty but was {prettyPrintString value}"
+
+    member this.IsNotEmptyGuid(value) =
+        match value with
+        | _ when value = Guid.Empty -> this.Error "should not be an empty guid"
+        | _ -> Ok value
+
+    member inline this.IsPositive(value) =
+        match value with
+        | IsPositive -> Ok value
+        | _ -> this.Error $"should be positive but was {value}"
+
+    member inline this.IsPositiveOrZero(value) =
+        match value with
+        | IsPositive -> Ok value
+        | IsZero -> Ok value
+        | _ -> this.Error $"should be positive or zero but was {value}"
+
+    member this.HasExactlyOneElement(sequence) =
+        match Seq.tryExactlyOne sequence with
+        | Some value -> Ok value
+        | None -> this.Error $"should have exactly one element but had {Seq.length sequence}"
+
+    member this.NotSupported(value) =
+        this.Error $"{prettyPrintObject value} is not supported"
+
+    member this.Satisfies(value, condition, error) =
+        match condition with
+        | true -> Ok value
+        | false -> this.Error error
+
+    member this.Satisfies(condition, error) = this.Satisfies((), condition, error)
 
 type OperationNotAllowedError = { Operation: string; Reason: string }
 
-[<RequireQualifiedAccess>]
-type HttpVerb =
-    | Get
-    | Post
-    | Put
-    | Patch
-    | Delete
-
-type HttpStatus = {
-    Code: int
-    Label: string
-    Content: string option
-    Request: string option
-    Verb: HttpVerb
-    Uri: Uri option
-} with
-
-    member this.Explain() =
-        let verb = this.Verb.ToString().ToUpperInvariant()
-
-        let uri =
-            match this.Uri with
-            | Some uri -> $"\n%s{verb} %s{uri.ToString()}"
-            | _ -> String.Empty
-
-        let request =
-            match this.Request with
-            | Some(String.NotEmpty as request) -> $"\nRequest: %s{request}"
-            | _ -> String.empty
-
-        let response =
-            match this.Content with
-            | Some(String.NotEmpty as content) -> $"\nResponse: %s{content}"
-            | _ -> String.empty
-
-        $"HTTP Status Code %i{this.Code} (%s{this.Label})%s{uri}%s{request}%s{response}"
-
-    static member Create(code: int, label: string, ?content) = {
-        Code = code
-        Label = label
-        Content = content
-        Request = None
-        Verb = HttpVerb.Get
-        Uri = None
-    }
-
-#if !FABLE_COMPILER
-
-type HttpStatus with
-    /// <remarks>
-    /// This method is not available in Fable. Use the <c>HttpStatus.Create</c> method instead.
-    /// </remarks>
-    static member FromHttpStatusCode(httpStatusCode: System.Net.HttpStatusCode, ?content, ?request, ?verb, ?uri) = {
-        Code = int httpStatusCode
-        Label = httpStatusCode.ToString()
-        Content = content
-        Request = request
-        Verb = defaultArg verb HttpVerb.Get
-        Uri = uri
-    }
-
-#endif
-
 type DataRelatedError =
+    | DataException of exn
     | DataNotFound of Id: string * Type: string
     | DeserializationIssue of ContentToDeserialize: string * TargetType: string * ExceptionThrown: exn
-    | HttpApiError of apiName: string * status: HttpStatus
-    | UpdateError of string
 
 type Error =
-    | ValidationError of ValidationError
-    | OperationNotAllowed of OperationNotAllowedError
-    | DataError of DataRelatedError
     | Bug of exn
+    | DataError of DataRelatedError
+    | GuardClause of GuardClauseError
+    | OperationNotAllowed of OperationNotAllowedError
 
-let (|MailNotFound|_|) =
-    function
-    | DataError(DataNotFound("Mail", _)) -> Some()
-    | _ -> None
+[<AutoOpen>]
+module Helpers =
+    let bug exn = Bug exn |> Error
 
-let validationError fieldPath message =
-    { FieldPath = fieldPath; Message = message } |> Error
+    let operationNotAllowed operation reason =
+        { Operation = operation
+          Reason = reason }
+        |> Error
 
-let bug exn = Bug exn |> Error
+    let dataException exn = Error(DataException exn)
 
-let operationNotAllowed operation reason =
-    { Operation = operation; Reason = reason } |> Error
+    let liftDataRelatedError result = Result.mapError DataError result
+    let liftGuardClause result = Result.mapError GuardClause result
 
-let expectValidationError result = Result.mapError ValidationError result
-let expectDataRelatedError result = Result.mapError DataError result
+    let liftOperationNotAllowed result =
+        Result.mapError OperationNotAllowed result
 
-let createOrValidationError constructor input =
-    constructor input |> expectValidationError
+    let createAndLiftGuardClause constructor input = constructor input |> liftGuardClause
 
-let (|FirstExceptions|) (exn: exn) =
-    match exn with
+    let (|FirstExceptions|) (exn: exn) =
+        match exn with
 #if !FABLE_COMPILER
-    | :? AggregateException as exn -> exn.Flatten().InnerExceptions |> List.ofSeq
-    | _ when not (isNull exn.InnerException) -> [ exn.InnerException ]
+        | :? AggregateException as exn -> exn.Flatten().InnerExceptions |> List.ofSeq
+        | _ when not (isNull exn.InnerException) -> [ exn.InnerException ]
 #endif
-    | _ -> [ exn ]
+        | _ -> [ exn ]
 
-let (|FirstException|) =
-    function
-    | FirstExceptions(exn :: _)
-    | exn -> exn
+    let (|FirstException|) =
+        function
+        | FirstExceptions(exn :: _)
+        | exn -> exn
+
+#if !FABLE_COMPILER
+
+[<RequireQualifiedAccess>]
+type TypeName<'a> =
+    | FullName
+    | Empty
+
+    member this.Value =
+        match this with
+        | FullName -> typeof<'a>.FullName
+        | Empty -> String.empty
+
+[<RequireQualifiedAccess>]
+module Result =
+    /// <summary>
+    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeName.Value))</c>.
+    /// </summary>
+    let requireSomeData (info: string, typeName: TypeName<'a>) (option: 'a option) : Result<'a, DataRelatedError> =
+        match option with
+        | Some value -> Ok value
+        | None -> Error(DataNotFound(Id = info, Type = typeName.Value))
+
+    /// <summary>
+    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeof{'a}.FullName))</c>.
+    /// </summary>
+    let requireSome info (option: 'a option) =
+        requireSomeData (info, TypeName.FullName) option
+
+#endif
+
+module ErrorCategory =
+    let inline ofError error =
+        match error with
+        | Bug _ -> "Bug: Exception"
+        | DataError(DataException _) -> "Data Error: Query Issue"
+        | DataError(DataNotFound _) -> "Data Error: Not Found"
+        | DataError(DeserializationIssue _) -> "Data Error: Deserialization Issue"
+        | GuardClause _ -> "Guard Clause"
+        | OperationNotAllowed _ -> "Operation Not Allowed"
 
 [<RequireQualifiedAccess>]
 type ErrorDetailLevel =
     | NoDetail
     | Admin
 
+type ErrorMessage =
+    { Message: string
+      InnerMessage: string option }
+
+    static member Create(message: string, ?innerMessage) =
+        { Message = message
+          InnerMessage = innerMessage }
+
+    member this.FullMessage =
+        match this.InnerMessage with
+        | Some innerMessage -> $"{this.Message} ({innerMessage})"
+        | None -> this.Message
+
+[<RequireQualifiedAccess>]
 module ErrorMessage =
-    let inline private dataErrorMessage dataError =
-        match dataError with
-        | UpdateError error -> error
-        | DataNotFound(id, (null | "")) -> $"%s{id} not found"
-        | DataNotFound(id, dataType) -> $"[%s{dataType}] %s{id} not found"
-        | DeserializationIssue(content, targetType, exn) -> $"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}"
-        | HttpApiError(apiName, status) -> $"Call to %s{apiName} API failed with %s{status.Explain()}"
+    let empty =
+        ErrorMessage.Create(String.empty)
 
-    let inline private validationErrorMessage { FieldPath = path; Message = message } =
-        $"Field [%s{path}] is invalid. Reason: %s{message}"
+    let private innerExceptionMessage (exn: exn) =
+#if FABLE_COMPILER
+        // System.Exception.get_InnerException is not supported by Fable
+        None
+#else
+        exn.InnerException
+        |> Option.ofObj
+        |> Option.map _.Message
+#endif
 
-    let inline private operationNotAllowedMessage { Operation = op; Reason = reason } =
-        $"Operation [%s{op}] is not allowed. Reason: %s{reason}"
+    let inline ofBug (exn: exn) =
+        ErrorMessage.Create $"[Program] Oops, something went wrong: {exn.Message}"
 
-    let inline private bugMessage (exn: exn) =
-        $"[Program] Oops, something went wrong: {exn.Message}"
+    let inline private ofException (exn: exn) =
+        ErrorMessage.Create(exn.Message, ?innerMessage = innerExceptionMessage exn)
 
-    let inline private errorCase error =
-        match error with
-        | Bug _ -> ""
-        | DataError(DataNotFound _) -> "[DataError:DataNotFound] "
-        | DataError(DeserializationIssue _) -> "[DataError:DeserializationIssue]"
-        | DataError(HttpApiError _) -> "[DataError:HttpApiError]"
-        | DataError(UpdateError _) -> "[DataError:UpdateError] "
-        | ValidationError _ -> "[ValidationError] "
-        | OperationNotAllowed _ -> "[OperationNotAllowed] "
+    let inline private ofOperationNotAllowed { Operation = op; Reason = reason } =
+        ErrorMessage.Create $"Operation [%s{op}] is not allowed. Reason: %s{reason}"
 
-    let inline ofError error level =
-        let errorMessage =
-            match error with
-            | Bug(FirstException exn) -> bugMessage exn
-            | DataError err -> dataErrorMessage err
-            | ValidationError err -> validationErrorMessage err
-            | OperationNotAllowed err -> operationNotAllowedMessage err
+    let ofDataError =
+        function
+        | DataException exn -> ofException exn
+        | DataNotFound(id, (String.NotEmpty as typeName)) -> ErrorMessage.Create $"[%s{typeName}] %s{id} not found"
+        | DataNotFound(id, _) -> ErrorMessage.Create $"%s{id} not found"
+        | DeserializationIssue(content, targetType, exn) -> ErrorMessage.Create($"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}", ?innerMessage = innerExceptionMessage exn)
 
-        match level with
-        | ErrorDetailLevel.NoDetail -> errorMessage
-        | ErrorDetailLevel.Admin -> $"%s{errorCase error}%s{errorMessage}"
+    let ofError =
+        function
+        | Bug(FirstException exn) -> ofBug exn
+        | DataError err -> ofDataError err
+        | GuardClause err -> ErrorMessage.Create $"Guard {err.EntityName}: {err.ErrorMessage}"
+        | OperationNotAllowed err -> ofOperationNotAllowed err
 
 type ErrorType =
     | Business
     | Technical
-
-type ValidationResult<'a> = Result<'a, ValidationError>
