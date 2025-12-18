@@ -1,6 +1,7 @@
 ﻿namespace Shopfoo.Catalog
 
 open Shopfoo.Catalog.Data
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Products
 

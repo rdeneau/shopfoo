@@ -1,7 +1,7 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =

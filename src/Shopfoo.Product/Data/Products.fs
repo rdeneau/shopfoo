@@ -3,9 +3,10 @@ module internal Shopfoo.Catalog.Data.Products
 
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Products
+open Shopfoo.Product.Data
 
 let private cleanArchitecture = {
-    SKU = SKU "0134494164"
+    SKU = SKU.CleanArchitecture
     Name = "Clean Architecture: A Craftsman's Guide to Software Structure and Design"
     Description =
         "Building upon the success of best-sellers The Clean Coder and Clean Code, legendary software craftsman Robert C. 'Uncle Bob' Martin "
@@ -14,7 +15,7 @@ let private cleanArchitecture = {
 }
 
 let private domainDrivenDesign = {
-    SKU = SKU "0321125215"
+    SKU = SKU.DomainDrivenDesign
     Name = "Domain-Driven Design: Tackling Complexity in the Heart of Software"
     Description =
         "Leading software designers have recognized domain modeling and design as critical topics for at least twenty years, "
@@ -24,7 +25,7 @@ let private domainDrivenDesign = {
 }
 
 let private domainModelingMadeFunctional = {
-    SKU = SKU "9781680502541"
+    SKU = SKU.DomainModelingMadeFunctional
     Name = "Domain Modeling Made Functional: Tackle Software Complexity with Domain-Driven Design and F#"
     Description =
         "You want increased IPSer satisfaction, faster development cycles, and less wasted work. Domain-driven design (DDD) combined "
@@ -37,7 +38,7 @@ let private domainModelingMadeFunctional = {
 }
 
 let private javaScriptTheGoodParts = {
-    SKU = SKU "9780596107130"
+    SKU = SKU.JavaScriptTheGoodParts
     Name = "JavaScript: The Good Parts"
     Description =
         "Most programming languages contain good and bad parts, but JavaScript has more than its share of the bad, having been developed "
@@ -48,7 +49,7 @@ let private javaScriptTheGoodParts = {
 }
 
 let private thePragmaticProgrammer = {
-    SKU = SKU "0135957052"
+    SKU = SKU.ThePragmaticProgrammer
     Name = "The Pragmatic Programmer: Your Journey to Mastery"
     Description =
         "The Pragmatic Programmer is one of those rare tech books you'll read, re-read, and read again over the years. "

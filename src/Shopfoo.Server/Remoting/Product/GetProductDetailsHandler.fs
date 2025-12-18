@@ -1,6 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Product
 
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
