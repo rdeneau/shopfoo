@@ -21,7 +21,7 @@
     <Compile Include="Program.fs" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\Shopfoo.Catalog\Shopfoo.Catalog.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Product\Shopfoo.Product.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
     <ProjectReference Include="..\Shopfoo.Home\Shopfoo.Home.fsproj" />
     <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />

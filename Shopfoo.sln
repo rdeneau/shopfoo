@@ -34,7 +34,7 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Common", "src\Shopf
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Feat", "Feat", "{D6868961-CC02-4121-97AC-CACB282F1AC1}"
 EndProject
-Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Catalog", "src\Shopfoo.Catalog\Shopfoo.Catalog.fsproj", "{47CA82A7-D814-44AA-94BD-28776091B3C9}"
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Product", "src\Shopfoo.Product\Shopfoo.Product.fsproj", "{47CA82A7-D814-44AA-94BD-28776091B3C9}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Home", "src\Shopfoo.Home\Shopfoo.Home.fsproj", "{86B809E9-6D43-4613-8B89-FC91BAB2373C}"
 EndProject
