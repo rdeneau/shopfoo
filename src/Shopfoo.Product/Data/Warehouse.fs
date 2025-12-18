@@ -25,24 +25,24 @@ let oneYear =
     ResizeArray [
         yield!
             SKU.CleanArchitecture.Events [ // ↩
-                10 |> Units.Purchased 24.99m<euros> (365 |> daysAgo)
+                10 |> Units.Purchased (Dollars 24.99m) (365 |> daysAgo)
             ]
         yield!
             SKU.DomainDrivenDesign.Events [ // ↩
-                8 |> Units.Purchased 44.30m<euros> (365 |> daysAgo)
+                8 |> Units.Purchased (44.30m |> Euros) (365 |> daysAgo)
             ]
         yield!
             SKU.DomainModelingMadeFunctional.Events [
-                15 |> Units.Purchased 25.99m<euros> (365 |> daysAgo)
-                10 |> Units.Purchased 25.99m<euros> (100 |> daysAgo)
+                15 |> Units.Purchased (25.99m |> Euros) (365 |> daysAgo)
+                10 |> Units.Purchased (25.99m |> Euros) (100 |> daysAgo)
                 11 |> Units.Remaining(50 |> daysAgo) // 2 units lost
             ]
         yield!
             SKU.JavaScriptTheGoodParts.Events [ // ↩
-                8 |> Units.Purchased 15.10m<euros> (365 |> daysAgo)
+                8 |> Units.Purchased (15.10m |> Euros) (365 |> daysAgo)
             ]
         yield!
             SKU.ThePragmaticProgrammer.Events [ // ↩
-                8 |> Units.Purchased 27.80m<euros> (365 |> daysAgo)
+                8 |> Units.Purchased (27.80m |> Euros) (365 |> daysAgo)
             ]
     ]

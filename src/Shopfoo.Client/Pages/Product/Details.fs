@@ -38,7 +38,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSaveProduct)
                 Html.div [
                     prop.key "product-actions"
                     prop.className "col-span-1"
-                    prop.children [ ActionsForm "actions" fullContext ]
+                    prop.children [ ActionsForm "actions" fullContext sku ]
                 ]
         ]
     ]

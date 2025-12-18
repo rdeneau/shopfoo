@@ -91,7 +91,12 @@ type Remote<'a> =
 
 [<RequireQualifiedAccess>]
 module Remote =
-    let ofResult (result: Result<'a, _>) =
-        match result with
+    let ofOption =
+        function
+        | Some value -> Remote.Loaded value
+        | None -> Remote.Empty
+
+    let ofResult =
+        function
         | Ok value -> Remote.Loaded value
         | Error error -> Remote.LoadError error

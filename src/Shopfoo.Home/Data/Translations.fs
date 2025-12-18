@@ -63,7 +63,8 @@ let private translationPages = [
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
 
-        TagCode "Price", "Price", "Prix"
+        TagCode "RetailPrice", "Retail price", "Prix de vente recommandé"
+
         TagCode "PriceAction.Increase", "Increase price", "Augmenter le prix"
         TagCode "PriceAction.Decrease", "Decrease price", "Réduire le prix"
         TagCode "PriceAction.Unavailable", "Unavailable", "Rendre indisponible"

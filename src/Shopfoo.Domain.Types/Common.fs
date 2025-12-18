@@ -1,8 +1,9 @@
 ﻿[<AutoOpen>]
 module Shopfoo.Domain.Types.Common
 
-[<Measure>]
-type euros
+type Money =
+    | Dollars of value: decimal
+    | Euros of value: decimal
 
 [<RequireQualifiedAccess>]
 type Lang =

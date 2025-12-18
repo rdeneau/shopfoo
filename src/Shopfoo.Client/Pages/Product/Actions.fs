@@ -1,9 +1,39 @@
 ﻿module Shopfoo.Client.Pages.Product.Actions
 
+open Elmish
 open Feliz
 open Feliz.DaisyUI
+open Feliz.UseElmish
+open Shopfoo.Client.Components
+open Shopfoo.Client.Remoting
+open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Remoting
+
+type private Model = { Prices: Remote<Prices>; SaveStatus: Remote<unit> }
+
+type private Msg = PricesFetched of ApiResult<GetPricesResponse>
+
+[<RequireQualifiedAccess>]
+module private Cmd =
+    let loadPrices (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Product.GetPrices request
+            Error = Error >> PricesFetched
+            Success = Ok >> PricesFetched
+        }
+
+let private init (fullContext: FullContext) sku =
+    { Prices = Remote.Loading; SaveStatus = Remote.Empty }, // ↩
+    Cmd.loadPrices (fullContext.PrepareRequest sku)
+
+let private update (fullContext: FullContext) (msg: Msg) (model: Model) =
+    match msg with
+    | PricesFetched(Ok response) -> { model with Prices = response.Prices |> Remote.ofOption }, Cmd.none
+    | PricesFetched(Error apiError) -> { model with Prices = Remote.LoadError apiError }, Cmd.none
+
+// -- View ----
 
 type private Action = {
     Key: string
@@ -16,17 +46,25 @@ type private Action = {
         OnClick = onClick
     }
 
+[<RequireQualifiedAccess>]
+type private Symbol =
+    | None
+    | Left of string
+    | Right of string
+
 type private Value =
     | Natural of value: int
-    | Money of value: decimal * currency: string
+    | Money of value: decimal * currency: Symbol
 
-    static member Dollars(value) = Money(value, "$")
-    static member Euros(value) = Money(value, "€")
+    static member OfMoney =
+        function
+        | Dollars value -> Money(value, Symbol.Left "$")
+        | Euros value -> Money(value, Symbol.Right "€")
 
     member this.Symbol =
         match this with
-        | Value.Natural _ -> None
-        | Value.Money(_, symbol) -> Some symbol
+        | Value.Natural _ -> Symbol.None
+        | Value.Money(_, symbol) -> symbol
 
     member this.Text =
         match this with
@@ -57,8 +95,8 @@ let private ActionsDropdown key access (value: Value) (actions: Action list) =
                 prop.className "bg-base-300 flex-1"
                 prop.children [
                     match value.Symbol with
-                    | Some symbol -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
-                    | None -> ()
+                    | Symbol.Left symbol -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
+                    | _ -> ()
 
                     Html.input [
                         prop.key $"{key}-input"
@@ -67,6 +105,10 @@ let private ActionsDropdown key access (value: Value) (actions: Action list) =
                         prop.readOnly true
                         prop.type' "text"
                     ]
+
+                    match value.Symbol with
+                    | Symbol.Right symbol -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
+                    | _ -> ()
                 ]
             ]
 
@@ -106,29 +148,39 @@ let private ActionsDropdown key access (value: Value) (actions: Action list) =
     ]
 
 [<ReactComponent>]
-let ActionsForm key (fullContext: FullContext) =
+let ActionsForm key fullContext sku =
+    let model, dispatch =
+        React.useElmish (init fullContext sku, update fullContext, [||])
+
     let translations = fullContext.Translations
 
-    Daisy.fieldset [
-        prop.key $"%s{key}-fieldset"
-        prop.className "bg-base-200 border border-base-300 rounded-box p-4"
-        prop.children [
-            Html.legend [
-                prop.key "product-actions-legend"
-                prop.className "text-sm"
-                prop.text $"⚡ %s{translations.Product.Actions}"
-            ]
+    React.fragment [
+        match model.Prices with
+        | Remote.Empty -> ()
+        | Remote.Loading -> Daisy.skeleton [ prop.className "h-64 w-full"; prop.key "prices-skeleton" ]
+        | Remote.LoadError apiError -> Alert.apiError "prices-load-error" apiError fullContext.User
+        | Remote.Loaded prices ->
+            Daisy.fieldset [
+                prop.key $"%s{key}-fieldset"
+                prop.className "bg-base-200 border border-base-300 rounded-box p-4"
+                prop.children [
+                    Html.legend [
+                        prop.key "product-actions-legend"
+                        prop.className "text-sm"
+                        prop.text $"⚡ %s{translations.Product.Actions}"
+                    ]
 
-            Daisy.fieldsetLabel [ prop.key "price-label"; prop.text translations.Product.Price ]
-            ActionsDropdown "price" (fullContext.User.AccessTo Feat.Sales) (Value.Euros 85.00m) [
-                Action.Emoji("↗️", "increase", translations.Product.PriceAction.Increase, fun () -> ()) // TODO
-                Action.Emoji("↘️", "decrease", translations.Product.PriceAction.Decrease, fun () -> ()) // TODO
-                Action.Emoji("🚫", "unavailable", translations.Product.PriceAction.Unavailable, fun () -> ()) // TODO
-            ]
+                    Daisy.fieldsetLabel [ prop.key "retail-price-label"; prop.text translations.Product.RetailPrice ]
+                    ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoney prices.RetailPrice) [
+                        Action.Emoji("↗️", "increase", translations.Product.PriceAction.Increase, fun () -> ()) // TODO
+                        Action.Emoji("↘️", "decrease", translations.Product.PriceAction.Decrease, fun () -> ()) // TODO
+                        Action.Emoji("🚫", "unavailable", translations.Product.PriceAction.Unavailable, fun () -> ()) // TODO
+                    ]
 
-            Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
-            ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [
-                Action.Emoji("✏️", "inventory-adjustment", translations.Product.StockAction.InventoryAdjustment, fun () -> ()) // TODO
+                    Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
+                    ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [
+                        Action.Emoji("✏️", "inventory-adjustment", translations.Product.StockAction.InventoryAdjustment, fun () -> ()) // TODO
+                    ]
+                ]
             ]
-        ]
     ]

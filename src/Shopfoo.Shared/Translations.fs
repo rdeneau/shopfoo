@@ -125,7 +125,7 @@ module TranslationPages =
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
 
-        member this.Price = this.Get "Price"
+        member this.RetailPrice = this.Get "RetailPrice"
 
         member this.PriceAction =
             this.WithPrefix "PriceAction."

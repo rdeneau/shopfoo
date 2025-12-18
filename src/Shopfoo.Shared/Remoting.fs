@@ -104,13 +104,16 @@ module HomeApi =
 [<AutoOpen>]
 module ProductApi =
     open Shopfoo.Domain.Types.Catalog
+    open Shopfoo.Domain.Types.Sales
 
     type GetProductsResponse = { Products: Product list }
     type GetProductResponse = { Product: Product option }
+    type GetPricesResponse = { Prices: Prices option }
 
     type ProductApi = {
         GetProducts: QueryWithTranslations<unit, GetProductsResponse>
         GetProduct: QueryWithTranslations<SKU, GetProductResponse>
+        GetPrices: Query<SKU, GetPricesResponse>
         SaveProduct: Command<Product>
     } with
         interface IApi

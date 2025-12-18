@@ -15,7 +15,7 @@ open Shopfoo.Shared.Remoting
 type private Model = { Product: Remote<Product>; SaveDate: Remote<DateTime> }
 
 type private Msg =
-    | ProductDetailsFetched of ApiResult<GetProductResponse * Translations>
+    | ProductFetched of ApiResult<GetProductResponse * Translations>
     | ProductChanged of Product
     | SaveProduct of Product * ApiCall<unit>
 
@@ -24,8 +24,8 @@ module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiRequest {
             Call = fun api -> api.Product.GetProduct request
-            Error = Error >> ProductDetailsFetched
-            Success = Ok >> ProductDetailsFetched
+            Error = Error >> ProductFetched
+            Success = Ok >> ProductFetched
         }
 
     let saveProduct (cmder: Cmder, request) =
@@ -41,16 +41,11 @@ let private init (fullContext: FullContext) sku =
 
 let private update fillTranslations onSaveProduct (fullContext: FullContext) (msg: Msg) (model: Model) =
     match msg with
-    | ProductDetailsFetched(Ok(data, translations)) ->
-        let product =
-            match data.Product with
-            | Some product -> Remote.Loaded product
-            | None -> Remote.Empty
-
-        { model with Product = product }, // ↩
+    | ProductFetched(Ok(response, translations)) ->
+        { model with Product = response.Product |> Remote.ofOption }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations translations)
 
-    | ProductDetailsFetched(Error apiError) ->
+    | ProductFetched(Error apiError) ->
         { model with Product = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 

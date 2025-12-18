@@ -3,7 +3,7 @@
 open System
 
 type EventType =
-    | ProductReceived of purchasePrice: decimal<euros>
+    | ProductReceived of purchasePrice: Money
     | StockAdjusted
 
 type StockEvent = {

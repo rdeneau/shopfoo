@@ -4,6 +4,7 @@ open Shopfoo.Catalog.Data
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Sales
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Product.Workflows
 open Shopfoo.Product.Workflows.Instructions
@@ -12,6 +13,8 @@ open Shopfoo.Product.Workflows.Instructions
 type IProductApi =
     abstract member GetProducts: (unit -> Async<Result<Product list, Error>>)
     abstract member GetProduct: (SKU -> Async<Result<Product option, Error>>)
+    abstract member GetPrices: (SKU -> Async<Result<Prices option, Error>>)
+    abstract member GetSales: (SKU -> Async<Result<Sale list, Error>>)
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
@@ -28,6 +31,8 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
     interface IProductApi with
         member val GetProducts = Catalog.Client.getProducts
         member val GetProduct = Catalog.Client.getProduct
+        member val GetPrices = Prices.Client.getPrices
+        member val GetSales = Sales.Client.getSales
         member val SaveProduct = interpretWorkflow (SaveProductWorkflow())
 
 module DependencyInjection =
