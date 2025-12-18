@@ -2,6 +2,7 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Remoting
 
 type private Action = {
@@ -33,7 +34,20 @@ type private Value =
         | Value.Money(value, _) -> $"%0.2f{value}"
 
 [<ReactComponent>]
-let private ActionsDropdown key (value: Value) (actions: Action list) =
+let private ActionsDropdown key access (value: Value) (actions: Action list) =
+    let itemElement (action: Action) =
+        Html.li [
+            prop.key $"{key}-action--{action.Key}"
+            prop.children [
+                Html.a [
+                    prop.key $"{key}-action--{action.Key}--link"
+                    prop.text action.Text
+                    prop.className "whitespace-nowrap"
+                    prop.onClick (fun _ -> action.OnClick())
+                ]
+            ]
+        ]
+
     Html.div [
         prop.key $"%s{key}-div"
         prop.className "flex items-center mb-4 w-full"
@@ -55,45 +69,39 @@ let private ActionsDropdown key (value: Value) (actions: Action list) =
                     ]
                 ]
             ]
-            Daisy.dropdown [
-                dropdown.hover
-                dropdown.end'
-                prop.key $"{key}-dropdown"
-                prop.className "ml-2"
-                prop.children [
-                    Daisy.button.button [ // ↩
-                        button.primary
-                        button.outline
-                        prop.key $"{key}-dropdown-button"
-                        prop.className "p-3"
-                        prop.text "⏷"
-                    ]
-                    Daisy.dropdownContent [
-                        prop.key $"{key}-dropdown-content"
-                        prop.className "p-2 shadow menu bg-base-100 rounded-box"
-                        prop.tabIndex 0
-                        prop.children [
-                            Html.ul [
-                                prop.key $"{key}-dropdown-list"
-                                prop.children [
-                                    for action in actions do
-                                        Html.li [
-                                            prop.key $"{key}-action--{action.Key}"
-                                            prop.children [
-                                                Html.a [
-                                                    prop.key $"{key}-action--{action.Key}--link"
-                                                    prop.text action.Text
-                                                    prop.className "whitespace-nowrap"
-                                                    prop.onClick (fun _ -> action.OnClick())
-                                                ]
-                                            ]
-                                        ]
+
+            match access with
+            | Some Access.Edit ->
+                Daisy.dropdown [
+                    dropdown.hover
+                    dropdown.end'
+                    prop.key $"{key}-dropdown"
+                    prop.className "ml-2"
+                    prop.children [
+                        Daisy.button.button [ // ↩
+                            button.primary
+                            button.outline
+                            prop.key $"{key}-dropdown-button"
+                            prop.className "p-3"
+                            prop.text "⏷"
+                        ]
+                        Daisy.dropdownContent [
+                            prop.key $"{key}-dropdown-content"
+                            prop.className "p-2 shadow menu bg-base-100 rounded-box"
+                            prop.tabIndex 0
+                            prop.children [
+                                Html.ul [
+                                    prop.key $"{key}-dropdown-list"
+                                    prop.children [
+                                        for action in actions do
+                                            itemElement action
+                                    ]
                                 ]
                             ]
                         ]
                     ]
                 ]
-            ]
+            | _ -> ()
         ]
     ]
 
@@ -112,14 +120,14 @@ let ActionsForm key (fullContext: FullContext) =
             ]
 
             Daisy.fieldsetLabel [ prop.key "price-label"; prop.text translations.Product.Price ]
-            ActionsDropdown "price" (Value.Euros 85.00m) [
+            ActionsDropdown "price" (fullContext.User.AccessTo Feat.Sales) (Value.Euros 85.00m) [
                 Action.Emoji("↗️", "increase", translations.Product.PriceAction.Increase, fun () -> ()) // TODO
                 Action.Emoji("↘️", "decrease", translations.Product.PriceAction.Decrease, fun () -> ()) // TODO
                 Action.Emoji("🚫", "unavailable", translations.Product.PriceAction.Unavailable, fun () -> ()) // TODO
             ]
 
             Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
-            ActionsDropdown "stock" (Value.Natural 17) [
+            ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [
                 Action.Emoji("✏️", "inventory-adjustment", translations.Product.StockAction.InventoryAdjustment, fun () -> ()) // TODO
             ]
         ]
