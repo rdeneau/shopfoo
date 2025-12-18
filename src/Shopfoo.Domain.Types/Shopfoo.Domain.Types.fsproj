@@ -11,11 +11,13 @@
     <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Common.fs" />
     <Compile Include="Errors.fs" />
+    <Compile Include="Common.fs" />
     <Compile Include="Products.fs" />
+    <Compile Include="Sales.fs" />
     <Compile Include="Security.fs" />
     <Compile Include="Translations.fs" />
+    <Compile Include="Warehouse.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

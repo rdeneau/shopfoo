@@ -1,5 +1,7 @@
-﻿namespace Shopfoo.Product.Data
+﻿[<AutoOpen>]
+module internal Shopfoo.Product.Data.Common
 
+open System
 open Shopfoo.Domain.Types
 
 [<RequireQualifiedAccess>]
@@ -9,3 +11,7 @@ module SKU =
     let DomainModelingMadeFunctional = SKU "9781680502541"
     let JavaScriptTheGoodParts = SKU "9780596107130"
     let ThePragmaticProgrammer = SKU "0135957052"
+    let none = SKU null
+
+let daysAgo (days: int) =
+    DateOnly.FromDateTime(DateTime.Now.AddDays(-days))
