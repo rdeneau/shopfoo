@@ -167,7 +167,7 @@ let AppView () =
         | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, onSaveProduct)
 
     let navbar =
-        AppNavBar "app-nav" model.Page translations [
+        AppNavBar "app-nav" model.Page pageToDisplayInline translations [
             LangDropdown "nav-lang" fullContext.Lang model.LangMenus startChangeLang
             ThemeDropdown "nav-theme" model.Theme translations onThemeChanged
 

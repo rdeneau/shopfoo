@@ -42,7 +42,7 @@ type private Nav(currentPage, translations: AppTranslations) =
         nav.page (Page.ProductDetail sku, text = sku, cssClass = "font-semibold")
 
 [<ReactComponent>]
-let AppNavBar key currentPage translations children =
+let AppNavBar key currentPage pageDisplayedInline translations children =
     let nav = Nav(currentPage, translations)
 
     Daisy.navbar [
@@ -57,7 +57,7 @@ let AppNavBar key currentPage translations children =
                         prop.key "breadcrumbs-ul"
                         prop.children [
                             nav.Home
-                            match currentPage with
+                            match pageDisplayedInline with
                             | Page.Home
                             | Page.NotFound _ -> ()
                             | Page.About -> nav.About
