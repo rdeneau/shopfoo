@@ -89,8 +89,26 @@ let (|Guid|_|) (s: string) = Guid.TryParse s |> Option.ofPair
 
 #endif
 
-let isInteger (s: string) = Int32.TryParse(s) |> fst
+let (|CI|_|) (s1: string) (s2: string) =
+    if s1.Equals(s2, StringComparison.OrdinalIgnoreCase) then
+        Some()
+    else
+        None
 
-let (|Int|_|) (s: string) = Int32.TryParse s |> Option.ofPair
 let (|NotEmpty|_|) s = not (isEmpty s) |> Option.ofBool
 let (|NullOrWhiteSpace|_|) s = isEmpty s |> Option.ofBool
+
+let (|Lower|) = toLower
+
+let (|Bool|_|) (s: string) = Boolean.TryParse s |> Option.ofPair
+let (|Int|_|) (s: string) = Int32.TryParse s |> Option.ofPair
+let (|DateOnly|_|) (s: string) = DateOnly.tryParse s
+
+let (|DateTime|_|) (s: string) =
+    InvariantCulture.TryParseDateTime s |> Option.ofPair
+
+let (|Decimal|_|) (s: string) =
+    InvariantCulture.TryParseDecimal s |> Option.ofPair
+
+let (|Percentage|_|) (s: string) =
+    Option.ofObj s |> Option.map _.TrimEnd('%') |> Option.bind (|Decimal|_|)
