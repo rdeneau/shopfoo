@@ -38,6 +38,7 @@
     <Content Include="..\..\yarn.lock">
       <Link>yarn.lock</Link>
     </Content>
+    <Content Include="styles\styles.css" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

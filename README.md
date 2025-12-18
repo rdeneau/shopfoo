@@ -12,12 +12,15 @@ Run the relevant command(s) in a console at the root of the solution:
 # Both Client and Server
 dotnet run
 
-# Server only
+# Server only (fast: no dotnet restore)
 dotnet run Server
 
-# Client only
+# Client only (fast: no dotnet restore)
+yarn start:fast
+
+# Client only, with dotnet restore
 yarn start
-`````
+```
 
 ## TODO
 

@@ -3,4 +3,6 @@
 @plugin "daisyui" {
     themes: all;
 }
+@tailwind utilities; /* Force inclusion of theme utilities */
 @source "../.fable-build/**/*.{js,ts,jsx,tsx}";
+@source "../src/**/*.fs";
