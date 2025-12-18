@@ -20,6 +20,7 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
                 }
 
             let response = ResponseBuilder.withTranslations user translations
+
             match personas with
             | Ok personas -> return response.Ok { Personas = personas }
             | Error error -> return response.ApiError error

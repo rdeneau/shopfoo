@@ -52,8 +52,7 @@ type Instruction<'arg, 'ret, 'a>
     /// You should use the <c>Run</c> or <c>RunAsync</c> methods to execute the instruction with the given handler.
     /// </para>
     /// </remarks>
-    (name: string, arg: 'arg, cont: 'ret -> 'a)
-    =
+    (name: string, arg: 'arg, cont: 'ret -> 'a) =
     /// Name of the instruction, usable for logging or debugging
     member val Name = name
 

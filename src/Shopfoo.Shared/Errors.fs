@@ -49,7 +49,8 @@ and ApiError = {
             | ErrorDetailLevel.Admin -> ErrorCategory.ofError error
 
         match error with
-        | Bug exn -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
+        | Bug exn ->
+            ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
         | DataError _
         | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | GuardClause _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)

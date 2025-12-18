@@ -18,8 +18,7 @@ type IProductApi =
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
-    let interpret =
-        interpreterFactory.Create(ProductDomain)
+    let interpret = interpreterFactory.Create(ProductDomain)
 
     let runEffect (productEffect: IProductEffect<_>) =
         match productEffect.Instruction with

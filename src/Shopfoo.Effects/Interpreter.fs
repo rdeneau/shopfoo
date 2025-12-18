@@ -21,14 +21,11 @@ open Monitoring
 
 [<Sealed>]
 type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipelineLoggerFactory, timer: IPipelineTimer) =
-    let logger =
-        loggerFactory.CreateLogger $"Shopfoo.Domain.%s{domain.Name}.Workflow"
+    let logger = loggerFactory.CreateLogger $"Shopfoo.Domain.%s{domain.Name}.Workflow"
 
     member private _.Instruction(instruction: Instruction<_, _, _>, withTiming, pipeline: 'arg -> Async<_>) =
         let pipelineWithMonitoring =
-            pipeline
-            |> logger.LogPipeline instruction.Name
-            |> withTiming instruction.Name
+            pipeline |> logger.LogPipeline instruction.Name |> withTiming instruction.Name
 
         instruction.RunAsync(pipelineWithMonitoring)
 

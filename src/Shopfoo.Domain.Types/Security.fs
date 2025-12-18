@@ -39,8 +39,7 @@ type User =
         | User.LoggedIn(_, claims) -> claims |> Map.tryFind feat
         | _ -> None
 
-    member user.CanAccess feat =
-        user.AccessTo feat |> Option.isSome
+    member user.CanAccess feat = user.AccessTo feat |> Option.isSome
 
 let (|UserCanAccess|_|) feat (user: User) = // ↩
     user.CanAccess feat |> Option.ofBool

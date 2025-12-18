@@ -167,8 +167,7 @@ type GuardExtensions =
         guardResult |> Result.ignore |> liftGuardClause
 
     [<Extension>]
-    static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> =
-        guardResult |> toValidation
+    static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> = guardResult |> toValidation
 
 #if !FABLE_COMPILER
 
