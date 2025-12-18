@@ -113,8 +113,8 @@ module TranslationPages =
                 Warehouse = this.Get "Warehouse"
             |}
 
-        member this.SelectDemoUser = this.Get "SelectDemoUser"
-        member this.User = this.Get "User"
+        member this.SelectPersona = this.Get "SelectPersona"
+        member this.Persona = this.Get "Persona"
 
     type Product internal (?translations) =
         inherit Base(PageCode.Product, ?translations = translations)

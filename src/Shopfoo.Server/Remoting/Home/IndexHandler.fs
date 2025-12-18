@@ -10,7 +10,7 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
 
     override _.Handle lang request user =
         async {
-            let! demoUsers = api.Home.GetDemoUsers()
+            let! personas = api.Home.GetPersonas()
 
             let! translations =
                 api.Home.GetAllowedTranslations {
@@ -20,7 +20,7 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
                 }
 
             let response = ResponseBuilder.withTranslations user translations
-            match demoUsers with
-            | Ok demoUsers -> return response.Ok { DemoUsers = demoUsers }
+            match personas with
+            | Ok personas -> return response.Ok { Personas = personas }
             | Error error -> return response.ApiError error
         }

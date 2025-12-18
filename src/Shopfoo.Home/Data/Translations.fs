@@ -51,8 +51,8 @@ let private translationPages = [
         TagCode "Feat.Sales", "Sales", "Ventes"
         TagCode "Feat.Warehouse", "Warehouse", "Entrepôt"
 
-        TagCode "SelectDemoUser", "Select a demo user based on his/her rights", "Sélectionner un utilisateur de démo selon ses droits" // ↩
-        TagCode "User", "User", "Utilisateur"
+        TagCode "SelectPersona", "Select a persona based on access rights", "Choisir un persona en fonction des droits d'accès"
+        TagCode "Persona", "Persona", "Persona"
     ]
 
     PageCode.Product,

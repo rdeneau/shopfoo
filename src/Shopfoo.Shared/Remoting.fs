@@ -90,7 +90,7 @@ type IApi = interface end
 
 [<AutoOpen>]
 module HomeApi =
-    type HomeIndexResponse = { DemoUsers: User list }
+    type HomeIndexResponse = { Personas: User list }
 
     type GetTranslationsRequest = { Lang: Lang; PageCodes: Set<PageCode> }
     type GetTranslationsResponse = { Lang: Lang; Translations: Translations }

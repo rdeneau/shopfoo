@@ -31,10 +31,10 @@ module private Claims =
         productManager // ↩
         |> Map.add Feat.Admin Access.Edit
 
-let forDemo = [
-    User.LoggedIn("Guest", Claims.guest)
-    User.LoggedIn("Catalog editor", Claims.catalogEditor)
-    User.LoggedIn("Sales", Claims.sales)
-    User.LoggedIn("Product manager", Claims.productManager)
-    User.LoggedIn("Administrator", Claims.admin)
+let personas = [
+    User.LoggedIn("👤 Guest", Claims.guest)
+    User.LoggedIn("✍️ Catalog editor", Claims.catalogEditor)
+    User.LoggedIn("💰 Sales", Claims.sales)
+    User.LoggedIn("🕵️ Product manager", Claims.productManager)
+    User.LoggedIn("🛡️ Administrator", Claims.admin)
 ]

@@ -10,7 +10,7 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type Model = { DemoUsers: Remote<User list> }
+type Model = { Personas: Remote<User list> }
 
 type Msg =
     | HomeDataFetched of ApiResult<HomeIndexResponse * Translations>
@@ -26,17 +26,17 @@ module private Cmd =
         }
 
 let private init (fullContext: FullContext) =
-    { DemoUsers = Remote.Loading }, // ↩
+    { Personas = Remote.Loading }, // ↩
     Cmd.loadHomeData (fullContext.PrepareQueryWithTranslations())
 
 let private update fillTranslations loginUser msg (model: Model) =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
-        { model with DemoUsers = Remote.Loaded data.DemoUsers }, // ↩
+        { model with Personas = Remote.Loaded data.Personas }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations translations)
 
     | Msg.HomeDataFetched(Error apiError) ->
-        { model with DemoUsers = Remote.LoadError apiError }, // ↩
+        { model with Personas = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
     | Msg.Login user -> // ↩
@@ -52,7 +52,7 @@ let LoginView (fullContext, fillTranslations, loginUser) =
     Html.section [
         prop.key "login-page"
         prop.children [
-            match model.DemoUsers with
+            match model.Personas with
             | Remote.Empty -> ()
             | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "login-skeleton" ]
             | Remote.LoadError apiError ->
@@ -80,7 +80,7 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                             prop.text $"🔐 %s{translations.Home.Login}"
                         ]
 
-                        Daisy.fieldsetLabel [ prop.key "login-label"; prop.text translations.Login.SelectDemoUser ]
+                        Daisy.fieldsetLabel [ prop.key "login-label"; prop.text translations.Login.SelectPersona ]
 
                         Daisy.table [
                             prop.key "users-table"
@@ -93,7 +93,7 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                                             color.bgBase300
                                             prop.children [
                                                 Html.th [ prop.key "users-th-num"; prop.text " " ]
-                                                Html.th [ prop.key "users-th-user"; prop.text translations.Login.User ]
+                                                Html.th [ prop.key "users-th-persona"; prop.text translations.Login.Persona ]
                                                 Html.th [ prop.key "users-th-feat-about"; prop.text $"ℹ️ %s{translations.Login.Feat.About}" ]
                                                 Html.th [ prop.key "users-th-feat-catalog"; prop.text $"🗂️ %s{translations.Login.Feat.Catalog}" ]
                                                 Html.th [ prop.key "users-th-feat-sales"; prop.text $"🛒 %s{translations.Login.Feat.Sales}" ]
