@@ -1,7 +1,7 @@
 ﻿namespace Shopfoo.Product.Workflows
 
 open Shopfoo.Domain.Types.Errors
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Effects
 open Shopfoo.Product.Workflows.Instructions
 

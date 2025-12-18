@@ -1,6 +1,6 @@
 ﻿module Shopfoo.Product.Workflows.Instructions
 
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Effects
 
 type SaveProductCommand<'a> = Command<Product, 'a>

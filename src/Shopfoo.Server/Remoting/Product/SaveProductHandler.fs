@@ -1,6 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Product
 
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
@@ -11,7 +11,7 @@ type SaveProductHandler(api: FeatApi) =
 
     override _.Handle _ product user =
         async {
-            let! result = api.Catalog.SaveProduct(product)
+            let! result = api.Product.SaveProduct(product)
             let response = ResponseBuilder.plain user
 
             return

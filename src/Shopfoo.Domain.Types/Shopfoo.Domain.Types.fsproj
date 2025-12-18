@@ -13,7 +13,7 @@
   <ItemGroup>
     <Compile Include="Errors.fs" />
     <Compile Include="Common.fs" />
-    <Compile Include="Products.fs" />
+    <Compile Include="Catalog.fs" />
     <Compile Include="Sales.fs" />
     <Compile Include="Security.fs" />
     <Compile Include="Translations.fs" />

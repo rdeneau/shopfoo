@@ -3,6 +3,7 @@
 open Shopfoo.Catalog
 open Shopfoo.Home
 
-type FeatApi(catalog: ICatalogApi, home: IHomeApi) =
-    member val Catalog = catalog
+/// Singleton providing access to each of the Feat project APIs
+type FeatApi(home: IHomeApi, product: IProductApi) =
     member val Home = home
+    member val Product = product

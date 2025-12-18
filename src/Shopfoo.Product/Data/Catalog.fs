@@ -1,9 +1,9 @@
 ﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Catalog.Data.Products
+module internal Shopfoo.Catalog.Data.Catalog
 
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Product.Data
 
 module private Fakes =

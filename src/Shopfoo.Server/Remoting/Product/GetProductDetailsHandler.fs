@@ -11,7 +11,7 @@ type GetProductDetailsHandler(api: FeatApi, authorizedPageCodes) =
 
     override _.Handle lang request user =
         async {
-            let! result = api.Catalog.GetProduct(request.Query)
+            let! result = api.Product.GetProduct(request.Query)
 
             let! translations =
                 api.Home.GetAllowedTranslations {

@@ -1,4 +1,4 @@
-﻿module Shopfoo.Domain.Types.Products
+﻿module Shopfoo.Domain.Types.Catalog
 
 open Shopfoo.Domain.Types.Errors
 

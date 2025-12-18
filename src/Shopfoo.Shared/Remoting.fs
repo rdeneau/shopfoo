@@ -103,7 +103,7 @@ module HomeApi =
 
 [<AutoOpen>]
 module ProductApi =
-    open Shopfoo.Domain.Types.Products
+    open Shopfoo.Domain.Types.Catalog
 
     type GetProductsResponse = { Products: Product list }
     type GetProductResponse = { Product: Product option }

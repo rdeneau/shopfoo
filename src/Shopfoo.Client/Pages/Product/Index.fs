@@ -9,7 +9,7 @@ open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
-open Shopfoo.Domain.Types.Products
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
