@@ -5,6 +5,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Catalog
@@ -131,27 +132,65 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                         prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
                         prop.children [
                             Html.div [
-                                prop.key "image-input-div"
+                                prop.key "image-input-column"
                                 prop.children [
-                                    Daisy.fieldsetLabel [ prop.key "image-label"; prop.text translations.Product.ImageUrl ]
-                                    Daisy.input [
-                                        prop.key "image-input-column"
-                                        prop.className "mb-4 w-full"
-                                        prop.placeholder translations.Product.ImageUrl
-                                        prop.value product.ImageUrl
-                                        yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
+                                    // -- Image ----
+                                    Daisy.fieldset [
+                                        prop.key "image-fieldset"
+                                        prop.children [
+                                            let props = Product.Guard.ImageUrl.props (product.ImageUrl, translations)
+
+                                            Daisy.fieldsetLabel [
+                                                prop.key "image-label"
+                                                prop.children [
+                                                    Html.text translations.Product.ImageUrl
+                                                    Html.small [ prop.key "image-required"; yield! props.textRequired ]
+                                                    Html.small [ prop.key "image-spacer"; prop.className "flex-1" ]
+                                                    Html.span [ prop.key "image-char-count"; yield! props.textCharCount ]
+                                                ]
+                                            ]
+
+                                            Daisy.validator.input [
+                                                prop.key "image-input"
+                                                prop.className "mb-4 w-full"
+                                                prop.placeholder translations.Product.ImageUrl
+                                                props.value
+                                                yield! props.validation
+                                                yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
+                                            ]
+                                        ]
                                     ]
 
-                                    Daisy.fieldsetLabel [ prop.key "name-label"; prop.text translations.Product.Name ]
-                                    Daisy.input [
-                                        prop.key "name-input"
-                                        prop.className "mb-4 w-full"
-                                        prop.placeholder translations.Product.Name
-                                        prop.value product.Name
-                                        yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
+                                    // -- Name ----
+                                    Daisy.fieldset [
+                                        prop.key "name-fieldset"
+                                        prop.children [
+                                            let props = Product.Guard.Name.props (product.Name, translations)
+
+                                            Daisy.fieldsetLabel [
+                                                prop.key "name-label"
+                                                prop.children [
+                                                    Html.text translations.Product.Name
+                                                    Html.small [ prop.key "name-required"; yield! props.textRequired ]
+                                                    Html.small [ prop.key "name-spacer"; prop.className "flex-1" ]
+                                                    Html.span [ prop.key "name-char-count"; yield! props.textCharCount ]
+                                                ]
+                                            ]
+
+                                            Daisy.validator.input [
+                                                prop.key "name-input"
+                                                prop.className "mb-4 w-full"
+                                                prop.placeholder translations.Product.Name
+                                                props.value
+                                                yield! props.validation
+                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
+                                            ]
+                                        ]
                                     ]
                                 ]
                             ]
+
+                            // -- Preview ----
                             Html.div [
                                 prop.key "image-preview-column"
                                 prop.children [
@@ -166,15 +205,29 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                         ]
                     ]
 
-                    Daisy.fieldsetLabel [ prop.key "description-label"; prop.text translations.Product.Description ]
+                    // -- Description ----
+                    let props = Product.Guard.Description.props (product.Description, translations)
+
+                    Daisy.fieldsetLabel [
+                        prop.key "description-label"
+                        prop.children [
+                            Html.text translations.Product.Description
+                            Html.small [ prop.key "description-required"; yield! props.textRequired ]
+                            Html.small [ prop.key "description-spacer"; prop.className "flex-1" ]
+                            Html.span [ prop.key "description-char-count"; yield! props.textCharCount ]
+                        ]
+                    ]
+
                     Daisy.textarea [
                         prop.key "description-textarea"
-                        prop.className "h-21 mb-4 w-full"
+                        prop.className "validator h-21 mb-4 w-full"
                         prop.placeholder translations.Product.Description
-                        prop.value product.Description
+                        props.value
+                        yield! props.validation
                         yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
                     ]
 
+                    // -- Save ----
                     match catalogAccess with
                     | None
                     | Some View -> ()

@@ -23,6 +23,8 @@ let private translationPages = [
         TagCode "Product", "Product", "Produit"
         TagCode "Products", "Products", "Produits"
 
+        TagCode "Required", "Required", "Requis"
+
         TagCode "ChangeLangOk", "Successful switch to English", "Passage au français réussi"
         TagCode "ChangeLangError", "Switching to {0} failed: {1}", "Passage de la langue en {0} en erreur : {1}"
         TagCode "ErrorNotFound", "{0} not found:", "{0} non trouvé :"

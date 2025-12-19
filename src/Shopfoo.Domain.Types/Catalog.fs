@@ -11,8 +11,8 @@ type Product = {
 
 [<RequireQualifiedAccess>]
 module Product =
-    type GuardCriteria =
-        static member val SKU = [ NotEmpty ]
-        static member val Name = [ NotEmpty; MaxLength 128 ]
-        static member val Description = [ NotEmpty ]
-        static member val ImageUrl = [ NotEmpty ]
+    module Guard =
+        let SKU = GuardCriteria.Create(required = true)
+        let Name = GuardCriteria.Create(required = true, maxLength = 128)
+        let Description = GuardCriteria.Create(maxLength = 512)
+        let ImageUrl = GuardCriteria.None

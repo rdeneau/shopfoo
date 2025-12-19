@@ -27,10 +27,18 @@ module Validation =
 module Guards =
     type GuardClauseError = { EntityName: string; ErrorMessage: string }
 
-    type GuardCriterion =
-        | MaxLength of int
-        | MinLength of int
-        | NotEmpty
+    type GuardCriteria = {
+        MaxLength: int option
+        MinLength: int option
+        Required: bool
+    } with
+        static member Create(?maxLength, ?minLength, ?required): GuardCriteria = {
+            MaxLength = maxLength
+            MinLength = minLength
+            Required = defaultArg required false
+        }
+
+        static member None = GuardCriteria.Create()
 
     type Guard(entityName: string) =
         member val EntityName = entityName
@@ -98,21 +106,28 @@ module Guards =
         member this.Satisfies(condition, error) = // ↩
             this.Satisfies((), condition, error)
 
-        member this.Satisfies(value, criteria) =
+        member this.Satisfies(value, criteria: GuardCriteria) =
             let len = (String.trimWhiteSpace value).Length
 
-            let issues = [
-                for criterion in criteria do
-                    match criterion with
-                    | MaxLength maxlen when len > maxlen -> $"%i{maxlen} character long max"
-                    | MinLength minlen when len < minlen -> $"%i{minlen} character long min"
-                    | NotEmpty when len = 0 -> "not empty"
-                    | _ -> ()
+            let issuesWithRank = [
+                match criteria.Required with
+                | true when  len = 0 -> 1, "required"
+                | _ -> ()
+
+                match criteria.MinLength with
+                | Some n  when len < n -> 2, $"%i{n} character long min"
+                | _ -> ()
+
+                match criteria.MaxLength with
+                | Some n  when len > n -> 3, $"%i{n} character long max"
+                | _ -> ()
             ]
 
-            match issues with
+            match issuesWithRank with
             | [] -> Ok value
-            | _ -> this.Error $"""'%s{value}' should be a string %s{issues |> String.concat ", "}, trailing whitespaces excluded"""
+            | _ ->
+                let issues = issuesWithRank |> List.sortBy fst |> List.map snd |> String.concat ", "
+                this.Error $"""'%s{value}' should be a string %s{issues}, trailing whitespaces excluded"""
 
 type OperationNotAllowedError = { Operation: string; Reason: string }
 

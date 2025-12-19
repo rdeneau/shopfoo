@@ -66,6 +66,8 @@ module TranslationPages =
         member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
 
+        member this.Required = this.Get "Required"
+
         member this.ChangeLangError(lang: string, error: string) =
             this.Format("ChangeLangError", lang, error)
 

@@ -11,10 +11,10 @@ type internal SaveProductWorkflow() =
 
     let validate (product: Product) =
         validation {
-            let! _ = Guard(nameof Product.GuardCriteria.SKU).Satisfies(product.SKU.Value, Product.GuardCriteria.SKU).ToValidation()
-            and! _ = Guard(nameof Product.GuardCriteria.Name).Satisfies(product.Name, Product.GuardCriteria.Name).ToValidation()
-            and! _ = Guard(nameof Product.GuardCriteria.Description).Satisfies(product.Description, Product.GuardCriteria.Description).ToValidation()
-            and! _ = Guard(nameof Product.GuardCriteria.ImageUrl).Satisfies(product.ImageUrl, Product.GuardCriteria.ImageUrl).ToValidation()
+            let! _ = Guard(nameof Product.Guard.SKU).Satisfies(product.SKU.Value, Product.Guard.SKU).ToValidation()
+            and! _ = Guard(nameof Product.Guard.Name).Satisfies(product.Name, Product.Guard.Name).ToValidation()
+            and! _ = Guard(nameof Product.Guard.Description).Satisfies(product.Description, Product.Guard.Description).ToValidation()
+            and! _ = Guard(nameof Product.Guard.ImageUrl).Satisfies(product.ImageUrl, Product.Guard.ImageUrl).ToValidation()
             return ()
         }
 
