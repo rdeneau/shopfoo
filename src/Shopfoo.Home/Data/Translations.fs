@@ -23,6 +23,13 @@ let private translationPages = [
         TagCode "Product", "Product", "Produit"
         TagCode "Products", "Products", "Produits"
 
+        TagCode "Cancel", "Cancel", "Annuler"
+        TagCode "Close", "Close", "Fermer"
+        TagCode "Save", "Save", "Enregistrer"
+        TagCode "SaveOk", "{0} saved successfully", "{0} enregistré avec succès"
+        TagCode "SaveError", "{0} not saved: {1}", "{0} non enregistré : {1}"
+
+        TagCode "Colon", ":", " :"
         TagCode "Required", "Required", "Requis"
 
         TagCode "ChangeLangOk", "Successful switch to English", "Passage au français réussi"
@@ -65,18 +72,23 @@ let private translationPages = [
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
 
-        TagCode "RetailPrice", "Retail price", "Prix de vente recommandé"
+        TagCode "Discount", "Discount", "Réduction"
+        TagCode "Increase", "Increase", "Augmentation"
+        TagCode "Decrease", "Decrease", "Diminution"
+        TagCode "Price", "Price", "Prix"
+        TagCode "CurrentPrice", "Current price", "Prix actuel"
+        TagCode "NewPrice", "New price", "nouveau prix"
+        TagCode "ListPrice", "List price", "Prix conseillé"
+        TagCode "RetailPrice", "Retail price", "Prix de vente"
 
+        TagCode "PriceAction.Define", "Define", "Définir"
+        TagCode "PriceAction.Remove", "Remove", "Supprimer"
         TagCode "PriceAction.Increase", "Increase price", "Augmenter le prix"
-        TagCode "PriceAction.Decrease", "Decrease price", "Réduire le prix"
-        TagCode "PriceAction.Unavailable", "Unavailable", "Rendre indisponible"
+        TagCode "PriceAction.Decrease", "Decrease price", "Diminuer le prix"
+        TagCode "PriceAction.MarkAsSoldOut", "Mark as sold out", "Marquer comme épuisé"
 
         TagCode "Stock", "Stock", "Stock"
-        TagCode "StockAction.InventoryAdjustment", "Inventory adjustment", "Ajuster suite à inventaire"
-
-        TagCode "Save", "Save", "Enregistrer"
-        TagCode "SaveOk", "Product {0} saved successfully", "Enregistrement réussi du produit {0}"
-        TagCode "SaveError", "Failed to save the product {0}: {1}", "Erreur lors de l'enregistrement du produit {0} : {1}"
+        TagCode "StockAction.AdjustStockAfterInventory", "Inventory adjustment", "Ajuster suite à inventaire"
     ]
 ]
 

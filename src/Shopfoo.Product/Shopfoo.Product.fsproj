@@ -9,9 +9,10 @@
     <Compile Include="Workflows\Types.fs" />
     <Compile Include="Workflows\Instructions.fs" />
     <Compile Include="Workflows\SaveProduct.fs" />
+    <Compile Include="Workflows\SavePrices.fs" />
     <Compile Include="Data\Common.fs" />
-    <Compile Include="Data\Prices.fs" />
     <Compile Include="Data\Catalog.fs" />
+    <Compile Include="Data\Prices.fs" />
     <Compile Include="Data\Sales.fs" />
     <Compile Include="Data\Warehouse.fs" />
     <Compile Include="Api.fs" />

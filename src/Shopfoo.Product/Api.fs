@@ -16,6 +16,7 @@ type IProductApi =
     abstract member GetPrices: (SKU -> Async<Result<Prices option, Error>>)
     abstract member GetSales: (SKU -> Async<Result<Sale list, Error>>)
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
+    abstract member SavePrices: (Prices -> Async<Result<unit, Error>>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
     let interpret = interpreterFactory.Create(ProductDomain)
@@ -23,6 +24,7 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
     let runEffect (productEffect: IProductEffect<_>) =
         match productEffect.Instruction with
         | SaveProduct command -> interpret.Command(command, Catalog.Client.saveProduct)
+        | SavePrices command -> interpret.Command(command, Prices.Client.savePrices)
 
     let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args =
         interpret.Workflow runEffect workflow args
@@ -33,6 +35,7 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
         member val GetPrices = Prices.Client.getPrices
         member val GetSales = Sales.Client.getSales
         member val SaveProduct = interpretWorkflow (SaveProductWorkflow())
+        member val SavePrices = interpretWorkflow (SavePricesWorkflow())
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection

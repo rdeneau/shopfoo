@@ -115,6 +115,7 @@ module ProductApi =
         GetProduct: QueryWithTranslations<SKU, GetProductResponse>
         GetPrices: Query<SKU, GetPricesResponse>
         SaveProduct: Command<Product>
+        SavePrices: Command<Prices>
     } with
         interface IApi
 

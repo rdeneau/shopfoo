@@ -1,7 +1,7 @@
 ﻿[<RequireQualifiedAccess>]
 module internal Shopfoo.Catalog.Data.Catalog
 
-open Shopfoo.Common
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Product.Data
@@ -68,7 +68,7 @@ module private Fakes =
     ]
 
 module Client =
-    let repository = Fakes.all |> dictionaryBy _.SKU
+    let repository = Fakes.all |> Dictionary.ofListBy _.SKU
 
     let getProducts () =
         async {
@@ -83,13 +83,8 @@ module Client =
             return Ok product
         }
 
-    let saveProduct product =
+    let saveProduct (product: Product) =
         async {
             do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
-
-            if repository.ContainsKey(product.SKU) then
-                repository[product.SKU] <- product
-                return Ok()
-            else
-                return Error(DataError(DataNotFound(Id = product.SKU.Value, Type = nameof Product)))
+            return repository |> Dictionary.tryUpdateBy _.SKU product |> liftDataRelatedError
         }

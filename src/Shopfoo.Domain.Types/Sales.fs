@@ -5,7 +5,9 @@ open System
 type Prices = {
     SKU: SKU
     RetailPrice: Money
-    RecommendedPrice: Money option
+
+    /// A.k.a. Recommended price
+    ListPrice: Money option
 }
 
 type Sale = {

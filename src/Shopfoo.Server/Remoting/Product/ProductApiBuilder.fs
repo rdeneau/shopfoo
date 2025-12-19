@@ -27,4 +27,7 @@ type ProductApiBuilder(api: FeatApi) =
         SaveProduct =
             SaveProductHandler(api) // ↩
             |> Security.authorizeHandler (Claims.single Feat.Catalog Access.Edit)
+        SavePrices =
+            SavePricesHandler(api) // ↩
+            |> Security.authorizeHandler (Claims.single Feat.Sales Access.Edit)
     }

@@ -16,29 +16,23 @@ type Action = {
         OnClick = onClick
     }
 
-[<RequireQualifiedAccess>]
-type Symbol =
-    | None
-    | Left of string
-    | Right of string
-
 type Value =
     | Natural of value: int
-    | Money of value: decimal option * currency: Symbol
+    | Money of value: decimal option * currency: Symbol option
 
     static member OfMoney =
         function
-        | Dollars value -> Money(Some value, Symbol.Left "$")
-        | Euros value -> Money(Some value, Symbol.Right "€")
+        | Dollars value -> Money(Some value, Some(Symbol.Left "$"))
+        | Euros value -> Money(Some value, Some(Symbol.Right "€"))
 
     static member OfMoneyOptional =
         function
         | Some money -> Value.OfMoney money
-        | None -> Money(None, Symbol.None)
+        | None -> Money(None, None)
 
     member this.Symbol =
         match this with
-        | Value.Natural _ -> Symbol.None
+        | Value.Natural _ -> None
         | Value.Money(_, symbol) -> symbol
 
     member this.Text =
@@ -71,7 +65,7 @@ let ActionsDropdown key access (value: Value) (actions: Action list) =
                 prop.className "bg-base-300 flex-1"
                 prop.children [
                     match value.Symbol with
-                    | Symbol.Left symbol -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
+                    | Some(Symbol.Left symbol) -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
                     | _ -> ()
 
                     Html.input [
@@ -83,7 +77,7 @@ let ActionsDropdown key access (value: Value) (actions: Action list) =
                     ]
 
                     match value.Symbol with
-                    | Symbol.Right symbol -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
+                    | Some(Symbol.Right symbol) -> Daisy.label [ prop.key $"{key}-label-symbol"; prop.text symbol ]
                     | _ -> ()
                 ]
             ]

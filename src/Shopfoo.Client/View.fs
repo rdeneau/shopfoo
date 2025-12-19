@@ -11,20 +11,17 @@ open Shopfoo.Client.Components.AppNav
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
 open Shopfoo.Client.Components.User
+open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
-
-[<RequireQualifiedAccess>]
-type private Toast =
-    | Lang of Lang
-    | Product of Product * ApiError option
 
 type private Msg =
     | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
@@ -152,7 +149,7 @@ let AppView () =
     let fillTranslations = dispatch << Msg.FillTranslations
     let loginUser = dispatch << Msg.Login
     let logout () = dispatch Logout
-    let onSaveProduct = dispatch << Msg.ToastOn << Toast.Product
+    let showToast toast = dispatch (Msg.ToastOn toast)
     let onThemeChanged = dispatch << Msg.ThemeChanged
     let startChangeLang lang = dispatch (Msg.ChangeLang(lang, Start))
 
@@ -164,7 +161,7 @@ let AppView () =
         | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
         | Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
-        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, onSaveProduct)
+        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, showToast)
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [
@@ -202,6 +199,9 @@ let AppView () =
                 prop.className "px-4 py-2"
                 prop.children pageView
             ]
+
+            let onDismiss () = dispatch Msg.ToastOff
+
             match model.Toast with
             | None -> ()
             | Some(Toast.Lang lang) ->
@@ -214,8 +214,6 @@ let AppView () =
                         | None -> alert.success, translations.Home.ChangeLangOk
                         | Some err -> alert.error, translations.Home.ChangeLangError(langMenu.Label, err.ErrorMessage)
 
-                    let onDismiss () = dispatch Msg.ToastOff
-
                     Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
                         Html.text text
                     ]
@@ -227,14 +225,24 @@ let AppView () =
                 | Remote.LoadError apiError -> langToast (Some apiError)
 
             | Some(Toast.Product(product, error)) ->
+                let productSku = $"%s{translations.Home.Product} %s{product.SKU.Value}"
                 let alertType, text =
                     match error with
-                    | None -> alert.success, translations.Product.SaveOk(product.SKU)
-                    | Some err -> alert.error, translations.Product.SaveError(product.SKU, err.ErrorMessage)
-
-                let onDismiss () = dispatch Msg.ToastOff
+                    | None -> alert.success, translations.Home.SaveOk productSku
+                    | Some err -> alert.error, translations.Home.SaveError(productSku, err.ErrorMessage)
 
                 Toast.Toast $"toast-product-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+                    Html.text text
+                ]
+
+            | Some(Toast.Prices(prices, error)) ->
+                let pricesSku = $"%s{translations.Product.Price} %s{prices.SKU.Value}"
+                let alertType, text =
+                    match error with
+                    | None -> alert.success, translations.Home.SaveOk pricesSku
+                    | Some err -> alert.error, translations.Home.SaveError(pricesSku, err.ErrorMessage)
+
+                Toast.Toast $"toast-prices-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
                     Html.text text
                 ]
         ]

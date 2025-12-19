@@ -1,7 +1,7 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
-open Shopfoo.Domain.Types
+open Shopfoo.Common
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =
@@ -62,10 +62,16 @@ module TranslationPages =
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
         member this.Page = this.Get "Page"
-
         member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
 
+        member this.Cancel = this.Get "Cancel"
+        member this.Close = this.Get "Close"
+        member this.Save = this.Get "Save"
+        member this.SaveOk(name: string) = this.Format("SaveOk", name)
+        member this.SaveError(name: string, error: string) = this.Format("SaveError", name, error)
+
+        member this.Colon = this.Get "Colon"
         member this.Required = this.Get "Required"
 
         member this.ChangeLangError(lang: string, error: string) =
@@ -127,26 +133,30 @@ module TranslationPages =
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
 
+        member this.Discount = this.Get "Discount"
+        member this.Increase = this.Get "Increase"
+        member this.Decrease = this.Get "Decrease"
+        member this.Price = this.Get "Price"
+        member this.CurrentPrice = this.Get "CurrentPrice"
+        member this.NewPrice = this.Get "NewPrice"
+        member this.ListPrice = this.Get "ListPrice"
         member this.RetailPrice = this.Get "RetailPrice"
 
         member this.PriceAction =
             this.WithPrefix "PriceAction."
             <| fun this -> {|
+                Define = this.Get "Define"
+                Remove = this.Get "Remove"
                 Increase = this.Get "Increase"
                 Decrease = this.Get "Decrease"
-                Unavailable = this.Get "Unavailable"
-                FreeShipping = this.Get "FreeShipping"
+                MarkAsSoldOut = this.Get "MarkAsSoldOut"
             |}
 
         member this.Stock = this.Get "Stock"
 
         member this.StockAction =
             this.WithPrefix "StockAction."
-            <| fun this -> {| InventoryAdjustment = this.Get "InventoryAdjustment" |}
-
-        member this.Save = this.Get "Save"
-        member this.SaveOk(SKU sku) = this.Format("SaveOk", sku)
-        member this.SaveError(SKU sku, error: string) = this.Format("SaveError", sku, error)
+            <| fun this -> {| AdjustStockAfterInventory = this.Get "AdjustStockAfterInventory" |}
 
 open TranslationPages
 
@@ -227,3 +237,6 @@ type AppTranslations
             $"%A{pageCode} (%i{count})%s{sectionsIfRelevant}"
         )
         |> Seq.toArray
+
+let (|TranslationsMissing|_|) pageCode (translations: AppTranslations) =
+    translations.PopulatedPages.Contains pageCode |> not |> Option.ofBool

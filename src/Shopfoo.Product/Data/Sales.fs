@@ -1,7 +1,6 @@
 ﻿[<RequireQualifiedAccess>]
 module internal Shopfoo.Catalog.Data.Sales
 
-open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
@@ -51,7 +50,7 @@ module private Fakes =
         ]
 
 module Client =
-    let repository = Fakes.oneYear |> dictionaryBy _.SKU
+    let repository = Fakes.oneYear |> Dictionary.ofListBy _.SKU
 
     let getSales sku =
         async {

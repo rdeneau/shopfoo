@@ -8,6 +8,7 @@ open Feliz.UseElmish
 open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
+open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -58,21 +59,10 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
         Cmd.saveProduct (fullContext.PrepareRequest product)
 
     | SaveProduct(product, Done result) ->
-        {
-            model with
-                SaveDate =
-                    result // ↩
-                    |> Result.map (fun () -> DateTime.Now)
-                    |> Remote.ofResult
-        },
-        Cmd.ofEffect (fun _ ->
-            let optionalError =
-                match result with
-                | Error error -> Some error
-                | Ok() -> None
+        let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
 
-            onSaveProduct (product, optionalError)
-        )
+        { model with SaveDate = saveDate }, // ↩
+        Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
 
 [<ReactComponent>]
 let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
@@ -232,45 +222,18 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                     | None
                     | Some View -> ()
                     | Some Edit ->
-                        Daisy.button.button [
-                            button.primary
-                            prop.className "justify-self-start"
-                            prop.key "save-product-button"
+                        let productSku = $"%s{translations.Home.Product} %s{sku.Value}"
 
-                            prop.children [
-                                Html.text translations.Product.Save
-
-                                match model.SaveDate with
-                                | Remote.Empty -> ()
-                                | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "save-product-spinner" ]
-                                | Remote.LoadError apiError ->
-                                    Daisy.tooltip [
-                                        tooltip.text (translations.Product.SaveError(product.SKU, apiError.ErrorMessage))
-                                        tooltip.right
-                                        tooltip.error
-                                        prop.text "❗"
-                                        prop.key "save-product-error-tooltip"
-                                    ]
-                                | Remote.Loaded dateTime ->
-                                    Daisy.tooltip [
-                                        tooltip.text $"%s{translations.Product.SaveOk(product.SKU)} @ {dateTime}"
-                                        tooltip.right
-                                        tooltip.success
-                                        prop.key "save-product-ok-tooltip"
-                                        prop.children [
-                                            Html.span [
-                                                prop.key "save-product-ok-text"
-                                                prop.text "✓"
-                                                prop.className "font-bold text-green-500"
-                                            ]
-                                        ]
-                                    ]
-                            ]
-
-                            match model.SaveDate with
-                            | Remote.Loading -> prop.disabled true
-                            | _ -> prop.onClick (fun _ -> dispatch (SaveProduct(product, Start)))
-                        ]
+                        Buttons.SaveButton(
+                            key = "save-product",
+                            label = translations.Home.Save,
+                            tooltipOk = translations.Home.SaveOk productSku,
+                            tooltipError = (fun err -> translations.Home.SaveError(productSku, err.ErrorMessage)),
+                            tooltipProps = [ tooltip.right ],
+                            saveDate = model.SaveDate,
+                            disabled = false,
+                            onClick = (fun () -> dispatch (SaveProduct(product, Start)))
+                        )
                 ]
             ]
     ]
