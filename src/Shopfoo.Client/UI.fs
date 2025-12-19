@@ -94,6 +94,13 @@ type Html with
 
 [<RequireQualifiedAccess>]
 module JS =
+    /// Remove the focus on the active element.
+    /// Helpful to properly hide the menu after click and mouse out events.
+    let blurActiveElement () =
+        match Browser.Dom.document.activeElement with
+        | :? Browser.Types.HTMLElement as el -> el.blur ()
+        | _ -> ()
+
     let runAfter (delay: TimeSpan) f =
         let milliseconds = delay.TotalMilliseconds |> int |> max 0
         JS.setTimeout f milliseconds |> ignore

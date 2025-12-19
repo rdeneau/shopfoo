@@ -54,11 +54,7 @@ type private LangMenuElement(currentLang, onClick) =
                         if canClick then
                             prop.onClick (fun _ ->
                                 onClick lg.Lang
-
-                                // Remove the focus to fix the menu hiding on mouse out
-                                match Browser.Dom.document.activeElement with
-                                | :? Browser.Types.HTMLElement as el -> el.blur ()
-                                | _ -> ()
+                                JS.blurActiveElement ()
                             )
                         else
                             prop.ariaDisabled true
