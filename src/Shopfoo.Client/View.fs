@@ -176,7 +176,8 @@ let AppView () =
                 Daisy.button.button [
                     button.ghost
                     prop.key "nav-about"
-                    prop.text translations.Home.About
+                    prop.text "📚"
+                    prop.title translations.Home.About
                     prop.onClick (fun _ -> Router.navigatePage Page.About)
                 ]
 
@@ -184,7 +185,8 @@ let AppView () =
                     Daisy.button.button [
                         button.ghost
                         prop.key "nav-admin"
-                        prop.text translations.Home.Admin
+                        prop.text "🛠️"
+                        prop.title translations.Home.Admin
                         prop.onClick (fun _ -> Router.navigatePage Page.Admin)
                     ]
         ]

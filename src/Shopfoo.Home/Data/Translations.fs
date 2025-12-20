@@ -9,8 +9,8 @@ let private translationPages = [
     [
         TagCode "About", "About", "À propos"
         TagCode "AboutDisclaimer",
-        "This application is a demo project showcasing the SAFE functional architecture, with domain workflows based on pseudo algebraic effects.",
-        "Cette application est un projet démo illustrant l'architecture 'SAFE functional', avec des 'domain workflows' basé sur des pseudos effets algébriques."
+        "This application is a demo project showcasing the ❝ Safe Clean Architecture ❞.",
+        "Cette application est un projet démo illustrant la ❝ Safe Clean Architecture ❞."
 
         TagCode "Admin", "Admin", "Administration"
         TagCode "AdminDisclaimer",
