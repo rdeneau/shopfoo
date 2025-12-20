@@ -49,10 +49,13 @@ type DrawerControl(open': Drawer -> unit, close: unit -> unit) =
         onOpenListeners |> Seq.iter (invokeWith drawer)
         openedDrawer <- Some drawer
 
-    member this.Close() =
-        match openedDrawer with
-        | None -> ()
-        | Some drawer ->
-            close ()
+    /// `drawer` is used optionally to specify the new drawer data to listeners, to pass saved values for example.
+    member this.Close(?drawer) =
+        drawer
+        |> Option.orElse openedDrawer
+        |> Option.iter (fun drawer ->
             onCloseListeners |> Seq.iter (invokeWith drawer)
             openedDrawer <- None
+        )
+
+        close ()

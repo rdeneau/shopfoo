@@ -107,7 +107,7 @@ module JS =
 
 [<RequireQualifiedAccess>]
 module Cmd =
-    let ofMsgDelayed (msg: 'msg, delay: TimeSpan) =
+    let ofMsgDelayed (msg: 'msg) (delay: TimeSpan) =
         let effect dispatch =
             JS.runAfter delay (fun () -> dispatch msg)
 

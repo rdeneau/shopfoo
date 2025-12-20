@@ -5,6 +5,7 @@ open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client.Remoting
+open Shopfoo.Common
 open Shopfoo.Shared.Errors
 
 [<Erase>]
@@ -42,7 +43,7 @@ type Buttons =
                     ]
                 | Remote.Loaded dateTime ->
                     Daisy.tooltip [
-                        tooltip.text $"%s{tooltipOk} @ {dateTime}"
+                        tooltip.text $"%s{tooltipOk} @ %i{dateTime.Hour}:%i{dateTime.Minute}:%i{dateTime.Second}"
                         tooltip.success
                         yield! tooltipProps
                         prop.key $"%s{key}-ok-tooltip"

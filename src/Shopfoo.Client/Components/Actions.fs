@@ -71,7 +71,8 @@ let ActionsDropdown key access (value: Value) (actions: Action list) =
                     Html.input [
                         prop.key $"{key}-input"
                         prop.className "flex-1"
-                        prop.defaultValue value.Text
+                        prop.value value.Text
+                        prop.onChange ignore<bool> // Noop. Still, it's needed by React because it's a controlled input.
                         prop.readOnly true
                         prop.type' "text"
                     ]

@@ -5,6 +5,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
@@ -12,15 +13,30 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Shared.Remoting
 
+let private CountdownStep = TimeSpan.FromMilliseconds 100.
+let private CountdownDuration = 50. * CountdownStep
+
 type private Msg = // ↩
     | PriceChanged of PriceModel
     | SavePrices of ApiCall<unit>
+    | StartCountdown
+    | StopCountdown
+    | DecrementCountdown
 
 type private Model = {
     Price: PriceModel
     Prices: Prices
     SaveDate: Remote<DateTime>
-}
+    Countdown: TimeSpan option
+} with
+    /// Closes the drawer, passing the modified prices back to drawer opener, only if prices have been saved.
+    member model.CloseDrawer(drawerControl: DrawerControl) =
+        let drawer =
+            match model.SaveDate with
+            | Remote.Loaded _ -> Some(Drawer.ModifyPrice(model.Price, model.Prices))
+            | _ -> None
+
+        drawerControl.Close(?drawer = drawer)
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -36,10 +52,11 @@ let private init price prices =
         Price = price
         Prices = prices
         SaveDate = Remote.Empty
+        Countdown = None
     },
     Cmd.none
 
-let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Model) =
+let private update (fullContext: FullContext) (drawerControl: DrawerControl) onSave (msg: Msg) (model: Model) =
     match msg with
     | PriceChanged price -> // ↩
         { model with Price = price; Prices = price.Update(model.Prices) }, Cmd.none
@@ -51,20 +68,41 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
     | SavePrices(Done result) ->
         let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
 
-        { model with SaveDate = saveDate }, // ↩
-        Cmd.ofEffect (fun _ -> onSavePrice (model.Prices, result |> Result.tryGetError))
+        { model with SaveDate = saveDate },
+        Cmd.batch [
+            Cmd.ofEffect (fun _ -> onSave (model.Prices, result |> Result.tryGetError))
+            if result.IsOk then
+                Cmd.ofMsg StartCountdown
+        ]
+
+    | StartCountdown ->
+        { model with Countdown = Some CountdownDuration }, // ↩
+        Cmd.ofMsgDelayed DecrementCountdown CountdownStep
+
+    | StopCountdown -> // ↩
+        { model with Countdown = None }, Cmd.none
+
+    | DecrementCountdown ->
+        match model.Countdown |> Option.map (fun x -> x - CountdownStep) with
+        | None -> model, Cmd.none
+        | Some(TimeSpan.TotalSeconds(IsPositive) as countdown) ->
+            { model with Countdown = Some countdown }, // ↩
+            Cmd.ofMsgDelayed DecrementCountdown CountdownStep
+        | Some _ ->
+            do model.CloseDrawer(drawerControl)
+            { model with Countdown = None }, Cmd.none
 
 [<ReactComponent>]
-let ModifyPriceForm key (fullContext: FullContext) price prices onClose onSavePrice =
+let ModifyPriceForm key (fullContext: FullContext) price prices drawerControl onSave =
     let model, dispatch =
-        React.useElmish (init price prices, update fullContext onSavePrice, [||])
+        React.useElmish (init price prices, update fullContext drawerControl onSave, [||])
 
     let currency = model.Price.Value.Currency.Symbol
     let translations = fullContext.Translations
 
     let currentPrice = price.Value.Value
     let newPrice = model.Price.Value.Value
-    let priceChange = currentPrice - newPrice
+    let priceChange = newPrice - currentPrice
     let percentChange = round (100m * priceChange / currentPrice)
 
     let currencyLabel priceKey symbol =
@@ -164,7 +202,7 @@ let ModifyPriceForm key (fullContext: FullContext) price prices onClose onSavePr
                 ]
             ]
 
-            // -- Save ----
+            // -- Buttons ----
             let priceLabel =
                 match price.Type with
                 | ListPrice -> translations.Product.ListPrice
@@ -174,21 +212,53 @@ let ModifyPriceForm key (fullContext: FullContext) price prices onClose onSavePr
                 prop.key $"%s{key}-save-div"
                 prop.className "flex justify-end"
                 prop.children [
+                    // -- Close ----
                     Daisy.button.button [
                         button.secondary
                         button.outline
                         prop.key $"%s{key}-close-button"
                         prop.className "mr-2"
-                        prop.text translations.Home.Close
-                        prop.onClick (fun _ -> onClose ())
+                        prop.onClick (fun _ ->
+                            model.CloseDrawer(drawerControl)
+                            dispatch StopCountdown
+                        )
+                        prop.children [
+                            Html.text translations.Home.Close
+
+                            match model.Countdown with
+                            | None -> ()
+                            | Some(TimeSpan.TotalSeconds seconds) ->
+                                let percent = int (100. * seconds / CountdownDuration.TotalSeconds)
+
+                                Daisy.radialProgress [
+                                    color.textSuccess
+                                    prop.style [ style.custom ("--value", percent); style.custom ("--size", "2rem") ]
+                                    prop.text $"%.0f{ceil seconds}s"
+                                    prop.key $"%s{key}-save-countdown"
+                                ]
+                        ]
                     ]
 
+                    // -- Cancel Countdown ----
+                    match model.Countdown with
+                    | None -> ()
+                    | Some _ ->
+                        Daisy.button.button [
+                            button.accent
+                            button.outline
+                            prop.key $"%s{key}-cancel-button"
+                            prop.text translations.Home.Cancel
+                            prop.className "mr-2"
+                            prop.onClick (fun _ -> dispatch StopCountdown)
+                        ]
+
+                    // -- Save Prices ----
                     Buttons.SaveButton(
                         key = "save-price",
                         label = translations.Home.Save,
                         tooltipOk = translations.Home.SaveOk priceLabel,
                         tooltipError = (fun err -> translations.Home.SaveError(priceLabel, err.ErrorMessage)),
-                        tooltipProps = [ tooltip.bottom ],
+                        tooltipProps = [ tooltip.left ],
                         saveDate = model.SaveDate,
                         disabled = ((abs priceChange) < 0.01m),
                         onClick = (fun () -> dispatch (SavePrices Start))

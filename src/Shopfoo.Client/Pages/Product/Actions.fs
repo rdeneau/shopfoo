@@ -39,7 +39,7 @@ let private update (msg: Msg) (model: Model) =
 
 [<ReactComponent>]
 let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
-    let model, _ = React.useElmish (init fullContext sku, update, [||])
+    let model, dispatch = React.useElmish (init fullContext sku, update, [||])
     let translations = fullContext.Translations
 
     // As the drawers are opened from dropdown menus that are positioned above the side drawer,
@@ -47,6 +47,13 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
     // 1. Blur the menu to hide it (on mouse out only?).
     // 2. Set a high z-index to the side drawer (see z-[9999] below).
     drawerControl.OnOpen(fun _ -> JS.blurActiveElement ())
+
+    // When the drawer is closed after a price modification, we refresh the prices.
+    drawerControl.OnClose(fun drawer ->
+        match drawer with
+        | ModifyPrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
+        | _ -> ()
+    )
 
     React.fragment [
         match model.Prices, translations with

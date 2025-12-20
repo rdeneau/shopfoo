@@ -201,6 +201,10 @@ module TimeOnly =
 #endif
 
 [<RequireQualifiedAccess>]
+module TimeSpan =
+    let (|TotalSeconds|) (timeSpan: TimeSpan) = timeSpan.TotalSeconds
+
+[<RequireQualifiedAccess>]
 module Enum =
     let inline values<'enum when 'enum :> Enum and 'enum: comparison> =
         Enum.GetValues(typeof<'enum>) :?> 'enum array |> Set.ofArray

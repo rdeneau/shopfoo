@@ -49,7 +49,6 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
         | _ -> false
 
     let isDrawerOpen = model.Drawer.IsSome
-    let closeDrawer () = dispatch CloseDrawer
     let onSavePrice (price, error) = onSave (Toast.Prices(price, error))
     let onSaveProduct (product, error) = onSave (Toast.Product(product, error))
 
@@ -94,7 +93,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                 prop.children [
                     Daisy.drawerOverlay [ // ↩
                         prop.key $"%s{key}-drawer-overlay"
-                        prop.onClick (fun _ -> closeDrawer ())
+                        prop.onClick (fun _ -> drawerControl.Close())
                     ]
                     Html.div [
                         prop.key $"%s{key}-drawer-side-content"
@@ -102,7 +101,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                         prop.children [
                             match model.Drawer with
                             | None -> ()
-                            | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices closeDrawer onSavePrice
+                            | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some DefineListPrice
                             | Some RemoveListPrice
                             | Some MarkAsSoldOut
