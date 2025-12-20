@@ -1,6 +1,17 @@
 {
   "type": "module",
   "private": true,
+  "name": "shopfoo",
+  "author": "Romain Deneau",
+  "license": "GPL-3.0",
+  "description": "Demo app showcasing the Safe Clean Architecture",
+  "homepage": "https://rdeneau.gitbook.io/safe-clean-architecture",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rdeneau/shopfoo.git"
+  },
+  "releaseDate": "2025-12-20",
+  "version": "0.0.0",
   "scripts": {
     "prestart": "dotnet tool restore",
     "start": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --run vite",
@@ -10,8 +21,13 @@
     "build": "dotnet fable ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --run vite build"
   },
   "devDependencies": {
+    "@semantic-release/changelog": "^6.0.3",
+    "@semantic-release/exec": "^6.0.3",
+    "@semantic-release/git": "^10.0.1",
     "@tailwindcss/vite": "^4.0.11",
     "@vitejs/plugin-react": "^4.3.4",
+    "conventional-changelog-conventionalcommits": "^8.0.0",
+    "semantic-release": "^24.2.0",
     "vite": "^6.2.1"
   },
   "dependencies": {

@@ -16,7 +16,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "build", "build", "{9B3F13D5
 		README.md = README.md
 		.config\dotnet-tools.json = .config\dotnet-tools.json
 		package.json = package.json
-		..\.github\workflows\main_shopfoo.yml = ..\.github\workflows\main_shopfoo.yml
 	EndProjectSection
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Build", "Build.fsproj", "{99315B2D-96A5-48E8-9285-0FEAE277AE4E}"
@@ -38,6 +37,14 @@ EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Home", "src\Shopfoo.Home\Shopfoo.Home.fsproj", "{86B809E9-6D43-4613-8B89-FC91BAB2373C}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Shopfoo.Effects", "src\Shopfoo.Effects\Shopfoo.Effects.fsproj", "{D3062E59-293F-4647-9619-556DDA33292C}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ci", "ci", "{005A6CA6-77A6-43DD-AF07-772F3415C01F}"
+	ProjectSection(SolutionItems) = preProject
+		.github\workflows\build.yml = .github\workflows\build.yml
+		.github\workflows\README.md = .github\workflows\README.md
+		.github\workflows\release.yml = .github\workflows\release.yml
+		.releaserc.json = .releaserc.json
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,0 +1,46 @@
+﻿name: Build and Test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  build:
+    name: Build and Verify
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 9
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '9.x'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Install Yarn
+        run: npm install -g yarn@1.22.22
+
+      - name: Install .NET Tools
+        run: dotnet tool restore
+
+      - name: Build solution
+        run: dotnet build Shopfoo.sln --configuration Release
+
+      - name: Install Node dependencies
+        run: yarn install --frozen-lockfile
+
+      # TODO: add unit tests when test projects are created
+      # - name: Run tests
+      #   run: dotnet test Shopfoo.sln --configuration Release --no-build

@@ -1,6 +1,6 @@
 # Shopfoo
 
-Shopfoo is a full-stack web app. It is a demo project showcasing the **Safe Clean Architecture**—a term I coined—with domain workflows based on pseudo algebraic effects.
+Shopfoo is a full-stack web app. It is a demo project showcasing the [Safe Clean Architecture](https://rdeneau.gitbook.io/safe-clean-architecture)—a term I coined—with domain workflows based on pseudo algebraic effects.
 
 > 😉 The name **Shopfoo** is a reference to the [chop suey](https://en.wikipedia.org/wiki/Chop_suey) dish and the [song](https://en.wikipedia.org/wiki/Chop_Suey!) by System of a Down.
 
@@ -47,8 +47,6 @@ The architecture combines—or rather is inspired by—many documented architect
 - *SAFE architecture*: Client-Shared-Server 3-project solution, F# full-stack
 
 Hence its name, ❝ *Safe Clean Architecture*. ❞
-
-🔗 More details: [architecture.md](./docs/architecture.md).
 
 ## Run the application
 
