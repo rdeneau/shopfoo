@@ -102,13 +102,15 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                         prop.children [
                             match model.Drawer with
                             | None -> ()
-                            | Some DefineListPrice -> () // TODO: [Drawer] DefineListPrice
-                            | Some RemoveListPrice -> () // TODO: [Drawer] RemoveListPrice
                             | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices closeDrawer onSavePrice
-                            | Some MarkAsSoldOut -> () // TODO: [Drawer] MarkAsSoldOut
-                            | Some InputSales -> () // TODO: [Drawer] InputSales
-                            | Some ReceivePurchasedProducts -> () // TODO: [Drawer] ReceivePurchasedProducts
-                            | Some AdjustStockAfterInventory -> () // TODO: [Drawer] AdjustStockAfterInventory
+                            | Some DefineListPrice
+                            | Some RemoveListPrice
+                            | Some MarkAsSoldOut
+                            | Some InputSales
+                            | Some ReceivePurchasedProducts
+                            | Some AdjustStockAfterInventory ->
+                                // TODO: [Drawer] other actions
+                                Html.text "🚧 TODO"
                         ]
                     ]
                 ]

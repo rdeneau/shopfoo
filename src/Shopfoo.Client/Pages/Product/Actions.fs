@@ -88,14 +88,14 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
 
                             Action.Emoji
                                 "remove-list-price"
-                                ("🧹", translations.Product.PriceAction.Remove)
-                                (fun () -> drawerControl.Open(Drawer.RemoveListPrice)) // TODO: [RemoveListPrice] use a confirmation modal instead
+                                ("🧹", translations.Product.PriceAction.Remove + " 🚧")
+                                (fun () -> drawerControl.Open(Drawer.RemoveListPrice)) // TODO: RemoveListPrice. ⚠️ Use a confirmation modal instead of a drawer.
 
                         | None ->
                             Action.Emoji
                                 "define-list-price"
-                                ("✍️", translations.Product.PriceAction.Define)
-                                (fun () -> drawerControl.Open(Drawer.DefineListPrice))
+                                ("✍️", translations.Product.PriceAction.Define + " 🚧")
+                                (fun () -> drawerControl.Open(Drawer.DefineListPrice)) // TODO: DefineListPrice
                     ]
 
                     // -- RetailPrice ----
@@ -135,8 +135,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
 
                         Action.Emoji
                             "mark-as-sold-out"
-                            ("🚫", translations.Product.PriceAction.MarkAsSoldOut)
-                            (fun () -> drawerControl.Open MarkAsSoldOut) // TODO: [MarkAsSoldOut] use a confirmation modal instead
+                            ("🚫", translations.Product.PriceAction.MarkAsSoldOut + " 🚧")
+                            (fun () -> drawerControl.Open MarkAsSoldOut) // TODO: MarkAsSoldOut. ⚠️ Use a confirmation modal, not a drawer.
                     ]
 
                     // -- Stock ----
@@ -144,8 +144,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
                     ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [ // TODO: Fetch stock
                         Action.Emoji
                             "inventory-adjustment"
-                            ("✏️", translations.Product.StockAction.AdjustStockAfterInventory)
-                            (fun () -> drawerControl.Open AdjustStockAfterInventory)
+                            ("✏️", translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")
+                            (fun () -> drawerControl.Open AdjustStockAfterInventory) // TODO: AdjustStockAfterInventory
                     ]
                 ]
             ]
