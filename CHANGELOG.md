@@ -54,17 +54,9 @@
 * **ci:**  🏗️ fix update-release-date ([9672d23](https://github.com/rdeneau/shopfoo/commit/9672d235d22d7aeab1137b57045b69c5a75a769f))
 * **View:** 🐛 separate pageToDisplayInline from access check ([2b20619](https://github.com/rdeneau/shopfoo/commit/2b20619f1ee3f38bddcd045b625acd4b2fe35320))
 
-# Changelog
+## [Changelog]
 
 All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-- Initial project setup
-- SAFE Stack architecture with F# and React
-- Azure deployment configuration
-- Automated CI/CD workflows
