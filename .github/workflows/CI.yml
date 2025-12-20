@@ -1,3 +1,7 @@
+# YAML from the SAFEr template.
+# !! For Shopfoo, we use another workflow,
+#    located at the root of the git repo: .github/workflows/main_shopfoo.yml
+
 name: CI
 
 on:
