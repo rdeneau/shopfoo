@@ -41,7 +41,7 @@
     [
       "@semantic-release/exec",
       {
-        "prepareCmd": "node update-release-date.js"
+        "prepareCmd": "node update-release-date.js ${nextRelease.version}"
       }
     ],
     [

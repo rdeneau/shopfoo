@@ -44,6 +44,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ci", "ci", "{005A6CA6-77A6-
 		.github\workflows\README.md = .github\workflows\README.md
 		.github\workflows\release.yml = .github\workflows\release.yml
 		.releaserc.json = .releaserc.json
+		update-release-date.js = update-release-date.js
 	EndProjectSection
 EndProject
 Global
