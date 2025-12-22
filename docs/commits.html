@@ -1,0 +1,63 @@
+﻿<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: Inter Variable, SF Pro Display, -apple-system, BlinkMacSystemFont, Segoe UI, Roboto, Oxygen, Ubuntu, Cantarell, Open Sans, Helvetica Neue, sans-serif; font-size: 14px; margin: 0; padding: 15px; background-color: transparent; color: #24292f; }
+        .commit { border-bottom: 1px solid #d0d7de; padding: 10px 0; }
+        .commit:last-child { border-bottom: none; }
+        .link { color: #0969da; text-decoration: none; }
+        .link:hover { text-decoration: underline; }
+        .message { font-weight: 600; margin-bottom: 4px; }
+        .meta { font-size: 12px; color: #57606a; }
+        .author { font-weight: 600; color: #24292f; }
+    </style>
+</head>
+<body>
+<h3>📖 Book <em>Safe Clean Architecture</em></h3>
+<div id="commits--gitbook-safe-clean-archi">Loading last commits...</div>
+<h3>👉 Companion app <em>Shopfoo</em></h3>
+<div id="commits--shopfoo">Loading last commits...</div>
+<script>
+    const USER = 'rdeneau';
+    const LIMIT = 5;
+
+    const firstLine = (str) => str.split('\n')[0];
+    const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric'
+    });
+    const formatCommit = (date, href, text) => `
+        <div class="commit">
+            <code>[${date}] </code>
+            <a class="link message" href="${href}" target="_blank">${firstLine(text)}</a>
+        </div>
+    `;
+
+    async function fetchCommits(repo) {
+        const container = document.getElementById(`commits--${repo}`);
+        try {
+            const response = await fetch(`https://api.github.com/repos/${USER}/${repo}/commits?per_page=${LIMIT}`);
+            const data = await response.json();
+
+            const commits = (data.message === "Not Found")
+                ? "⛓️‍💥 Repository not found."
+                : data
+                    .map(c => formatCommit(formatDate(c.commit.author.date), c.html_url, firstLine(c.commit.message)))
+                    .join('');
+
+            container.innerHTML = `
+                    ${commits}
+                    ${formatCommit("All commits ", `https://github.com/${USER}/${repo}/commits/main/`, `https://github.com/${USER}/${repo}/commits/main/`)}
+                `;
+        } catch (e) {
+            container.innerHTML = `Failed to load the commits: ${e.message}`;
+        }
+    }
+
+    fetchCommits('gitbook-safe-clean-archi');
+    fetchCommits('shopfoo');
+</script>
+</body>
+</html>
