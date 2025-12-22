@@ -1,6 +1,6 @@
 # Shopfoo
 
-Shopfoo is a full-stack web app. It is a demo project showcasing the [Safe Clean Architecture](https://rdeneau.gitbook.io/safe-clean-architecture)—a term I coined—with domain workflows based on pseudo algebraic effects.
+Shopfoo is a full-stack web app. It is a demo project showcasing the [Safe Clean Architecture](https://rdeneau.gitbook.io/safe-clean-architecture)—a term I coined.
 
 > 😉 The name **Shopfoo** is a reference to the [chop suey](https://en.wikipedia.org/wiki/Chop_suey) dish and the [song](https://en.wikipedia.org/wiki/Chop_Suey!) by System of a Down.
 
@@ -125,9 +125,9 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 
 ## TODO
 
-- [ ] Demo video
+- [x] Deploy to Azure
+- [x] Install Iconify and FontAwesome 6 Solid icons via Glutinum
+- [ ] Use FontAwesome icons
 - [ ] Architecture tests
 - [ ] Workflow tests
 - [ ] UI tests
-- [ ] Deploy to Azure or AWS? with Aspire?
-- [ ] Full documentation (gitbook), to complete the [Elmish book](https://zaid-ajaj.github.io/the-elmish-book/#/).

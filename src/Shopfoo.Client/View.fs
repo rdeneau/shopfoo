@@ -4,8 +4,11 @@ open System
 open Elmish
 open Feliz
 open Feliz.DaisyUI
+open Feliz.Iconify
+open type Feliz.Iconify.Offline.Exports
 open Feliz.Router
 open Feliz.UseElmish
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.AppNav
 open Shopfoo.Client.Components.Lang
@@ -185,9 +188,9 @@ let AppView () =
                     Daisy.button.button [
                         button.ghost
                         prop.key "nav-admin"
-                        prop.text "🛠️"
                         prop.title translations.Home.Admin
                         prop.onClick (fun _ -> Router.navigatePage Page.Admin)
+                        prop.children [ Icon [ icon.icon fa6Solid.userGear ] ]
                     ]
         ]
 
@@ -228,6 +231,7 @@ let AppView () =
 
             | Some(Toast.Product(product, error)) ->
                 let productSku = $"%s{translations.Home.Product} %s{product.SKU.Value}"
+
                 let alertType, text =
                     match error with
                     | None -> alert.success, translations.Home.SaveOk productSku
@@ -239,6 +243,7 @@ let AppView () =
 
             | Some(Toast.Prices(prices, error)) ->
                 let pricesSku = $"%s{translations.Product.Price} %s{prices.SKU.Value}"
+
                 let alertType, text =
                     match error with
                     | None -> alert.success, translations.Home.SaveOk pricesSku
