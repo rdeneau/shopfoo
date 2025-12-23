@@ -4,10 +4,32 @@ open Feliz
 open Feliz.DaisyUI
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components.Icon
+open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Translations
 
+let UserIcon userName =
+    if userName = UserNames.guest then
+        icon fa6Solid.user
+    elif userName = UserNames.catalogEditor then
+        icon fa6Solid.userTag
+    elif userName = UserNames.sales then
+        icon fa6Solid.userPen
+    elif userName = UserNames.productManager then
+        icon fa6Solid.userTie
+    elif userName = UserNames.administrator then
+        icon fa6Solid.userShield
+    else
+        Html.none
+
+let UserName key userName =
+    Html.span [
+        prop.key $"%s{key}-username"
+        prop.className "flex items-center justify-left"
+        prop.children [ UserIcon userName; Html.text $" %s{userName}" ]
+    ]
+
 [<ReactComponent>]
-let UserDropdown key (userName: string) (translations: AppTranslations) onClick =
+let UserDropdown key userName (translations: AppTranslations) onClick =
     let logoutMenu =
         Html.li [
             prop.key "user-logout"
@@ -51,7 +73,7 @@ let UserDropdown key (userName: string) (translations: AppTranslations) onClick 
                             Daisy.menuTitle [
                                 prop.key "user-dropdown-username"
                                 prop.className "whitespace-nowrap"
-                                prop.text userName
+                                prop.children (UserName "user-dropdown" userName)
                             ]
                             logoutMenu
                         ]

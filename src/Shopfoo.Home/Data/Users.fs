@@ -32,9 +32,9 @@ module private Claims =
         |> Map.add Feat.Admin Access.Edit
 
 let personas = [
-    User.LoggedIn("👤 Guest", Claims.guest)
-    User.LoggedIn("✍️ Catalog editor", Claims.catalogEditor)
-    User.LoggedIn("💰 Sales", Claims.sales)
-    User.LoggedIn("🕵️ Product manager", Claims.productManager)
-    User.LoggedIn("🛡️ Administrator", Claims.admin)
+    User.LoggedIn(UserNames.guest, Claims.guest)
+    User.LoggedIn(UserNames.catalogEditor, Claims.catalogEditor)
+    User.LoggedIn(UserNames.sales, Claims.sales)
+    User.LoggedIn(UserNames.productManager, Claims.productManager)
+    User.LoggedIn(UserNames.administrator, Claims.admin)
 ]

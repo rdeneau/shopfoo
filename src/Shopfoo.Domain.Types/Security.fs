@@ -47,6 +47,14 @@ let (|UserCanAccess|_|) feat (user: User) = // ↩
 let (|UserCanNotAccess|_|) feat (user: User) =
     not (user.CanAccess feat) |> Option.ofBool
 
+[<RequireQualifiedAccess>]
+module UserNames =
+    let guest = "Guest"
+    let catalogEditor = "Catalog Editor"
+    let sales = "Sales"
+    let productManager = "Product Manager"
+    let administrator = "Administrator"
+
 type AuthToken = AuthToken of string
 
 type AuthError =

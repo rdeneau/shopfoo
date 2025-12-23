@@ -4,7 +4,10 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
+open Shopfoo.Client.Components.Icon
+open Shopfoo.Client.Components.User
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -42,6 +45,51 @@ let private update fillTranslations loginUser msg (model: Model) =
     | Msg.Login user -> // ↩
         model, Cmd.ofEffect (fun _ -> loginUser user)
 
+type private Users =
+    static member th(key, text, ?icon: ReactElement, ?className) =
+        let icon = defaultArg icon Html.none
+        let className = defaultArg className ""
+
+        Html.th [
+            prop.key $"users-%s{key}-th"
+            prop.className className
+            prop.children [
+                Html.div [
+                    prop.key $"users-%s{key}-th-content"
+                    prop.className "flex items-center justify-left"
+                    prop.children [
+                        icon
+                        Html.span [
+                            prop.key $"users-%s{key}-text"
+                            prop.className "ml-2"
+                            prop.text $"%s{text}"
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
+    static member td(key, text, ?icon: ReactElement) =
+        let icon = defaultArg icon Html.none
+
+        Html.td [
+            prop.key $"users-%s{key}-td"
+            prop.children [
+                Html.div [
+                    prop.key $"users-%s{key}-td-content"
+                    prop.className "flex items-center justify-left"
+                    prop.children [
+                        icon
+                        Html.span [
+                            prop.key $"users-%s{key}-text"
+                            prop.className "ml-2"
+                            prop.text $"%s{text}"
+                        ]
+                    ]
+                ]
+            ]
+        ]
+
 [<ReactComponent>]
 let LoginView (fullContext, fillTranslations, loginUser) =
     let model, dispatch =
@@ -76,8 +124,15 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                     prop.children [
                         Html.legend [
                             prop.key "login-legend"
-                            prop.className "text-sm"
-                            prop.text $"🔐 %s{translations.Home.Login}"
+                            prop.className "text-sm flex items-center"
+                            prop.children [
+                                icon fa6Solid.userLock
+                                Html.span [
+                                    prop.key "login-legend-text"
+                                    prop.className "ml-2"
+                                    prop.text translations.Home.Login
+                                ]
+                            ]
                         ]
 
                         Daisy.fieldsetLabel [ prop.key "login-label"; prop.text translations.Login.SelectPersona ]
@@ -92,13 +147,13 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                                         Html.tr [
                                             color.bgBase300
                                             prop.children [
-                                                Html.th [ prop.key "users-th-num"; prop.text " " ]
-                                                Html.th [ prop.key "users-th-persona"; prop.text translations.Login.Persona ]
-                                                Html.th [ prop.key "users-th-feat-about"; prop.text $"ℹ️ %s{translations.Login.Feat.About}" ]
-                                                Html.th [ prop.key "users-th-feat-catalog"; prop.text $"🗂️ %s{translations.Login.Feat.Catalog}" ]
-                                                Html.th [ prop.key "users-th-feat-sales"; prop.text $"🛒 %s{translations.Login.Feat.Sales}" ]
-                                                Html.th [ prop.key "users-th-feat-warehouse"; prop.text $"🏬 %s{translations.Login.Feat.Warehouse}" ]
-                                                Html.th [ prop.key "users-th-feat-admin"; prop.text $"⚙️ %s{translations.Login.Feat.Admin}" ]
+                                                Users.th ("num", " ")
+                                                Users.th ("persona", translations.Login.Persona, className = "w-1/6")
+                                                Users.th ("feat-about", translations.Login.Feat.About, icon fa6Solid.circleInfo, "w-1/6")
+                                                Users.th ("feat-catalog", translations.Login.Feat.Catalog, icon fa6Solid.folderOpen, "w-1/6")
+                                                Users.th ("feat-sales", translations.Login.Feat.Sales, icon fa6Solid.cartShopping, "w-1/6")
+                                                Users.th ("feat-warehouse", translations.Login.Feat.Warehouse, icon fa6Solid.store, "w-1/6")
+                                                Users.th ("feat-admin", translations.Login.Feat.Admin, icon fa6Solid.gear, "w-1/6")
                                             ]
                                         ]
                                     )
@@ -118,13 +173,13 @@ let LoginView (fullContext, fillTranslations, loginUser) =
                                                 prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
                                                 prop.onClick (fun _ -> dispatch (Msg.Login user))
                                                 prop.children [
-                                                    Html.td [ prop.key $"users-td-%i{i}-num"; prop.text (i + 1) ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-user"; prop.text userName ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-feat-about"; prop.text (accessTo Feat.About) ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-feat-catalog"; prop.text (accessTo Feat.Catalog) ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-feat-sales"; prop.text (accessTo Feat.Sales) ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-feat-warehouse"; prop.text (accessTo Feat.Warehouse) ]
-                                                    Html.td [ prop.key $"users-td-%i{i}-feat-admin"; prop.text (accessTo Feat.Admin) ]
+                                                    Users.td ($"%i{i}-num", string (i + 1))
+                                                    Users.td ($"%i{i}-user", userName, UserIcon userName)
+                                                    Users.td ($"%i{i}-feat-about", (accessTo Feat.About))
+                                                    Users.td ($"%i{i}-feat-catalog", (accessTo Feat.Catalog))
+                                                    Users.td ($"%i{i}-feat-sales", (accessTo Feat.Sales))
+                                                    Users.td ($"%i{i}-feat-warehouse", (accessTo Feat.Warehouse))
+                                                    Users.td ($"%i{i}-feat-admin", (accessTo Feat.Admin))
                                                 ]
                                             ]
                                     ]
