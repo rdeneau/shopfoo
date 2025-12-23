@@ -45,6 +45,7 @@ type private ThemeMenu(currentTheme, onClick) =
 
     member _.item (theme: Theme) (Emoji emoji) (text: string) =
         let key = keyOf theme
+        let isSelected = (theme = currentTheme)
 
         let previewBadge letter colorName colorProp =
             Daisy.badge [
@@ -58,6 +59,8 @@ type private ThemeMenu(currentTheme, onClick) =
 
         Html.li [
             prop.key $"{key}-theme"
+            prop.className "aria-selected:bg-base-300 rounded"
+            prop.ariaSelected isSelected
             prop.children [
                 Html.a [
                     prop.key $"{key}-theme-link"
@@ -90,7 +93,7 @@ type private ThemeMenu(currentTheme, onClick) =
                         Html.span [
                             prop.key $"{key}-theme-tick"
                             prop.className "font-bold text-green-500 min-w-[1em] text-right"
-                            if theme = currentTheme then
+                            if isSelected then
                                 prop.children (icon fa6Solid.check)
                         ]
                     ]

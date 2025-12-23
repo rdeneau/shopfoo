@@ -180,7 +180,7 @@ let AppView () =
                         button.ghost
                         prop.key "nav-admin"
                         prop.className "opacity-70 hover:opacity-100"
-                        prop.children (icon fa6Solid.userGear)
+                        prop.children (icon fa6Solid.gear)
                         prop.title translations.Home.Admin
                         prop.onClick (fun _ -> Router.navigatePage Page.Admin)
                     ]

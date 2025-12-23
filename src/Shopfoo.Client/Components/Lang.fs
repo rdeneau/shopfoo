@@ -39,10 +39,14 @@ module private LangExtensions =
             LangMenu.all |> List.find (fun lg -> lg.Lang = lang)
 
 type private LangMenuElement(currentLang, onClick) =
-    member private _.li(key, langMenu: LangMenu, canClick) =
+    member private _.li(key, langMenu: LangMenu, canClick, ?isSelected) =
         fun statusElement ->
+            let isSelected = defaultArg isSelected false
+
             Html.li [
                 prop.key $"%s{key}-li"
+                prop.className "aria-selected:bg-base-300 rounded"
+                prop.ariaSelected isSelected
                 prop.children [
                     Html.a [
                         prop.key $"{key}-link"
@@ -61,8 +65,11 @@ type private LangMenuElement(currentLang, onClick) =
                         else
                             prop.ariaDisabled true
 
-                        prop.children [ // ↩
-                            Html.span [ prop.key $"{key}-label"; prop.text $"%s{langMenu.Emoji} %s{langMenu.Label}" ]
+                        prop.children [
+                            Html.span [ // ↩
+                                prop.key $"{key}-label"
+                                prop.text $"%s{langMenu.Emoji}  %s{langMenu.Label}"
+                            ]
                             statusElement
                         ]
                     ]
@@ -93,7 +100,7 @@ type private LangMenuElement(currentLang, onClick) =
                 if isCurrentLang then
                     prop.children (icon fa6Solid.check)
             ]
-            |> this.li (key, langMenu, canClick = not isCurrentLang)
+            |> this.li (key, langMenu, canClick = not isCurrentLang, isSelected = isCurrentLang)
 
         | Remote.LoadError apiError ->
             Daisy.tooltip [ // ↩
