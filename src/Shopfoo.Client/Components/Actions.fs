@@ -8,11 +8,13 @@ open Shopfoo.Domain.Types.Security
 type Action = {
     Key: string
     Text: string
+    Icon: ReactElement option
     OnClick: unit -> unit
 } with
-    static member Emoji key (emoji, text) onClick : Action = {
+    static member withIcon key icon text onClick : Action = {
         Key = key
-        Text = $"%s{emoji}  {text}"
+        Text = text
+        Icon = Some icon
         OnClick = onClick
     }
 
@@ -48,10 +50,24 @@ let ActionsDropdown key access (value: Value) (actions: Action list) =
             prop.key $"{key}-action--{action.Key}"
             prop.children [
                 Html.a [
-                    prop.key $"{key}-action--{action.Key}--link"
-                    prop.text action.Text
-                    prop.className "whitespace-nowrap"
+                    prop.key $"{key}-action--{action.Key}-link"
+                    prop.className "flex items-center justify-start"
                     prop.onClick (fun _ -> action.OnClick())
+                    prop.children [
+                        match action.Icon with
+                        | Some iconElement -> iconElement
+                        | None -> ()
+
+                        Html.span [
+                            prop.key $"{key}-action--{action.Key}-text"
+                            prop.className [
+                                "whitespace-nowrap"
+                                if action.Icon.IsSome then
+                                    "ml-1"
+                            ]
+                            prop.text action.Text
+                        ]
+                    ]
                 ]
             ]
         ]

@@ -4,9 +4,11 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Actions
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
@@ -83,25 +85,29 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
                                 Intent = intent
                             }
 
-                            Action.Emoji
+                            Action.withIcon
                                 "increase-list-price"
-                                ("↗️", translations.Product.PriceAction.Increase)
+                                (icon fa6Solid.arrowUpWideShort)
+                                translations.Product.PriceAction.Increase
                                 (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Increase, prices)))
 
-                            Action.Emoji
+                            Action.withIcon
                                 "decrease-list-price"
-                                ("↘️", translations.Product.PriceAction.Decrease)
+                                (icon fa6Solid.arrowDownWideShort)
+                                translations.Product.PriceAction.Decrease
                                 (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Decrease, prices)))
 
-                            Action.Emoji
+                            Action.withIcon
                                 "remove-list-price"
-                                ("🧹", translations.Product.PriceAction.Remove + " 🚧")
+                                (icon fa6Solid.eraser)
+                                (translations.Product.PriceAction.Remove + " 🚧")
                                 (fun () -> drawerControl.Open(Drawer.RemoveListPrice)) // TODO: RemoveListPrice. ⚠️ Use a confirmation modal instead of a drawer.
 
                         | None ->
-                            Action.Emoji
+                            Action.withIcon
                                 "define-list-price"
-                                ("✍️", translations.Product.PriceAction.Define + " 🚧")
+                                (icon fa6Solid.circlePlus)
+                                (translations.Product.PriceAction.Define + " 🚧")
                                 (fun () -> drawerControl.Open(Drawer.DefineListPrice)) // TODO: DefineListPrice
                     ]
 
@@ -130,28 +136,32 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) =
                             Intent = intent
                         }
 
-                        Action.Emoji
-                            "increase"
-                            ("↗️", translations.Product.PriceAction.Increase)
+                        Action.withIcon
+                            "increase-retail-price"
+                            (icon fa6Solid.arrowUpWideShort)
+                            translations.Product.PriceAction.Increase
                             (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Increase, prices)))
 
-                        Action.Emoji
-                            "decrease"
-                            ("↘️", translations.Product.PriceAction.Decrease)
+                        Action.withIcon
+                            "decrease-retail-price"
+                            (icon fa6Solid.arrowDownWideShort)
+                            translations.Product.PriceAction.Decrease
                             (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Decrease, prices)))
 
-                        Action.Emoji
+                        Action.withIcon
                             "mark-as-sold-out"
-                            ("🚫", translations.Product.PriceAction.MarkAsSoldOut + " 🚧")
+                            (icon fa6Solid.ban)
+                            (translations.Product.PriceAction.MarkAsSoldOut + " 🚧")
                             (fun () -> drawerControl.Open MarkAsSoldOut) // TODO: MarkAsSoldOut. ⚠️ Use a confirmation modal, not a drawer.
                     ]
 
                     // -- Stock ----
                     Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
                     ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [ // TODO: Fetch stock
-                        Action.Emoji
+                        Action.withIcon
                             "inventory-adjustment"
-                            ("✏️", translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")
+                            (icon fa6Solid.pencil)
+                            (translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")
                             (fun () -> drawerControl.Open AdjustStockAfterInventory) // TODO: AdjustStockAfterInventory
                     ]
                 ]
