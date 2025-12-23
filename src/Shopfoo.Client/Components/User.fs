@@ -2,6 +2,8 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Glutinum.IconifyIcons.Fa6Solid
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Shared.Translations
 
 [<ReactComponent>]
@@ -14,7 +16,14 @@ let UserDropdown key (userName: string) (translations: AppTranslations) onClick 
                     prop.key "user-logout-link"
                     prop.className "whitespace-nowrap"
                     prop.onClick (fun _ -> onClick ())
-                    prop.text $"🔓  %s{translations.Home.Logout}"
+                    prop.children [
+                        icon fa6Solid.arrowRightFromBracket
+                        Html.span [
+                            prop.key "user-logout-text"
+                            prop.className "ml-2"
+                            prop.text $"%s{translations.Home.Logout}"
+                        ]
+                    ]
                 ]
             ]
         ]
@@ -28,7 +37,8 @@ let UserDropdown key (userName: string) (translations: AppTranslations) onClick 
             Daisy.button.button [
                 button.ghost
                 prop.key "user-button"
-                prop.text userName
+                prop.className "opacity-80 hover:opacity-100"
+                prop.children (icon fa6Solid.userLock)
             ]
             Daisy.dropdownContent [
                 prop.key "user-dropdown-content"
@@ -37,7 +47,12 @@ let UserDropdown key (userName: string) (translations: AppTranslations) onClick 
                 prop.children [
                     Html.ul [
                         prop.key "user-dropdown-list"
-                        prop.children [ // ↩
+                        prop.children [
+                            Daisy.menuTitle [
+                                prop.key "user-dropdown-username"
+                                prop.className "whitespace-nowrap"
+                                prop.text userName
+                            ]
                             logoutMenu
                         ]
                     ]

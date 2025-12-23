@@ -2,7 +2,9 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types
 
@@ -27,7 +29,7 @@ module LangMenu =
     let all = [
         mk Lang.English "en" "English" "ᴇɴ"
         mk Lang.French "fr" "Français" "ꜰʀ"
-        mk Lang.Latin "la" "Latin" "🚩"
+        mk Lang.Latin "la" "Latin ⚠️" "ʟᴀ"
     ]
 
 [<AutoOpen>]
@@ -37,7 +39,7 @@ module private LangExtensions =
             LangMenu.all |> List.find (fun lg -> lg.Lang = lang)
 
 type private LangMenuElement(currentLang, onClick) =
-    member private _.li(key, lg: LangMenu, canClick) =
+    member private _.li(key, langMenu: LangMenu, canClick) =
         fun statusElement ->
             Html.li [
                 prop.key $"%s{key}-li"
@@ -53,27 +55,27 @@ type private LangMenuElement(currentLang, onClick) =
 
                         if canClick then
                             prop.onClick (fun _ ->
-                                onClick lg.Lang
+                                onClick langMenu.Lang
                                 JS.blurActiveElement ()
                             )
                         else
                             prop.ariaDisabled true
 
                         prop.children [ // ↩
-                            Html.span [ prop.key $"{key}-label"; prop.text $"%s{lg.Emoji} %s{lg.Label}" ]
+                            Html.span [ prop.key $"{key}-label"; prop.text $"%s{langMenu.Emoji} %s{langMenu.Label}" ]
                             statusElement
                         ]
                     ]
                 ]
             ]
 
-    member this.item(lg: LangMenu) =
-        let key = $"lang-%s{lg.Code}"
+    member this.item(langMenu: LangMenu) =
+        let key = $"lang-%s{langMenu.Code}"
 
         let isCurrentLang = // ↩
-            lg.Lang = currentLang
+            langMenu.Lang = currentLang
 
-        match lg.Status with
+        match langMenu.Status with
         | Remote.Empty -> Html.none
         | Remote.Loading ->
             Daisy.loading [
@@ -82,23 +84,25 @@ type private LangMenuElement(currentLang, onClick) =
                 loading.xs
                 color.textInfo
             ]
-            |> this.li (key, lg, canClick = false)
+            |> this.li (key, langMenu, canClick = false)
 
         | Remote.Loaded() ->
             Html.span [
                 prop.key $"{key}-status"
                 prop.className "ml-auto font-bold text-green-500 min-w-[1em]"
-                prop.text (if isCurrentLang then "✓" else "")
+                if isCurrentLang then
+                    prop.children (icon fa6Solid.check)
             ]
-            |> this.li (key, lg, canClick = not isCurrentLang)
+            |> this.li (key, langMenu, canClick = not isCurrentLang)
 
         | Remote.LoadError apiError ->
             Daisy.tooltip [ // ↩
-                tooltip.text $"Error: %s{apiError.ErrorMessage}"
                 prop.key $"{key}-error-tooltip"
-                prop.child (Daisy.status [ status.error; status.xl ])
+                color.textError
+                prop.children (icon fa6Solid.circleExclamation)
+                tooltip.text $"Error: %s{apiError.ErrorMessage}"
             ]
-            |> this.li (key, lg, canClick = true)
+            |> this.li (key, langMenu, canClick = true)
 
 [<ReactComponent>]
 let LangDropdown key (currentLang: Lang) menus onClick =
@@ -111,7 +115,8 @@ let LangDropdown key (currentLang: Lang) menus onClick =
             Daisy.button.button [
                 button.ghost
                 prop.key "lang-button"
-                prop.text currentLang.AsModel.Emoji
+                prop.className "opacity-80 hover:opacity-100"
+                prop.children (icon fa6Solid.language)
             ]
             Daisy.dropdownContent [
                 prop.key "lang-dropdown-content"

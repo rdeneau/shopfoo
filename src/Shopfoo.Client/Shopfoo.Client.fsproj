@@ -20,6 +20,7 @@
     <Compile Include="Components\Alert.fs" />
     <Compile Include="Components\AppNav.fs" />
     <Compile Include="Components\Buttons.fs" />
+    <Compile Include="Components\Icon.fs" />
     <Compile Include="Components\Lang.fs" />
     <Compile Include="Components\Theme.fs" />
     <Compile Include="Components\User.fs" />

@@ -5,11 +5,24 @@ open System
 open Elmish
 open Fable.Core
 open Fable.Core.JsInterop
+open Fable.React
 open Feliz
 open Feliz.Router
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Shared.Translations
+
+type React =
+    static member withKey (key: string) (element: ReactElement) =
+        ReactBindings.React.createElement ( // ↩
+            comp = ReactBindings.React.Fragment,
+            props = createObj [ "key" ==> key ],
+            children = [ element ]
+        )
+
+    static member withKeyAuto(element: ReactElement) =
+        let key = Guid.NewGuid().ToString().[..7]
+        element |> React.withKey key
 
 type prop with
     static member inline hrefRouted(PageUrl pageUrl) = [
@@ -17,13 +30,9 @@ type prop with
         prop.onClick Router.goToUrl
     ]
 
-    static member inline child(item: ReactElement) =
-        let key = Guid.NewGuid()
-
-        let wrappingFragment =
-            Fable.React.ReactBindings.React.createElement (Fable.React.ReactBindings.React.Fragment, createObj [ "key" ==> string key ], [ item ])
-
-        prop.children [ wrappingFragment ]
+    /// Adds a single child with an automatically generated key.
+    static member inline child(element: ReactElement) =
+        prop.children [ element |> React.withKeyAuto ]
 
 type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations) =
     let len = String.length value

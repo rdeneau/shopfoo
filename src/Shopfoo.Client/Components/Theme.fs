@@ -3,7 +3,9 @@
 open System
 open Feliz
 open Feliz.DaisyUI
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
@@ -88,7 +90,8 @@ type private ThemeMenu(currentTheme, onClick) =
                         Html.span [
                             prop.key $"{key}-theme-tick"
                             prop.className "font-bold text-green-500 min-w-[1em] text-right"
-                            prop.text (if theme = currentTheme then "✓" else "")
+                            if theme = currentTheme then
+                                prop.children (icon fa6Solid.check)
                         ]
                     ]
                 ]
@@ -109,7 +112,8 @@ let ThemeDropdown key theme (translations: AppTranslations) onClick =
                 Daisy.button.button [
                     button.ghost
                     prop.key "theme-button"
-                    prop.text "🌗"
+                    prop.className "opacity-80 hover:opacity-100"
+                    prop.children (icon fa6Solid.brush)
                 ]
                 Daisy.dropdownContent [
                     prop.key "theme-dropdown-content"

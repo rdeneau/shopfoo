@@ -1,5 +1,7 @@
 # Shopfoo
 
+TODO: badge to indicate the current release (version number)
+
 Shopfoo is a full-stack web app. It is a demo project showcasing the [Safe Clean Architecture](https://rdeneau.gitbook.io/safe-clean-architecture)—a term I coined.
 
 > 😉 The name **Shopfoo** is a reference to the [chop suey](https://en.wikipedia.org/wiki/Chop_suey) dish and the [song](https://en.wikipedia.org/wiki/Chop_Suey!) by System of a Down.

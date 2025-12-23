@@ -4,13 +4,12 @@ open System
 open Elmish
 open Feliz
 open Feliz.DaisyUI
-open Feliz.Iconify
-open type Feliz.Iconify.Offline.Exports
 open Feliz.Router
 open Feliz.UseElmish
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.AppNav
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
 open Shopfoo.Client.Components.User
@@ -168,30 +167,32 @@ let AppView () =
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [
-            LangDropdown "nav-lang" fullContext.Lang model.LangMenus startChangeLang
-            ThemeDropdown "nav-theme" model.Theme translations onThemeChanged
-
             match fullContext.User with
             | User.Anonymous -> ()
             | User.LoggedIn(userName, _) -> UserDropdown "nav-user" userName translations logout
 
-            if not translations.IsEmpty then
-                Daisy.button.button [
-                    button.ghost
-                    prop.key "nav-about"
-                    prop.text "📚"
-                    prop.title translations.Home.About
-                    prop.onClick (fun _ -> Router.navigatePage Page.About)
-                ]
+            LangDropdown "nav-lang" fullContext.Lang model.LangMenus startChangeLang
+            ThemeDropdown "nav-theme" model.Theme translations onThemeChanged
 
+            if not translations.IsEmpty then
                 if fullContext.User.CanAccess Feat.Admin then
                     Daisy.button.button [
                         button.ghost
                         prop.key "nav-admin"
+                        prop.className "opacity-70 hover:opacity-100"
+                        prop.children (icon fa6Solid.userGear)
                         prop.title translations.Home.Admin
                         prop.onClick (fun _ -> Router.navigatePage Page.Admin)
-                        prop.children [ Icon [ icon.icon fa6Solid.userGear ] ]
                     ]
+
+                Daisy.button.button [
+                    button.ghost
+                    prop.key "nav-about"
+                    prop.className "opacity-70 hover:opacity-100"
+                    prop.children (icon fa6Solid.circleInfo)
+                    prop.title translations.Home.About
+                    prop.onClick (fun _ -> Router.navigatePage Page.About)
+                ]
         ]
 
     React.router [
