@@ -81,17 +81,28 @@ Shopfoo is the back-office tool to manage a shop selling products, limited to 5 
 Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 
 - Catalog Info
-  - [x] Index: table of products
-  - [x] Details:
-    - [x] Edit the cover image, with preview.
-    - [x] Edit the book name: required, max 128 chars.
-    - [x] Edit the description: max 512 chars.
+  - Index
+    - [x] Display the table of products
+      - [ ] Display ellipsis for texts longer than 2 lines
+    - [ ] Handle two categories: Books and Goodies
+      - [ ] Filter by categories, book author
+        - [ ] New component "Filter"
+    - [ ] Add new product
+    - [ ] Delete product (if no stock, no sales, no purchases)
+  - Details
+    - [x] Edit the image, with preview.
+    - [x] Edit the product name: required, max 128 chars.
+    - [x] Edit the product description: max 512 chars.
+    - [ ] Edit the book authors
+      - [ ] Select/Unselect existing author(s)
+        - [ ] New component "MultiSelect"
+      - [ ] Add new author
 - Sales
   - List price (a.k.a. recommended price)
     - [x] Display the price fetched from the server
     - [ ] Action: Define if not defined
-    - [ ] Action: Modify if defined (intent: Increase or Decrease)
-    - [ ] Action: Remove if defined
+    - [x] Action: Modify if defined (intent: Increase or Decrease)
+    - [x] Action: Remove if defined
   - Retail price
     - [x] Display the price fetched from the server
     - [x] Display discount / list price if any
