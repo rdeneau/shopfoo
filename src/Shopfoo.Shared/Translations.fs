@@ -67,6 +67,9 @@ module TranslationPages =
 
         member this.Cancel = this.Get "Cancel"
         member this.Close = this.Get "Close"
+        member this.Confirmation = this.Get "Confirmation"
+        member this.Completed = this.Get "Completed"
+        member this.Error(error: string) = this.Format("Error", error)
         member this.Save = this.Get "Save"
         member this.SaveOk(name: string) = this.Format("SaveOk", name)
         member this.SaveError(name: string, error: string) = this.Format("SaveError", name, error)
@@ -150,6 +153,12 @@ module TranslationPages =
                 Increase = this.Get "Increase"
                 Decrease = this.Get "Decrease"
                 MarkAsSoldOut = this.Get "MarkAsSoldOut"
+                MarkAsSoldOutDialog =
+                    this.WithPrefix "RemoveListPriceDialog."
+                    <| fun this -> {|
+                        Confirm = this.Get "Confirm"
+                        Question = this.Get "Question"
+                    |}
             |}
 
         member this.Stock = this.Get "Stock"

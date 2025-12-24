@@ -23,9 +23,7 @@ type PriceModel = {
 
 type Drawer =
     | DefineListPrice
-    | RemoveListPrice
     | ModifyPrice of PriceModel * Prices
-    | MarkAsSoldOut
     | InputSales
     | ReceivePurchasedProducts
     | AdjustStockAfterInventory

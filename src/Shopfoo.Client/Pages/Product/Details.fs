@@ -14,8 +14,8 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Remoting
 
 type private Msg =
-    | OpenDrawer of Drawer
     | CloseDrawer
+    | OpenDrawer of Drawer
 
 type private Model = { Drawer: Drawer option }
 
@@ -23,8 +23,8 @@ let private init () = { Drawer = None }, Cmd.none
 
 let private update msg (model: Model) =
     match msg with
-    | OpenDrawer drawer -> { model with Drawer = Some drawer }, Cmd.none
     | CloseDrawer -> { model with Drawer = None }, Cmd.none
+    | OpenDrawer drawer -> { model with Drawer = Some drawer }, Cmd.none
 
 [<ReactComponent>]
 let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast -> unit) =
@@ -62,7 +62,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                 prop.key $"%s{key}-drawer-toggle"
                 prop.id $"%s{key}-drawer-toggle"
                 prop.isChecked isDrawerOpen
-                prop.onChange ignore<bool> // Noop. Still, it's needed by React because it's a controlled input.
+                prop.onChange ignore<bool> // `onChange` is needed by React because it's a controlled input.
             ]
             Daisy.drawerContent [
                 prop.key $"%s{key}-drawer-content"
@@ -83,7 +83,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                         Html.div [
                             prop.key $"%s{key}-actions"
                             prop.className "col-span-1"
-                            prop.children [ ActionsForm "actions" fullContext sku drawerControl ]
+                            prop.children [ ActionsForm "actions" fullContext sku drawerControl onSavePrice ]
                         ]
                 ]
             ]
@@ -103,8 +103,6 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                             | None -> ()
                             | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some DefineListPrice
-                            | Some RemoveListPrice
-                            | Some MarkAsSoldOut
                             | Some InputSales
                             | Some ReceivePurchasedProducts
                             | Some AdjustStockAfterInventory ->

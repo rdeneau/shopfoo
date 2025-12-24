@@ -73,14 +73,14 @@ module Client =
     let getProducts () =
         async {
             do! Async.Sleep(millisecondsDueTime = 500) // Simulate latency
-            return Ok(repository.Values |> Seq.toList)
+            return repository.Values |> Seq.toList
         }
 
     let getProduct sku =
         async {
             do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
             let product = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
-            return Ok product
+            return product
         }
 
     let saveProduct (product: Product) =

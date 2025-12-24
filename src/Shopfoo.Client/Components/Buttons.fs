@@ -5,7 +5,6 @@ open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client.Remoting
-open Shopfoo.Common
 open Shopfoo.Shared.Errors
 
 [<Erase>]
@@ -58,6 +57,7 @@ type Buttons =
             ]
 
             if disabled || saveDate = Remote.Loading then
+                prop.ariaDisabled true
                 prop.disabled true
             else
                 prop.onClick (fun _ -> onClick ())

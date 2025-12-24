@@ -56,5 +56,5 @@ module Client =
         async {
             do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
             let sales = Fakes.oneYear |> Seq.filter (fun x -> x.SKU = sku) |> Seq.toList
-            return Ok sales
+            return sales
         }

@@ -25,6 +25,9 @@ let private translationPages = [
 
         TagCode "Cancel", "Cancel", "Annuler"
         TagCode "Close", "Close", "Fermer"
+        TagCode "Confirmation", "Confirmation", "Confirmation"
+        TagCode "Completed", "Completed", "Réussi"
+        TagCode "Error", "Error: {1}", "Erreur : {1}"
         TagCode "Save", "Save", "Enregistrer"
         TagCode "SaveOk", "{0} saved successfully", "{0} enregistré avec succès"
         TagCode "SaveError", "{0} not saved: {1}", "{0} non enregistré : {1}"
@@ -78,13 +81,19 @@ let private translationPages = [
         TagCode "Price", "Price", "Prix"
         TagCode "CurrentPrice", "Current price", "Prix actuel"
         TagCode "NewPrice", "New price", "nouveau prix"
-        TagCode "ListPrice", "List price", "Prix conseillé"
+        TagCode "ListPrice", "List price", "Prix catalogue"
         TagCode "RetailPrice", "Retail price", "Prix de vente"
 
         TagCode "PriceAction.Define", "Define", "Définir"
         TagCode "PriceAction.Remove", "Remove", "Supprimer"
         TagCode "PriceAction.Increase", "Increase price", "Augmenter le prix"
         TagCode "PriceAction.Decrease", "Decrease price", "Diminuer le prix"
+
+        TagCode "PriceAction.RemoveListPriceDialog.Confirm", "Yes, remove the list price", "Oui, supprimer le prix catalogue"
+        TagCode "PriceAction.RemoveListPriceDialog.Question",
+        "Are you sure you want to remove the list price?",
+        "Êtes-vous sûr de vouloir supprimer le prix catalogue ?"
+
         TagCode "PriceAction.MarkAsSoldOut", "Mark as sold out", "Marquer comme épuisé"
 
         TagCode "Stock", "Stock", "Stock"

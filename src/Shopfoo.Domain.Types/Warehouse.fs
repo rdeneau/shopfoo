@@ -3,7 +3,7 @@
 open System
 
 type EventType =
-    | ProductReceived of purchasePrice: Money
+    | ProductSupplyReceived of purchasePrice: Money
     | StockAdjusted
 
 type StockEvent = {

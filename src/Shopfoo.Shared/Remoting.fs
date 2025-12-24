@@ -124,6 +124,7 @@ module PricesApi =
     type PricesApi = {
         GetPrices: Query<SKU, GetPricesResponse>
         SavePrices: Command<Prices>
+        RemoveListPrice: Command<SKU>
     } with
         interface IApi
 

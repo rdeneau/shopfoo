@@ -8,8 +8,9 @@
     <Content Include="paket.references" />
     <Compile Include="Workflows\Types.fs" />
     <Compile Include="Workflows\Instructions.fs" />
-    <Compile Include="Workflows\SaveProduct.fs" />
+    <Compile Include="Workflows\RemoveListPrice.fs" />
     <Compile Include="Workflows\SavePrices.fs" />
+    <Compile Include="Workflows\SaveProduct.fs" />
     <Compile Include="Data\Common.fs" />
     <Compile Include="Data\Catalog.fs" />
     <Compile Include="Data\Prices.fs" />

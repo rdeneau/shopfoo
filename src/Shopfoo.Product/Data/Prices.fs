@@ -52,7 +52,7 @@ module Client =
         async {
             do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
             let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
-            return Ok prices
+            return prices
         }
 
     let savePrices (prices: Prices) =

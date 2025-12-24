@@ -14,7 +14,7 @@ type private Units =
     }
 
     static member Purchased price =
-        Units.For(EventType.ProductReceived price)
+        Units.For(EventType.ProductSupplyReceived price)
 
     static member Remaining = Units.For EventType.StockAdjusted
 
