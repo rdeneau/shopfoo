@@ -116,6 +116,7 @@ let ModifyPriceForm key (fullContext: FullContext) price prices drawerControl on
                 prop.className "text-base font-bold mb-2"
                 prop.children [
                     match price.Intent with
+                    // TODO: Use icons from Shopfoo.Client.Components.Icons
                     | Increase -> Html.text $"↗️ %s{translations.Product.Increase}"
                     | Decrease -> Html.text $"↘️ %s{translations.Product.Decrease}"
 
@@ -253,6 +254,7 @@ let ModifyPriceForm key (fullContext: FullContext) price prices drawerControl on
                         ]
 
                     // -- Save Prices ----
+                    // TODO: [After Save] hide Save button and disable form fields
                     Buttons.SaveButton(
                         key = "save-price",
                         label = translations.Home.Save,
