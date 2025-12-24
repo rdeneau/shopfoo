@@ -27,6 +27,7 @@
     <Compile Include="Remoting\Home\HomeApiBuilder.fs" />
     <Compile Include="Remoting\Prices\GetPricesHandler.fs" />
     <Compile Include="Remoting\Prices\SavePricesHandler.fs" />
+    <Compile Include="Remoting\Prices\MarkAsSoldOutHandler.fs" />
     <Compile Include="Remoting\Prices\RemoveListPriceHandler.fs" />
     <Compile Include="Remoting\Prices\PricesApiBuilder.fs" />
     <Compile Include="Remoting\RootApiBuilder.fs" />

@@ -5,13 +5,13 @@ open Feliz.DaisyUI
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Security
 
-type Action = {
+type ActionProps = {
     Key: string
     Text: string
     Icon: ReactElement option
     OnClick: unit -> unit
 } with
-    static member withIcon key icon text onClick : Action = {
+    static member withIcon key icon text onClick : ActionProps = {
         Key = key
         Text = text
         Icon = Some icon
@@ -44,8 +44,8 @@ type Value =
         | Value.Money(Some f, _) -> $"%0.2f{f}"
 
 [<ReactComponent>]
-let ActionsDropdown key access (value: Value) (actions: Action list) =
-    let itemElement (action: Action) =
+let ActionsDropdown key access (value: Value) (actions: ActionProps list) =
+    let itemElement (action: ActionProps) =
         Html.li [
             prop.key $"{key}-action--{action.Key}"
             prop.children [

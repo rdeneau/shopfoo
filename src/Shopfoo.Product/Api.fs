@@ -19,6 +19,7 @@ type IProductApi =
 
     abstract member GetPrices: (SKU -> Async<Prices option>)
     abstract member SavePrices: (Prices -> Async<Result<unit, Error>>)
+    abstract member MarkAsSoldOut: (SKU -> Async<Result<unit, Error>>)
     abstract member RemoveListPrice: (SKU -> Async<Result<unit, Error>>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
@@ -38,6 +39,7 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
         member val GetProduct = Catalog.Client.getProduct
         member val GetPrices = Prices.Client.getPrices
         member val GetSales = Sales.Client.getSales
+        member val MarkAsSoldOut = interpretWorkflow (MarkAsSoldOutWorkflow())
         member val RemoveListPrice = interpretWorkflow (RemoveListPriceWorkflow())
         member val SaveProduct = interpretWorkflow (SaveProductWorkflow())
         member val SavePrices = interpretWorkflow (SavePricesWorkflow())

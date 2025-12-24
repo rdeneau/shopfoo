@@ -95,6 +95,10 @@ let private translationPages = [
         "Êtes-vous sûr de vouloir supprimer le prix catalogue ?"
 
         TagCode "PriceAction.MarkAsSoldOut", "Mark as sold out", "Marquer comme épuisé"
+        TagCode "PriceAction.MarkAsSoldOutDialog.Confirm", "Yes, mark as sold out", "Oui, marquer comme épuisé"
+        TagCode "PriceAction.MarkAsSoldOutDialog.Question",
+        "Are you sure you want to mark this product as sold out?",
+        "Êtes-vous sûr de vouloir marquer ce produit comme épuisé ?"
 
         TagCode "Stock", "Stock", "Stock"
         TagCode "StockAction.AdjustStockAfterInventory", "Inventory adjustment", "Ajuster suite à inventaire"

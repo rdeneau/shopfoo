@@ -17,24 +17,24 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
+open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
-type private Dialog =
+type private Action =
+    | None
     | MarkAsSoldOut
     | RemoveListPrice
+    | SavePrices
 
-type private Model = {
-    Prices: Remote<Prices>
-    RemoveListPriceStatus: Remote<DateTime>
-    SaveStatus: Remote<unit>
-}
+type private Dialog = { Type: Action }
+
+type private Model = { Prices: Remote<Prices>; PriceActionStatus: Action * Remote<DateTime> }
 
 type private Msg =
-    // TODO: | MarkAsSoldOut of ApiCall<Tbd>
     | PricesFetched of ApiResult<GetPricesResponse>
-    | RemoveListPrice of SKU * ApiCall<unit>
+    | PerformAction of Action * SKU * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -45,41 +45,54 @@ module private Cmd =
             Success = Ok >> PricesFetched
         }
 
-    let removeListPrice (cmder: Cmder, request) =
+    let perform action (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Prices.RemoveListPrice request
-            Error = (fun apiError -> RemoveListPrice(request.Body, Done(Error apiError)))
-            Success = (fun data -> RemoveListPrice(request.Body, Done(Ok data)))
+            Call =
+                fun api ->
+                    match action with
+                    | Action.RemoveListPrice -> api.Prices.RemoveListPrice request
+                    | Action.MarkAsSoldOut -> api.Prices.MarkAsSoldOut request
+                    | _ ->
+                        // TODO: handle unexpected state properly: modal "Oops, something went wrong" + cmd to log the error
+                        async {
+                            // This action should not happen here. It's handled as an error from the server side for simplicity’s sake.
+                            return Error(ServerError.ApiError(ApiErrorBuilder.Technical.Build($"Unexpected action: %A{action}")))
+                        }
+            Error = fun apiError -> PerformAction(action, request.Body.SKU, Done(Error apiError))
+            Success = fun data -> PerformAction(action, request.Body.SKU, Done(Ok data))
         }
 
 let private init (fullContext: FullContext) sku =
-    {
-        Prices = Remote.Loading
-        RemoveListPriceStatus = Remote.Empty
-        SaveStatus = Remote.Empty
-    },
-    Cmd.loadPrices (fullContext.PrepareRequest sku)
+    { Prices = Remote.Loading; PriceActionStatus = Action.None, Remote.Empty }, Cmd.loadPrices (fullContext.PrepareRequest sku)
 
 let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Model) =
     match msg with
     | PricesFetched(Ok response) -> { model with Prices = response.Prices |> Remote.ofOption }, Cmd.none
     | PricesFetched(Error apiError) -> { model with Prices = Remote.LoadError apiError }, Cmd.none
 
-    | RemoveListPrice(sku, Start) ->
-        { model with RemoveListPriceStatus = Remote.Loading }, // ↩
-        Cmd.removeListPrice (fullContext.PrepareRequest sku)
+    | PerformAction(action, sku, Start) ->
+        { model with PriceActionStatus = action, Remote.Loading }, // ↩
+        Cmd.perform action (fullContext.PrepareRequest { SKU = sku })
 
-    | RemoveListPrice(_, Done result) ->
-        match model.Prices with
-        | Remote.Loaded prices ->
+    | PerformAction(action, _, Done result) ->
+        let prices =
+            match model.Prices, action with
+            | Remote.Loaded prices, Action.MarkAsSoldOut -> Some { prices with RetailPrice = RetailPrice.SoldOut }
+            | Remote.Loaded prices, Action.RemoveListPrice -> Some { prices with ListPrice = None }
+            | _ -> None
+
+        match prices with
+        | Some prices ->
             {
                 model with
-                    Prices = Remote.Loaded { prices with ListPrice = None }
-                    RemoveListPriceStatus = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
+                    Prices = Remote.Loaded prices
+                    PriceActionStatus = action, result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
             },
             Cmd.ofEffect (fun _ -> onSavePrice (prices, result |> Result.tryGetError))
         | _ ->
-            // Ignore the msg that should not happen if prices are not loaded.
+            // Unexpected case
+            // TODO: report it to the users, inviting them to reload the page
+            // TODO: send a report to the server
             model, Cmd.none
 
 [<ReactComponent>]
@@ -103,7 +116,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
     )
 
     let modalRef = React.useElementRef ()
-    let dialog, setDialog = React.useState Dialog.RemoveListPrice
+    let dialog, setDialog = React.useState { Dialog.Type = Action.None }
 
     let updateModal f =
         modalRef.current
@@ -116,33 +129,32 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
     // Close the modal after success with a short delay (500ms),
     // time to let the user get this result visually.
     React.useEffect (fun () ->
-        match dialog with
-        | Dialog.MarkAsSoldOut -> () // TODO
-        | Dialog.RemoveListPrice ->
-            match model.RemoveListPriceStatus with
-            | Remote.Loaded _ ->
-                JS.runAfter // ↩
-                    (TimeSpan.FromMilliseconds(500))
-                    (fun () -> updateModal _.close())
-            | _ -> ()
+        match model.PriceActionStatus with
+        | priceAction, Remote.Loaded _ when priceAction = dialog.Type ->
+            JS.runAfter // ↩
+                (TimeSpan.FromMilliseconds(500))
+                (fun () -> updateModal _.close())
+        | _ -> ()
     )
 
-    let openModal dialog =
-        setDialog dialog
+    let openModal action =
+        setDialog { Dialog.Type = action }
         updateModal _.showModal()
 
     let closeModal (e: MouseEvent) =
         e.preventDefault ()
         updateModal _.close()
+        setDialog { Dialog.Type = Action.None }
 
-    let dialogTranslations, onClick =
-        match dialog with
-        | Dialog.MarkAsSoldOut ->
-            translations.Product.PriceAction.MarkAsSoldOutDialog, // ↩
-            (fun _ -> ()) // TODO: dispatch msg
-        | Dialog.RemoveListPrice ->
-            translations.Product.PriceAction.RemoveListPriceDialog, // ↩
-            (fun _ -> dispatch (RemoveListPrice(sku, Start)))
+    let dialogTranslations =
+        match dialog.Type with
+        | Action.MarkAsSoldOut -> translations.Product.PriceAction.MarkAsSoldOutDialog
+        | Action.RemoveListPrice -> translations.Product.PriceAction.RemoveListPriceDialog
+        | Action.None
+        | Action.SavePrices -> {| Question = "Do you confirm?"; Confirm = "Yes, I confirm" |} // Default texts
+
+    let onConfirm () =
+        dispatch (PerformAction(dialog.Type, sku, Start))
 
     React.fragment [
         Daisy.modal.dialog [
@@ -191,9 +203,9 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                                     tooltipOk = translations.Home.Completed,
                                     tooltipError = (fun err -> translations.Home.Error(err.ErrorMessage)),
                                     tooltipProps = [ tooltip.left ],
-                                    saveDate = model.RemoveListPriceStatus,
+                                    saveDate = snd model.PriceActionStatus,
                                     disabled = false,
-                                    onClick = onClick
+                                    onClick = (fun _ -> onConfirm ())
                                 )
                             ]
                         ]
@@ -230,26 +242,26 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                                 Intent = intent
                             }
 
-                            Action.withIcon
+                            ActionProps.withIcon
                                 "increase-list-price"
                                 (icon fa6Solid.arrowUpWideShort)
                                 translations.Product.PriceAction.Increase
                                 (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Increase, prices)))
 
-                            Action.withIcon
+                            ActionProps.withIcon
                                 "decrease-list-price"
                                 (icon fa6Solid.arrowDownWideShort)
                                 translations.Product.PriceAction.Decrease
                                 (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Decrease, prices)))
 
-                            Action.withIcon
+                            ActionProps.withIcon
                                 "remove-list-price"
                                 (icon fa6Solid.eraser)
                                 translations.Product.PriceAction.Remove
-                                (fun () -> openModal Dialog.RemoveListPrice)
+                                (fun () -> openModal Action.RemoveListPrice)
 
                         | None ->
-                            Action.withIcon
+                            ActionProps.withIcon
                                 "define-list-price"
                                 (icon fa6Solid.circlePlus)
                                 (translations.Product.PriceAction.Define + " 🚧")
@@ -261,9 +273,9 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                         prop.key "retail-price-label"
                         prop.children [
                             Html.text translations.Product.RetailPrice
-                            match prices.ListPrice with
-                            | Some listPrice when listPrice > prices.RetailPrice ->
-                                match Money.tryCompute listPrice prices.RetailPrice (fun x y -> round (-100m * (x - y) / x)) with
+                            match prices.ListPrice, prices.RetailPrice with
+                            | Some listPrice, RetailPrice.Regular retailPrice when listPrice > retailPrice ->
+                                match Money.tryCompute listPrice retailPrice (fun x y -> round (-100m * (x - y) / x)) with
                                 | Some discount ->
                                     Html.div [
                                         prop.key "discount"
@@ -274,36 +286,45 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                             | _ -> ()
                         ]
                     ]
-                    ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoney prices.RetailPrice) [
-                        let priceModelTo intent : PriceModel = {
-                            Type = RetailPrice
-                            Value = prices.RetailPrice
-                            Intent = intent
-                        }
+                    ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
+                        match prices.RetailPrice with
+                        | RetailPrice.Regular retailPrice ->
+                            let priceModelTo intent : PriceModel = {
+                                Type = RetailPrice
+                                Value = retailPrice
+                                Intent = intent
+                            }
 
-                        Action.withIcon
-                            "increase-retail-price"
-                            (icon fa6Solid.arrowUpWideShort)
-                            translations.Product.PriceAction.Increase
-                            (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Increase, prices)))
+                            ActionProps.withIcon
+                                "increase-retail-price"
+                                (icon fa6Solid.arrowUpWideShort)
+                                translations.Product.PriceAction.Increase
+                                (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Increase, prices)))
 
-                        Action.withIcon
-                            "decrease-retail-price"
-                            (icon fa6Solid.arrowDownWideShort)
-                            translations.Product.PriceAction.Decrease
-                            (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Decrease, prices)))
+                            ActionProps.withIcon
+                                "decrease-retail-price"
+                                (icon fa6Solid.arrowDownWideShort)
+                                translations.Product.PriceAction.Decrease
+                                (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Decrease, prices)))
 
-                        Action.withIcon
-                            "mark-as-sold-out"
-                            (icon fa6Solid.ban)
-                            (translations.Product.PriceAction.MarkAsSoldOut + " 🚧")
-                            (fun () -> openModal Dialog.MarkAsSoldOut) // TODO: MarkAsSoldOut
+                            ActionProps.withIcon
+                                "mark-as-sold-out"
+                                (icon fa6Solid.ban)
+                                translations.Product.PriceAction.MarkAsSoldOut
+                                (fun () -> openModal Action.MarkAsSoldOut)
+
+                        | RetailPrice.SoldOut ->
+                            ActionProps.withIcon
+                                "define-retail-price"
+                                (icon fa6Solid.circlePlus)
+                                (translations.Product.PriceAction.Define + " 🚧")
+                                (fun () -> drawerControl.Open(Drawer.DefineRetailPrice)) // TODO: DefineRetailPrice
                     ]
 
                     // -- Stock ----
                     Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
                     ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [ // TODO: Fetch stock
-                        Action.withIcon
+                        ActionProps.withIcon
                             "inventory-adjustment"
                             (icon fa6Solid.pencil)
                             (translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")

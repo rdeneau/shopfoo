@@ -19,10 +19,11 @@ type PriceModel = {
     member this.Update(prices: Prices) =
         match this.Type with
         | ListPrice -> { prices with ListPrice = Some this.Value }
-        | RetailPrice -> { prices with RetailPrice = this.Value }
+        | RetailPrice -> { prices with RetailPrice = RetailPrice.Regular this.Value }
 
 type Drawer =
     | DefineListPrice
+    | DefineRetailPrice
     | ModifyPrice of PriceModel * Prices
     | InputSales
     | ReceivePurchasedProducts

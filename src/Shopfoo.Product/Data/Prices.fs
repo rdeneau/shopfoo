@@ -9,31 +9,31 @@ open Shopfoo.Product.Data
 module private Fakes =
     let private cleanArchitecture = {
         SKU = SKU.CleanArchitecture
-        RetailPrice = Dollars 39.90m
+        RetailPrice = RetailPrice.Regular(Dollars 39.90m)
         ListPrice = None
     }
 
     let private domainDrivenDesign = {
         SKU = SKU.DomainDrivenDesign
-        RetailPrice = 64.42m |> Euros
+        RetailPrice = RetailPrice.Regular(64.42m |> Euros)
         ListPrice = Some(67.33m |> Euros)
     }
 
     let private domainModelingMadeFunctional = {
         SKU = SKU.DomainModelingMadeFunctional
-        RetailPrice = 32.32m |> Euros
+        RetailPrice = RetailPrice.Regular(32.32m |> Euros)
         ListPrice = Some(43.04m |> Euros)
     }
 
     let private javaScriptTheGoodParts = {
         SKU = SKU.JavaScriptTheGoodParts
-        RetailPrice = 19.98m |> Euros
+        RetailPrice = RetailPrice.Regular(19.98m |> Euros)
         ListPrice = Some(28.92m |> Euros)
     }
 
     let private thePragmaticProgrammer = {
         SKU = SKU.ThePragmaticProgrammer
-        RetailPrice = 32.86m |> Euros
+        RetailPrice = RetailPrice.Regular(32.86m |> Euros)
         ListPrice = Some(49.37m |> Euros)
     }
 

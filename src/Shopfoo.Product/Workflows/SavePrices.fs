@@ -9,12 +9,20 @@ open Shopfoo.Product.Workflows.Instructions
 type internal SavePricesWorkflow() =
     inherit ProductWorkflow<Prices, unit>()
 
+    let guardListPrice (prices: Prices) =
+        match prices.ListPrice with
+        | Some price -> Guard(nameof prices.ListPrice).IsPositive(price.Value)
+        | None -> Ok 0m
+
+    let guardRetailPrice (prices: Prices) =
+        match prices.RetailPrice with
+        | RetailPrice.Regular price -> Guard(nameof prices.RetailPrice).IsPositive(price.Value)
+        | RetailPrice.SoldOut -> Ok 0m
+
     let validate (prices: Prices) =
         validation {
-            let recommendedPrice = prices.ListPrice |> Option.map _.Value |> Option.defaultValue 0m
-            let retailPrice = prices.RetailPrice.Value
-            let! _ = Guard(nameof recommendedPrice).IsPositiveOrZero(recommendedPrice).ToValidation()
-            and! _ = Guard(nameof retailPrice).IsPositive(retailPrice).ToValidation()
+            let! _ = guardListPrice(prices).ToValidation()
+            and! _ = guardRetailPrice(prices).ToValidation()
             return ()
         }
 

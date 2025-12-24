@@ -103,6 +103,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                             | None -> ()
                             | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some DefineListPrice
+                            | Some DefineRetailPrice
                             | Some InputSales
                             | Some ReceivePurchasedProducts
                             | Some AdjustStockAfterInventory ->

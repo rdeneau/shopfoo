@@ -5,12 +5,12 @@ open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
 
 [<Sealed>]
-type RemoveListPriceHandler(api: FeatApi) =
+type MarkAsSoldOutHandler(api: FeatApi) =
     inherit SecureCommandHandler<PriceCommand>()
 
     override _.Handle _ command user =
         async {
-            let! result = api.Product.RemoveListPrice(command.SKU)
+            let! result = api.Product.MarkAsSoldOut(command.SKU)
             let response = ResponseBuilder.plain user
 
             return

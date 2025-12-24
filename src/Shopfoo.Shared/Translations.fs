@@ -154,6 +154,12 @@ module TranslationPages =
                 Decrease = this.Get "Decrease"
                 MarkAsSoldOut = this.Get "MarkAsSoldOut"
                 MarkAsSoldOutDialog =
+                    this.WithPrefix "MarkAsSoldOutDialog."
+                    <| fun this -> {|
+                        Confirm = this.Get "Confirm"
+                        Question = this.Get "Question"
+                    |}
+                RemoveListPriceDialog =
                     this.WithPrefix "RemoveListPriceDialog."
                     <| fun this -> {|
                         Confirm = this.Get "Confirm"
