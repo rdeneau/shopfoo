@@ -32,7 +32,7 @@ module private Product =
 module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.GetProducts request
+            Call = fun api -> api.Catalog.GetProducts request
             Error = Error >> ProductsFetched
             Success = Ok >> ProductsFetched
         }

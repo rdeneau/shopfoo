@@ -4,10 +4,12 @@ open Shopfoo.Shared.Remoting
 
 type RootApiBuilder
     (
-        homeApiBuilder: Home.HomeApiBuilder, // ↩
-        productApiBuilder: Product.ProductApiBuilder
+        catalogApiBuilder: Catalog.CatalogApiBuilder, // ↩
+        homeApiBuilder: Home.HomeApiBuilder,
+        pricesApiBuilder: Prices.PricesApiBuilder
     ) =
-    member _.Build() : RootApi = { // ↩
+    member _.Build() : RootApi = {
+        Catalog = catalogApiBuilder.Build()
         Home = homeApiBuilder.Build()
-        Product = productApiBuilder.Build()
+        Prices = pricesApiBuilder.Build()
     }

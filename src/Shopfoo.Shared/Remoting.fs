@@ -89,6 +89,20 @@ type QueryWithTranslations<'query, 'response> = Query<QueryDataAndTranslations<'
 type IApi = interface end
 
 [<AutoOpen>]
+module CatalogApi =
+    open Shopfoo.Domain.Types.Catalog
+
+    type GetProductsResponse = { Products: Product list }
+    type GetProductResponse = { Product: Product option }
+
+    type CatalogApi = {
+        GetProducts: QueryWithTranslations<unit, GetProductsResponse>
+        GetProduct: QueryWithTranslations<SKU, GetProductResponse>
+        SaveProduct: Command<Product>
+    } with
+        interface IApi
+
+[<AutoOpen>]
 module HomeApi =
     type HomeIndexResponse = { Personas: User list }
 
@@ -102,21 +116,19 @@ module HomeApi =
         interface IApi
 
 [<AutoOpen>]
-module ProductApi =
-    open Shopfoo.Domain.Types.Catalog
+module PricesApi =
     open Shopfoo.Domain.Types.Sales
 
-    type GetProductsResponse = { Products: Product list }
-    type GetProductResponse = { Product: Product option }
     type GetPricesResponse = { Prices: Prices option }
 
-    type ProductApi = {
-        GetProducts: QueryWithTranslations<unit, GetProductsResponse>
-        GetProduct: QueryWithTranslations<SKU, GetProductResponse>
+    type PricesApi = {
         GetPrices: Query<SKU, GetPricesResponse>
-        SaveProduct: Command<Product>
         SavePrices: Command<Prices>
     } with
         interface IApi
 
-type RootApi = { Home: HomeApi; Product: ProductApi }
+type RootApi = {
+    Catalog: CatalogApi
+    Home: HomeApi
+    Prices: PricesApi
+}

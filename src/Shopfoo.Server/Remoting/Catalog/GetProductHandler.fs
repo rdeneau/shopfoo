@@ -1,17 +1,18 @@
-﻿namespace Shopfoo.Server.Remoting.Product
+﻿namespace Shopfoo.Server.Remoting.Catalog
 
-open Shopfoo.Domain.Types.Security
+open Shopfoo.Domain.Types
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
 
 [<Sealed>]
-type GetProductsHandler(api: FeatApi, authorizedPageCodes) =
-    inherit SecureQueryDataAndTranslationsHandler<unit, GetProductsResponse>()
+type GetProductHandler(api: FeatApi, authorizedPageCodes) =
+    inherit SecureQueryDataAndTranslationsHandler<SKU, GetProductResponse>()
 
     override _.Handle lang request user =
         async {
-            let! result = api.Product.GetProducts()
+            let sku = request.Query
+            let! product = api.Product.GetProduct sku
 
             let! translations =
                 api.Home.GetAllowedTranslations {
@@ -21,9 +22,5 @@ type GetProductsHandler(api: FeatApi, authorizedPageCodes) =
                 }
 
             let response = ResponseBuilder.withTranslations user translations
-
-            return
-                match result with
-                | Error error -> response.ApiError error
-                | Ok products -> response.Ok { Products = products }
+            return response.Ok { Product = product }
         }

@@ -10,6 +10,7 @@ let api: RootApi =
         |> Remoting.withRouteBuilder Route.builder
 
     {
-        Home = Remoting.buildProxy options // ↩
-        Product = Remoting.buildProxy options
+        Catalog = Remoting.buildProxy options
+        Home = Remoting.buildProxy options
+        Prices = Remoting.buildProxy options
     }

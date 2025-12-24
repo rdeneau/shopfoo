@@ -42,7 +42,7 @@ type private Model = {
 module private Cmd =
     let savePrices (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.SavePrices request
+            Call = fun api -> api.Prices.SavePrices request
             Error = SavePrices << Done << Error
             Success = SavePrices << Done << Ok
         }

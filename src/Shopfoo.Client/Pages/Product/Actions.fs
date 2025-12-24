@@ -25,7 +25,7 @@ type private Msg = PricesFetched of ApiResult<GetPricesResponse>
 module private Cmd =
     let loadPrices (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.GetPrices request
+            Call = fun api -> api.Prices.GetPrices request
             Error = Error >> PricesFetched
             Success = Ok >> PricesFetched
         }

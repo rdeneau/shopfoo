@@ -25,14 +25,14 @@ type private Msg =
 module private Cmd =
     let loadProducts (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.GetProduct request
+            Call = fun api -> api.Catalog.GetProduct request
             Error = Error >> ProductFetched
             Success = Ok >> ProductFetched
         }
 
     let saveProduct (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Product.SaveProduct request
+            Call = fun api -> api.Catalog.SaveProduct request
             Error = fun err -> SaveProduct(request.Body, Done(Error err))
             Success = fun () -> SaveProduct(request.Body, Done(Ok()))
         }

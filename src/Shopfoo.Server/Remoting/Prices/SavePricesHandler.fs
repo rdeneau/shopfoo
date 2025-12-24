@@ -1,4 +1,4 @@
-﻿namespace Shopfoo.Server.Remoting.Product
+﻿namespace Shopfoo.Server.Remoting.Prices
 
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Server.Remoting

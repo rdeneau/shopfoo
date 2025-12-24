@@ -38,8 +38,9 @@ let private apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
 let webApp (api: Remoting.RootApi) : HttpHandler =
     choose [
         choose [ // ↩
+            Require.services<ILogger<WebApp>> (apiHttpHandler api.Catalog)
             Require.services<ILogger<WebApp>> (apiHttpHandler api.Home)
-            Require.services<ILogger<WebApp>> (apiHttpHandler api.Product)
+            Require.services<ILogger<WebApp>> (apiHttpHandler api.Prices)
         ]
         htmlFile "public/index.html"
     ]
