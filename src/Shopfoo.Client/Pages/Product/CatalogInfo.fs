@@ -5,8 +5,10 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
@@ -155,7 +157,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                 yield! props.validation
                                                 yield!
                                                     propOnChangeOrReadonly (fun url ->
-                                                        dispatch (ProductChanged { product with Product.ImageUrl.Url = url })
+                                                        dispatch (ProductChanged { product with ImageUrl = ImageUrl.Valid url })
                                                     )
                                             ]
                                         ]
@@ -190,42 +192,47 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                 ]
                             ]
 
-                            // -- Preview ----
+                            // -- Image Preview ----
                             Html.div [
                                 prop.key "image-preview-column"
                                 prop.className "h-[230px] w-[180px] relative overflow-hidden flex items-center justify-center rounded-box"
                                 prop.children [
-                                    Html.img [
-                                        prop.key "image-preview"
-                                        prop.src product.ImageUrl.Url
-                                        prop.onError (fun (_: Browser.Types.Event) ->
-                                            dispatch (ProductChanged { product with Product.ImageUrl.Broken = true })
-                                        )
-                                        prop.onLoad (fun (_: Browser.Types.Event) ->
-                                            dispatch (ProductChanged { product with Product.ImageUrl.Broken = false })
-                                        )
-                                        prop.className [
-                                            "w-full h-full object-contain"
-                                            // After pseudo-element used to indicate when image is not available.
-                                            "after:absolute after:inset-0 after:flex after:items-center after:justify-center"
-                                            "after:bg-gray-100 after:border after:border-base-300 after:content-['⛓️‍💥'] after:text-xl"
-                                            if productModel.SoldOut then
-                                                "grayscale opacity-50"
+                                    // 1. Conditional Rendering: Image vs Broken Link Fallback
+                                    if product.ImageUrl.Broken then
+                                        Html.div [
+                                            prop.key "image-fallback"
+                                            prop.className [
+                                                "flex flex-col items-center justify-center w-full h-full"
+                                                "bg-gray-100 border border-base-300 text-error text-3xl"
+                                            ]
+                                            prop.children (icon fa6Solid.linkSlash)
                                         ]
-                                    ]
+                                    else
+                                        Html.img [
+                                            prop.key "image-preview"
+                                            prop.src product.ImageUrl.Url
+                                            prop.className [
+                                                "w-full h-full object-contain transition-all"
+                                                if productModel.SoldOut then
+                                                    "grayscale opacity-40"
+                                            ]
+                                            prop.onError (fun (_: Browser.Types.Event) ->
+                                                dispatch (ProductChanged { product with Product.ImageUrl.Broken = true })
+                                            )
+                                        ]
 
-                                    // Sold-out ribbon
+                                    // 2. Sold Out Ribbon (Optimized geometry for visual centering)
                                     if productModel.SoldOut then
                                         Html.div [
                                             prop.key "image-sold-out-overlay"
-                                            prop.className "absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none"
+                                            prop.className "absolute inset-0 overflow-hidden pointer-events-none"
                                             prop.children [
                                                 Html.div [
                                                     prop.key "image-sold-out-text"
                                                     prop.className [
-                                                        "absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-10 py-1"
-                                                        "translate-x-[25%] translate-y-[25%] rotate-45 shadow-sm uppercase tracking-wider"
-                                                        "flex items-center justify-center"
+                                                        "absolute top-8 -right-12 w-48 rotate-45"
+                                                        "bg-red-600 text-white text-[10px] font-bold py-1 shadow-md uppercase tracking-wider"
+                                                        "flex items-center justify-center text-center"
                                                     ]
                                                     prop.text translations.Product.SoldOut
                                                 ]
