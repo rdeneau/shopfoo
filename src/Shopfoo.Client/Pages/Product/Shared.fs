@@ -5,6 +5,8 @@ open Shopfoo.Client.Components.Icon
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 
+type ProductModel = { SKU: SKU; SoldOut: bool }
+
 module PriceAction =
     module Icons =
         let increase = icon fa6Solid.arrowUpWideShort

@@ -65,7 +65,9 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
         Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
 
 [<ReactComponent>]
-let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
+let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslations onSaveProduct =
+    let sku = productModel.SKU
+
     let model, dispatch =
         React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
@@ -191,7 +193,7 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                             // -- Preview ----
                             Html.div [
                                 prop.key "image-preview-column"
-                                prop.className "h-[230px] w-[180px] relative flex items-center justify-center border border-base-300 rounded-box"
+                                prop.className "h-[230px] w-[180px] relative overflow-hidden flex items-center justify-center rounded-box"
                                 prop.children [
                                     Html.img [
                                         prop.key "image-preview"
@@ -206,9 +208,29 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                                             "w-full h-full object-contain"
                                             // After pseudo-element used to indicate when image is not available.
                                             "after:absolute after:inset-0 after:flex after:items-center after:justify-center"
-                                            "after:bg-gray-100 after:content-['⛓️‍💥'] after:text-xl"
+                                            "after:bg-gray-100 after:border after:border-base-300 after:content-['⛓️‍💥'] after:text-xl"
+                                            if productModel.SoldOut then
+                                                "grayscale opacity-50"
                                         ]
                                     ]
+
+                                    // Sold-out ribbon
+                                    if productModel.SoldOut then
+                                        Html.div [
+                                            prop.key "image-sold-out-overlay"
+                                            prop.className "absolute top-0 right-0 w-full h-full overflow-hidden pointer-events-none"
+                                            prop.children [
+                                                Html.div [
+                                                    prop.key "image-sold-out-text"
+                                                    prop.className [
+                                                        "absolute top-0 right-0 bg-red-600 text-white text-xs font-bold px-10 py-1"
+                                                        "translate-x-[25%] translate-y-[25%] rotate-45 shadow-sm uppercase tracking-wider"
+                                                        "flex items-center justify-center"
+                                                    ]
+                                                    prop.text translations.Product.SoldOut
+                                                ]
+                                            ]
+                                        ]
                                 ]
                             ]
                         ]

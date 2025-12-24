@@ -96,9 +96,13 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
             model, Cmd.none
 
 [<ReactComponent>]
-let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
+let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice setSoldOut =
     let model, dispatch =
         React.useElmish (init fullContext sku, update fullContext onSavePrice, [||])
+
+    match model.Prices with
+    | Remote.Loaded prices -> setSoldOut (prices.RetailPrice = RetailPrice.SoldOut)
+    | _ -> ()
 
     let translations = fullContext.Translations
 

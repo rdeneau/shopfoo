@@ -74,6 +74,7 @@ let private translationPages = [
         TagCode "Description", "Description", "Description"
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
+        TagCode "SoldOut", "Sold-out", "Épuisé"
 
         TagCode "Discount", "Discount", "Réduction"
         TagCode "Increase", "Increase", "Augmentation"

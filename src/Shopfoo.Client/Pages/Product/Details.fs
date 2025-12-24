@@ -30,6 +30,9 @@ let private update msg (model: Model) =
 let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast -> unit) =
     let model, dispatch = React.useElmish (init, update)
 
+    let productModel, updateProductModel =
+        React.useState { ProductModel.SKU = sku; SoldOut = false }
+
     let drawerControl =
         DrawerControl( // ↩
             open' = (fun drawer -> dispatch (OpenDrawer drawer)),
@@ -52,6 +55,10 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
     let onSavePrice (price, error) = onSave (Toast.Prices(price, error))
     let onSaveProduct (product, error) = onSave (Toast.Product(product, error))
 
+    let setSoldOut soldOut =
+        if soldOut <> productModel.SoldOut then
+            updateProductModel { productModel with SoldOut = soldOut }
+
     let key = "product-details"
 
     Daisy.drawer [
@@ -72,7 +79,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                 prop.children [
                     Html.div [
                         prop.key $"%s{key}-catalog"
-                        prop.children [ CatalogInfoForm "catalog-info" fullContext sku fillTranslations onSaveProduct ]
+                        prop.children [ CatalogInfoForm "catalog-info" fullContext productModel fillTranslations onSaveProduct ]
                         match hasActions, isDrawerOpen with
                         | true, false -> prop.className "col-span-3"
                         | true, true -> prop.className "col-span-2"
@@ -83,7 +90,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                         Html.div [
                             prop.key $"%s{key}-actions"
                             prop.className "col-span-1"
-                            prop.children [ ActionsForm "actions" fullContext sku drawerControl onSavePrice ]
+                            prop.children [ ActionsForm "actions" fullContext sku drawerControl onSavePrice setSoldOut ]
                         ]
                 ]
             ]
