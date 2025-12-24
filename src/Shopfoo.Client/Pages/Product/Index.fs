@@ -25,7 +25,7 @@ module private Product =
         SKU = SKU "99999"
         Name = "❗"
         Description = "Fake product to demo how the page handles a product not found"
-        ImageUrl = ""
+        ImageUrl = ImageUrl.None
     }
 
 [<RequireQualifiedAccess>]

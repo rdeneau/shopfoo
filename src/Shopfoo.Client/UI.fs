@@ -34,8 +34,14 @@ type prop with
     static member inline child(element: ReactElement) =
         prop.children [ element |> React.withKeyAuto ]
 
-type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations) =
+type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations, ?invalid) =
     let len = String.length value
+
+    member private _.Invalid =
+        (criteria.Required && len = 0)
+        || (criteria.MinLength |> Option.exists (fun minLength -> len < minLength))
+        || (criteria.MaxLength |> Option.exists (fun maxLength -> len > maxLength))
+        || defaultArg invalid false
 
     member _.textCharCount = [
         match criteria.MaxLength with
@@ -55,34 +61,26 @@ type GuardProps(criteria: GuardCriteria, value: string, translations: AppTransla
                 prop.className "text-error"
     ]
 
-    member _.validation = [
+    member this.validation = [
+        if this.Invalid then
+            prop.className "input-error"
+
         if criteria.Required then
             prop.required true
 
-            if len = 0 then
-                prop.className "input-error"
-
         match criteria.MinLength with
-        | Some minLength ->
-            prop.minLength minLength
-
-            if len < minLength then
-                prop.className "input-error"
+        | Some minLength -> prop.minLength minLength
         | _ -> ()
 
         match criteria.MaxLength with
-        | Some maxLength ->
-            prop.maxLength maxLength
-
-            if len > maxLength then
-                prop.className "input-error"
+        | Some maxLength -> prop.maxLength maxLength
         | _ -> ()
     ]
 
     member _.value = prop.value value
 
 type GuardCriteria with
-    member this.props(value, translations) = GuardProps(this, value, translations)
+    member this.props(value, translations, ?invalid) = GuardProps(this, value, translations, ?invalid = invalid)
 
 type Html with
     static member inline a(text: string, p: Page) =

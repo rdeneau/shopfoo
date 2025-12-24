@@ -128,7 +128,12 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                                     Daisy.fieldset [
                                         prop.key "image-fieldset"
                                         prop.children [
-                                            let props = Product.Guard.ImageUrl.props (product.ImageUrl, translations)
+                                            let props =
+                                                Product.Guard.ImageUrl.props (
+                                                    product.ImageUrl.Url, // ↩
+                                                    translations,
+                                                    invalid = product.ImageUrl.Broken
+                                                )
 
                                             Daisy.fieldsetLabel [
                                                 prop.key "image-label"
@@ -146,7 +151,10 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                                                 prop.placeholder translations.Product.ImageUrl
                                                 props.value
                                                 yield! props.validation
-                                                yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = url }))
+                                                yield!
+                                                    propOnChangeOrReadonly (fun url ->
+                                                        dispatch (ProductChanged { product with Product.ImageUrl.Url = url })
+                                                    )
                                             ]
                                         ]
                                     ]
@@ -183,12 +191,23 @@ let CatalogInfoForm key fullContext sku fillTranslations onSaveProduct =
                             // -- Preview ----
                             Html.div [
                                 prop.key "image-preview-column"
+                                prop.className "h-[230px] w-[180px] relative flex items-center justify-center border border-base-300 rounded-box"
                                 prop.children [
                                     Html.img [
                                         prop.key "image-preview"
-                                        prop.src product.ImageUrl
-                                        prop.width 115
-                                        prop.height 62
+                                        prop.src product.ImageUrl.Url
+                                        prop.onError (fun (_: Browser.Types.Event) ->
+                                            dispatch (ProductChanged { product with Product.ImageUrl.Broken = true })
+                                        )
+                                        prop.onLoad (fun (_: Browser.Types.Event) ->
+                                            dispatch (ProductChanged { product with Product.ImageUrl.Broken = false })
+                                        )
+                                        prop.className [
+                                            "w-full h-full object-contain"
+                                            // After pseudo-element used to indicate when image is not available.
+                                            "after:absolute after:inset-0 after:flex after:items-center after:justify-center"
+                                            "after:bg-gray-100 after:content-['⛓️‍💥'] after:text-xl"
+                                        ]
                                     ]
                                 ]
                             ]

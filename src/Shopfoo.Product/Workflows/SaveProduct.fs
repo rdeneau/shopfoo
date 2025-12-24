@@ -14,7 +14,7 @@ type internal SaveProductWorkflow() =
             let! _ = Guard(nameof Product.Guard.SKU).Satisfies(product.SKU.Value, Product.Guard.SKU).ToValidation()
             and! _ = Guard(nameof Product.Guard.Name).Satisfies(product.Name, Product.Guard.Name).ToValidation()
             and! _ = Guard(nameof Product.Guard.Description).Satisfies(product.Description, Product.Guard.Description).ToValidation()
-            and! _ = Guard(nameof Product.Guard.ImageUrl).Satisfies(product.ImageUrl, Product.Guard.ImageUrl).ToValidation()
+            and! _ = Guard(nameof Product.Guard.ImageUrl).Satisfies(product.ImageUrl.Url, Product.Guard.ImageUrl).ToValidation()
             return ()
         }
 

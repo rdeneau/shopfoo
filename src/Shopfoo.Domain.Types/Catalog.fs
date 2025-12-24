@@ -2,11 +2,18 @@
 
 open Shopfoo.Domain.Types.Errors
 
+type ImageUrl = {
+    Url: string
+    Broken: bool
+} with
+    static member Valid(url) : ImageUrl = { Url = url; Broken = false }
+    static member None : ImageUrl = { Url = ""; Broken = true }
+
 type Product = {
     SKU: SKU
     Name: string
     Description: string
-    ImageUrl: string
+    ImageUrl: ImageUrl
 }
 
 [<RequireQualifiedAccess>]

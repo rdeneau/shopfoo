@@ -13,7 +13,7 @@ module private Fakes =
         Description =
             "Building upon the success of best-sellers The Clean Coder and Clean Code, legendary software craftsman Robert C. 'Uncle Bob' Martin "
             + "shows how to bring greater professionalism and discipline to application architecture and design."
-        ImageUrl = "https://m.media-amazon.com/images/I/71stxGw9JgL._SY385_.jpg"
+        ImageUrl = ImageUrl.Valid "https://m.media-amazon.com/images/I/71stxGw9JgL._SY385_.jpg"
     }
 
     let private domainDrivenDesign = {
@@ -23,7 +23,7 @@ module private Fakes =
             "Leading software designers have recognized domain modeling and design as critical topics for at least twenty years, "
             + "yet surprisingly little has been written about what needs to be done or how to do it. Although it has never been "
             + "clearly formulated, a philosophy has developed as an undercurrent in the object community, which I call 'domain-driven design'."
-        ImageUrl = "https://m.media-amazon.com/images/I/81ykBjVaUjL._SY425_.jpg"
+        ImageUrl = ImageUrl.Valid "https://m.media-amazon.com/images/I/81ykBjVaUjL._SY425_.jpg"
     }
 
     let private domainModelingMadeFunctional = {
@@ -36,7 +36,7 @@ module private Fakes =
             + "both elegantly and concisely - often more so than an object-oriented approach. Practical examples in the open-source F# "
             + "functional language, and examples from familiar business domains, show you how to apply these techniques to build software "
             + "that is business-focused, flexible, and high quality."
-        ImageUrl = "https://m.media-amazon.com/images/I/91THtohxBjL._SY385_.jpg"
+        ImageUrl = ImageUrl.Valid "https://m.media-amazon.com/images/I/91THtohxBjL._SY385_.jpg"
     }
 
     let private javaScriptTheGoodParts = {
@@ -47,7 +47,7 @@ module private Fakes =
             + "and released in a hurry before it could be refined. This authoritative book scrapes away these bad features to reveal a subset "
             + "of JavaScript that's more reliable, readable, and maintainable than the language as a whole—a subset you can use to create "
             + "truly extensible and efficient code."
-        ImageUrl = "https://m.media-amazon.com/images/I/91YlBt-bCHL._SY385_.jpg"
+        ImageUrl = ImageUrl.Valid "https://m.media-amazon.com/images/I/91YlBt-bCHL._SY385_.jpg"
     }
 
     let private thePragmaticProgrammer = {
@@ -56,7 +56,7 @@ module private Fakes =
         Description =
             "The Pragmatic Programmer is one of those rare tech books you'll read, re-read, and read again over the years. "
             + "Whether you're new to the field or an experienced practitioner, you'll come away with fresh insights each and every time."
-        ImageUrl = "https://m.media-amazon.com/images/I/911WvX7M98L._SY385_.jpg"
+        ImageUrl = ImageUrl.Valid "https://m.media-amazon.com/images/I/911WvX7M98L._SY385_.jpg"
     }
 
     let all = [
