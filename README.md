@@ -1,6 +1,6 @@
 # Shopfoo
 
-TODO: badge to indicate the current release (version number)
+![GitHub Release](https://img.shields.io/github/v/release/rdeneau/shopfoo)
 
 Shopfoo is a full-stack web app. It is a demo project showcasing the [Safe Clean Architecture](https://rdeneau.gitbook.io/safe-clean-architecture)—a term I coined.
 
