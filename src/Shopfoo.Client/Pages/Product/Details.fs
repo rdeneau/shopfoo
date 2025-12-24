@@ -7,7 +7,7 @@ open Feliz.UseElmish
 open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Pages.Product.Actions
 open Shopfoo.Client.Pages.Product.CatalogInfo
-open Shopfoo.Client.Pages.Product.ModifyPrice
+open Shopfoo.Client.Pages.Product.ManagePrice
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Security
@@ -101,9 +101,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                         prop.children [
                             match model.Drawer with
                             | None -> ()
-                            | Some(ModifyPrice(priceModel, prices)) -> ModifyPriceForm key fullContext priceModel prices drawerControl onSavePrice
-                            | Some DefineListPrice
-                            | Some DefineRetailPrice
+                            | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some InputSales
                             | Some ReceivePurchasedProducts
                             | Some AdjustStockAfterInventory ->

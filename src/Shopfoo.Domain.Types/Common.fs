@@ -23,6 +23,11 @@ type Money =
     | Dollars of value: decimal
     | Euros of value: decimal
 
+    static member ByCurrency currency value =
+        match currency with
+        | Currency.USD -> Dollars value
+        | Currency.EUR -> Euros value
+
     member this.Currency =
         match this with
         | Dollars _ -> Currency.USD

@@ -7,35 +7,20 @@ open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
 
 module private Fakes =
-    let private cleanArchitecture = {
-        SKU = SKU.CleanArchitecture
-        RetailPrice = RetailPrice.Regular(Dollars 39.90m)
-        ListPrice = None
-    }
+    let private cleanArchitecture = // ↩
+        Prices.Create(SKU.CleanArchitecture, USD, 39.90m)
 
-    let private domainDrivenDesign = {
-        SKU = SKU.DomainDrivenDesign
-        RetailPrice = RetailPrice.Regular(64.42m |> Euros)
-        ListPrice = Some(67.33m |> Euros)
-    }
+    let private domainDrivenDesign =
+        Prices.Create(SKU.DomainDrivenDesign, EUR, 64.42m, 67.33m)
 
-    let private domainModelingMadeFunctional = {
-        SKU = SKU.DomainModelingMadeFunctional
-        RetailPrice = RetailPrice.Regular(32.32m |> Euros)
-        ListPrice = Some(43.04m |> Euros)
-    }
+    let private domainModelingMadeFunctional =
+        Prices.Create(SKU.DomainModelingMadeFunctional, EUR, 32.32m, 43.04m)
 
-    let private javaScriptTheGoodParts = {
-        SKU = SKU.JavaScriptTheGoodParts
-        RetailPrice = RetailPrice.Regular(19.98m |> Euros)
-        ListPrice = Some(28.92m |> Euros)
-    }
+    let private javaScriptTheGoodParts =
+        Prices.Create(SKU.JavaScriptTheGoodParts, EUR, 19.98m, 28.92m)
 
-    let private thePragmaticProgrammer = {
-        SKU = SKU.ThePragmaticProgrammer
-        RetailPrice = RetailPrice.Regular(32.86m |> Euros)
-        ListPrice = Some(49.37m |> Euros)
-    }
+    let private thePragmaticProgrammer =
+        Prices.Create(SKU.ThePragmaticProgrammer, EUR, 32.86m, 49.37m)
 
     let all = [
         cleanArchitecture

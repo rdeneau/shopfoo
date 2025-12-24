@@ -1,11 +1,22 @@
 ﻿namespace Shopfoo.Client.Pages.Product
 
+open Glutinum.IconifyIcons.Fa6Solid
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 
-type PriceModificationIntent =
+module PriceAction =
+    module Icons =
+        let increase = icon fa6Solid.arrowUpWideShort
+        let decrease = icon fa6Solid.arrowDownWideShort
+        let define = icon fa6Solid.circlePlus
+        let remove = icon fa6Solid.eraser
+        let soldOut = icon fa6Solid.ban
+
+type PriceIntent =
     | Increase
     | Decrease
+    | Define
 
 type PriceType =
     | ListPrice
@@ -14,17 +25,28 @@ type PriceType =
 type PriceModel = {
     Type: PriceType
     Value: Money
-    Intent: PriceModificationIntent
+    Intent: PriceIntent
 } with
     member this.Update(prices: Prices) =
         match this.Type with
         | ListPrice -> { prices with ListPrice = Some this.Value }
         | RetailPrice -> { prices with RetailPrice = RetailPrice.Regular this.Value }
 
+type PriceType with
+    member this.To intent value = {
+        Type = this
+        Value = value
+        Intent = intent
+    }
+
+    member this.ToDefine(?initialCurrency: Currency) = {
+        Type = this
+        Value = Money.ByCurrency (defaultArg initialCurrency Currency.EUR) 0.01m
+        Intent = Define
+    }
+
 type Drawer =
-    | DefineListPrice
-    | DefineRetailPrice
-    | ModifyPrice of PriceModel * Prices
+    | ManagePrice of PriceModel * Prices
     | InputSales
     | ReceivePurchasedProducts
     | AdjustStockAfterInventory

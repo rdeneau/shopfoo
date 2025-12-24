@@ -139,6 +139,7 @@ module TranslationPages =
         member this.Discount = this.Get "Discount"
         member this.Increase = this.Get "Increase"
         member this.Decrease = this.Get "Decrease"
+        member this.Define = this.Get "Define"
         member this.Price = this.Get "Price"
         member this.CurrentPrice = this.Get "CurrentPrice"
         member this.NewPrice = this.Get "NewPrice"

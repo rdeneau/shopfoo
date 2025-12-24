@@ -111,7 +111,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
     // When the drawer is closed after a price modification, we refresh the prices.
     drawerControl.OnClose(fun drawer ->
         match drawer with
-        | ModifyPrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
+        | ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
         | _ -> ()
     )
 
@@ -235,37 +235,31 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                     Daisy.fieldsetLabel [ prop.key "list-price-label"; prop.text translations.Product.ListPrice ]
                     ActionsDropdown "list-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional prices.ListPrice) [
                         match prices.ListPrice with
-                        | Some listPrice ->
-                            let priceModelTo intent : PriceModel = {
-                                Type = ListPrice
-                                Value = listPrice
-                                Intent = intent
-                            }
-
+                        | Some price ->
                             ActionProps.withIcon
                                 "increase-list-price"
-                                (icon fa6Solid.arrowUpWideShort)
+                                PriceAction.Icons.increase
                                 translations.Product.PriceAction.Increase
-                                (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Increase, prices)))
+                                (fun () -> drawerControl.Open(Drawer.ManagePrice(ListPrice.To Increase price, prices)))
 
                             ActionProps.withIcon
                                 "decrease-list-price"
-                                (icon fa6Solid.arrowDownWideShort)
+                                PriceAction.Icons.decrease
                                 translations.Product.PriceAction.Decrease
-                                (fun () -> drawerControl.Open(Drawer.ModifyPrice(priceModelTo Decrease, prices)))
+                                (fun () -> drawerControl.Open(Drawer.ManagePrice(ListPrice.To Decrease price, prices)))
 
                             ActionProps.withIcon
                                 "remove-list-price"
-                                (icon fa6Solid.eraser)
+                                PriceAction.Icons.remove
                                 translations.Product.PriceAction.Remove
                                 (fun () -> openModal Action.RemoveListPrice)
 
                         | None ->
                             ActionProps.withIcon
                                 "define-list-price"
-                                (icon fa6Solid.circlePlus)
-                                (translations.Product.PriceAction.Define + " 🚧")
-                                (fun () -> drawerControl.Open(Drawer.DefineListPrice)) // TODO: DefineListPrice
+                                PriceAction.Icons.define
+                                translations.Product.PriceAction.Define
+                                (fun () -> drawerControl.Open(Drawer.ManagePrice(ListPrice.ToDefine prices.Currency, prices)))
                     ]
 
                     // -- RetailPrice ----
@@ -288,37 +282,31 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice =
                     ]
                     ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
                         match prices.RetailPrice with
-                        | RetailPrice.Regular retailPrice ->
-                            let priceModelTo intent : PriceModel = {
-                                Type = RetailPrice
-                                Value = retailPrice
-                                Intent = intent
-                            }
-
+                        | RetailPrice.Regular price ->
                             ActionProps.withIcon
                                 "increase-retail-price"
-                                (icon fa6Solid.arrowUpWideShort)
+                                PriceAction.Icons.increase
                                 translations.Product.PriceAction.Increase
-                                (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Increase, prices)))
+                                (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Increase price, prices)))
 
                             ActionProps.withIcon
                                 "decrease-retail-price"
-                                (icon fa6Solid.arrowDownWideShort)
+                                PriceAction.Icons.decrease
                                 translations.Product.PriceAction.Decrease
-                                (fun () -> drawerControl.Open(ModifyPrice(priceModelTo Decrease, prices)))
+                                (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Decrease price, prices)))
 
                             ActionProps.withIcon
                                 "mark-as-sold-out"
-                                (icon fa6Solid.ban)
+                                PriceAction.Icons.soldOut
                                 translations.Product.PriceAction.MarkAsSoldOut
                                 (fun () -> openModal Action.MarkAsSoldOut)
 
                         | RetailPrice.SoldOut ->
                             ActionProps.withIcon
                                 "define-retail-price"
-                                (icon fa6Solid.circlePlus)
-                                (translations.Product.PriceAction.Define + " 🚧")
-                                (fun () -> drawerControl.Open(Drawer.DefineRetailPrice)) // TODO: DefineRetailPrice
+                                PriceAction.Icons.define
+                                translations.Product.PriceAction.Define
+                                (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
                     ]
 
                     // -- Stock ----

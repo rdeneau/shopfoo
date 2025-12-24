@@ -32,7 +32,7 @@
     <Compile Include="Pages\NotFound.fs" />
     <Compile Include="Pages\Product\Shared.fs" />
     <Compile Include="Pages\Product\Actions.fs" />
-    <Compile Include="Pages\Product\ModifyPrice.fs" />
+    <Compile Include="Pages\Product\ManagePrice.fs" />
     <Compile Include="Pages\Product\CatalogInfo.fs" />
     <Compile Include="Pages\Product\Details.fs" />
     <Compile Include="Pages\Product\Index.fs" />

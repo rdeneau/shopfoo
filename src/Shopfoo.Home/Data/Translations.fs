@@ -78,6 +78,7 @@ let private translationPages = [
         TagCode "Discount", "Discount", "Réduction"
         TagCode "Increase", "Increase", "Augmentation"
         TagCode "Decrease", "Decrease", "Diminution"
+        TagCode "Define", "Define", "Définition"
         TagCode "Price", "Price", "Prix"
         TagCode "CurrentPrice", "Current price", "Prix actuel"
         TagCode "NewPrice", "New price", "nouveau prix"
