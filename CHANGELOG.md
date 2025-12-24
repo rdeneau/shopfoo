@@ -1,3 +1,19 @@
+## [1.1.0](https://github.com/rdeneau/shopfoo/compare/v1.0.0...v1.1.0) (2025-12-24)
+
+### Features
+
+* ✨ add commits.html for the GitHub page to embed in the Status page ([3782a2a](https://github.com/rdeneau/shopfoo/commit/3782a2a041fd1495bb4913d724e7d25b33d83394))
+* ✨ implement "define list/retail price" using ManagePriceFrom (previously ModifyPrice) ([abef0cf](https://github.com/rdeneau/shopfoo/commit/abef0cf18f7a5a5db74915de683141ffd2feec73))
+* ✨ implement "mark as sold-out" (missing checking stock = 0) ([a717e27](https://github.com/rdeneau/shopfoo/commit/a717e27de22dd551f4259d6c504228246e4deb79))
+* ✨ implement "remove list price" ([a10e5b6](https://github.com/rdeneau/shopfoo/commit/a10e5b6b2e7e68e2e652b572ece696cf9565b86e))
+* 🖼️ display a "sold-out" ribbon on the product image ([6a7082b](https://github.com/rdeneau/shopfoo/commit/6a7082b2ed69a9510096eab4269bb2ed4271ab43))
+* 🖼️ handle broken image url (at the UI level only) ([65f10f6](https://github.com/rdeneau/shopfoo/commit/65f10f63eb32f7a2e453134d49ec686fc1edc155))
+* 🖼️ highlight selected menu ([e385825](https://github.com/rdeneau/shopfoo/commit/e385825c3bb6337d0c289491ce7c3f07554158bd))
+* 🖼️ improve product image rendering when broken or sold-out ([dd3df7c](https://github.com/rdeneau/shopfoo/commit/dd3df7cba5162ad8463493a3c17e0985bf439220))
+* 🖼️ use fontawesome: login, user icon ([fe5b6a3](https://github.com/rdeneau/shopfoo/commit/fe5b6a3fabb8fe783bf9f63101391168ba190db6))
+* 🖼️ use fontawesome: navbar ([bbb6338](https://github.com/rdeneau/shopfoo/commit/bbb6338dee4aff6cb918444c4dc1f410766bb146))
+* 🖼️ use fontawesome: product details ([03d5dff](https://github.com/rdeneau/shopfoo/commit/03d5dffc939f0c0258e9d45d2caf6822ddf67361))
+
 ## 1.0.0 (2025-12-20)
 
 ### Features
