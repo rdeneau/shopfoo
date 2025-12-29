@@ -1,6 +1,8 @@
 ﻿[<RequireQualifiedAccess>]
 module internal Shopfoo.Catalog.Data.Sales
 
+open System.Linq
+open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
@@ -50,11 +52,14 @@ module private Fakes =
         ]
 
 module Client =
-    let repository = Fakes.oneYear |> Dictionary.ofListBy _.SKU
+    let repository =
+        Fakes.oneYear
+        |> Seq.groupBy _.SKU
+        |> Seq.map (fun (sku, sales) -> sku, sales |> Seq.toList)
+        |> _.ToDictionary(fst, snd)
 
     let getSales sku =
         async {
             do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
-            let sales = Fakes.oneYear |> Seq.filter (fun x -> x.SKU = sku) |> Seq.toList
-            return sales
+            return repository.TryGetValue(sku) |> Option.ofPair
         }

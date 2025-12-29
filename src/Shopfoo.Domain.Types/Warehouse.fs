@@ -12,3 +12,5 @@ type StockEvent = {
     Quantity: int
     Type: EventType
 }
+
+type Stock = { SKU: SKU; Quantity: int }

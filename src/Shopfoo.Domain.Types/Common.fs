@@ -71,6 +71,8 @@ type SKU =
     | SKU of string
     member this.Value = let (SKU value) = this in value
 
+#if !FABLE_COMPILER
+
 [<RequireQualifiedAccess>]
 module Dictionary =
     /// <summary>
@@ -80,9 +82,7 @@ module Dictionary =
     /// <param name="getKey">Determine the key for each item.</param>
     /// <param name="items">Items to put in the dictionary</param>
     let ofListBy getKey items =
-        dict [ for item in items -> getKey item, item ] |> Dictionary<'k, 'v>
-
-#if !FABLE_COMPILER
+        Dictionary<'k, 'v>(seq { for item in items -> KeyValuePair.Create(getKey item, item) })
 
     let tryUpdateBy getKey item (dict: Dictionary<'k, 'v>) =
         let key = getKey item
