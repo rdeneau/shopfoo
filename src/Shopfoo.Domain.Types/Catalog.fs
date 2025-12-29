@@ -7,7 +7,7 @@ type ImageUrl = {
     Broken: bool
 } with
     static member Valid(url) : ImageUrl = { Url = url; Broken = false }
-    static member None : ImageUrl = { Url = ""; Broken = true }
+    static member None: ImageUrl = { Url = ""; Broken = true }
 
 type Product = {
     SKU: SKU

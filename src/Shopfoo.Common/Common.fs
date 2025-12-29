@@ -2,7 +2,6 @@
 module Shopfoo.Common.Common
 
 open System
-open System.Collections.Generic
 open System.Globalization
 
 /// <summary>

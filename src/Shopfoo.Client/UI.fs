@@ -80,7 +80,8 @@ type GuardProps(criteria: GuardCriteria, value: string, translations: AppTransla
     member _.value = prop.value value
 
 type GuardCriteria with
-    member this.props(value, translations, ?invalid) = GuardProps(this, value, translations, ?invalid = invalid)
+    member this.props(value, translations, ?invalid) =
+        GuardProps(this, value, translations, ?invalid = invalid)
 
 type Html with
     static member inline a(text: string, p: Page) =

@@ -32,7 +32,7 @@ module Guards =
         MinLength: int option
         Required: bool
     } with
-        static member Create(?maxLength, ?minLength, ?required): GuardCriteria = {
+        static member Create(?maxLength, ?minLength, ?required) : GuardCriteria = {
             MaxLength = maxLength
             MinLength = minLength
             Required = defaultArg required false
@@ -111,15 +111,15 @@ module Guards =
 
             let issuesWithRank = [
                 match criteria.Required with
-                | true when  len = 0 -> 1, "required"
+                | true when len = 0 -> 1, "required"
                 | _ -> ()
 
                 match criteria.MinLength with
-                | Some n  when len < n -> 2, $"%i{n} character long min"
+                | Some n when len < n -> 2, $"%i{n} character long min"
                 | _ -> ()
 
                 match criteria.MaxLength with
-                | Some n  when len > n -> 3, $"%i{n} character long max"
+                | Some n when len > n -> 3, $"%i{n} character long max"
                 | _ -> ()
             ]
 
