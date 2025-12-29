@@ -4,6 +4,7 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
+open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Translations
 
@@ -123,6 +124,7 @@ module PricesApi =
     type PriceCommand = { SKU: SKU }
 
     type PricesApi = {
+        DetermineStock: Query<SKU, Stock>
         GetPrices: Query<SKU, GetPricesResponse>
         SavePrices: Command<Prices>
         MarkAsSoldOut: Command<PriceCommand>

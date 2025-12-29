@@ -10,6 +10,7 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Actions
+open Shopfoo.Client.Components.Dialog
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
@@ -17,6 +18,7 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
+open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
@@ -25,19 +27,32 @@ open Shopfoo.Shared.Translations
 type private Action =
     | None
     | MarkAsSoldOut
+    | WarnMarkAsSoldOutForbidden
     | RemoveListPrice
     | SavePrices
 
-type private Dialog = { Type: Action }
+type private Dialog = { Action: Action }
 
-type private Model = { Prices: Remote<Prices>; PriceActionStatus: Action * Remote<DateTime> }
+type private Model = {
+    Prices: Remote<Prices>
+    PriceActionStatus: Action * Remote<DateTime>
+    Stock: Remote<Stock>
+}
 
 type private Msg =
     | PricesFetched of ApiResult<GetPricesResponse>
+    | StockFetched of ApiResult<Stock>
     | PerformAction of Action * SKU * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
 module private Cmd =
+    let determineStock (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Prices.DetermineStock request
+            Error = Error >> StockFetched
+            Success = Ok >> StockFetched
+        }
+
     let loadPrices (cmder: Cmder, request) =
         cmder.ofApiRequest {
             Call = fun api -> api.Prices.GetPrices request
@@ -63,12 +78,23 @@ module private Cmd =
         }
 
 let private init (fullContext: FullContext) sku =
-    { Prices = Remote.Loading; PriceActionStatus = Action.None, Remote.Empty }, Cmd.loadPrices (fullContext.PrepareRequest sku)
+    {
+        Prices = Remote.Loading
+        PriceActionStatus = Action.None, Remote.Empty
+        Stock = Remote.Loading
+    },
+    Cmd.batch [ // ↩
+        Cmd.loadPrices (fullContext.PrepareRequest sku)
+        Cmd.determineStock (fullContext.PrepareRequest sku)
+    ]
 
 let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Model) =
     match msg with
     | PricesFetched(Ok response) -> { model with Prices = response.Prices |> Remote.ofOption }, Cmd.none
     | PricesFetched(Error apiError) -> { model with Prices = Remote.LoadError apiError }, Cmd.none
+
+    | StockFetched(Ok stock) -> { model with Stock = Remote.Loaded stock }, Cmd.none
+    | StockFetched(Error apiError) -> { model with Stock = Remote.LoadError apiError }, Cmd.none
 
     | PerformAction(action, sku, Start) ->
         { model with PriceActionStatus = action, Remote.Loading }, // ↩
@@ -83,11 +109,7 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
 
         match prices with
         | Some prices ->
-            {
-                model with
-                    Prices = Remote.Loaded prices
-                    PriceActionStatus = action, result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
-            },
+            { model with Prices = Remote.Loaded prices; PriceActionStatus = action, result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
             Cmd.ofEffect (fun _ -> onSavePrice (prices, result |> Result.tryGetError))
         | _ ->
             // Unexpected case
@@ -119,8 +141,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         | _ -> ()
     )
 
-    let modalRef = React.useElementRef ()
-    let dialog, setDialog = React.useState { Dialog.Type = Action.None }
+    let modalRef: IRefValue<HTMLElement option> = React.useElementRef ()
+    let dialog, setDialog = React.useState { Dialog.Action = Action.None }
 
     let updateModal f =
         modalRef.current
@@ -134,7 +156,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
     // time to let the user get this result visually.
     React.useEffect (fun () ->
         match model.PriceActionStatus with
-        | priceAction, Remote.Loaded _ when priceAction = dialog.Type ->
+        | priceAction, Remote.Loaded _ when priceAction = dialog.Action ->
             JS.runAfter // ↩
                 (TimeSpan.FromMilliseconds(500))
                 (fun () -> updateModal _.close())
@@ -142,101 +164,65 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
     )
 
     let openModal action =
-        setDialog { Dialog.Type = action }
+        setDialog { Dialog.Action = action }
         updateModal _.showModal()
 
     let closeModal (e: MouseEvent) =
         e.preventDefault ()
         updateModal _.close()
-        setDialog { Dialog.Type = Action.None }
+        setDialog { Dialog.Action = Action.None }
 
-    let dialogTranslations =
-        match dialog.Type with
-        | Action.MarkAsSoldOut -> translations.Product.PriceAction.MarkAsSoldOutDialog
-        | Action.RemoveListPrice -> translations.Product.PriceAction.RemoveListPriceDialog
-        | Action.None
-        | Action.SavePrices -> {| Question = "Do you confirm?"; Confirm = "Yes, I confirm" |} // Default texts
+    let confirmButton label =
+        Buttons.SaveButton(
+            key = $"%s{key}-dialog-confirm-price",
+            label = label,
+            tooltipOk = translations.Home.Completed,
+            tooltipError = (fun err -> translations.Home.Error(err.ErrorMessage)),
+            tooltipProps = [ tooltip.left ],
+            saveDate = snd model.PriceActionStatus,
+            disabled = false,
+            onClick = (fun _ -> dispatch (PerformAction(dialog.Action, sku, Start)))
+        )
 
-    let onConfirm () =
-        dispatch (PerformAction(dialog.Type, sku, Start))
+    let dialogProps =
+        match dialog.Action with
+        | Action.MarkAsSoldOut ->
+            let x = translations.Product.PriceAction.MarkAsSoldOutDialog
+            DialogProps.Confirmation(translations, x.Question, confirmButton x.Confirm)
+
+        | Action.RemoveListPrice ->
+            let x = translations.Product.PriceAction.RemoveListPriceDialog
+            DialogProps.Confirmation(translations, x.Question, confirmButton x.Confirm)
+
+        | Action.WarnMarkAsSoldOutForbidden -> // ↩
+            DialogProps.Warning(translations, translations.Product.PriceAction.WarnMarkAsSoldOutForbidden)
+
+        | Action.SavePrices
+        | Action.None -> DialogProps.Empty
 
     React.fragment [
-        Daisy.modal.dialog [
-            prop.key $"%s{key}-dialog"
-            prop.ref modalRef
+        ModalDialog $"%s{key}-dialog" modalRef dialogProps closeModal
+
+        Daisy.fieldset [
+            prop.key $"%s{key}-fieldset"
+            prop.className "bg-base-200 border border-base-300 rounded-box p-4"
             prop.children [
-                Daisy.modalBox.div [
-                    prop.key $"%s{key}-dialog-box"
-                    prop.children [
-                        Html.form [
-                            prop.key $"%s{key}-dialog-form"
-                            prop.children (
-                                Daisy.button.button [
-                                    button.sm
-                                    button.circle
-                                    button.ghost
-                                    prop.className "absolute right-2 top-2"
-                                    prop.text "✕"
-                                    prop.onClick closeModal
-                                ]
-                            )
-                        ]
-                        Html.h3 [
-                            prop.key $"%s{key}-dialog-title"
-                            prop.className "font-bold text-lg"
-                            prop.text translations.Home.Confirmation
-                        ]
-                        Html.p [
-                            prop.key $"%s{key}-dialog-message"
-                            prop.className "py-4"
-                            prop.text dialogTranslations.Question
-                        ]
-                        Daisy.modalAction [
-                            prop.key $"%s{key}-dialog-actions"
-                            prop.children [
-                                Daisy.button.button [
-                                    button.secondary
-                                    button.outline
-                                    prop.key $"%s{key}-dialog-cancel-button"
-                                    prop.text translations.Home.Cancel
-                                    prop.onClick closeModal
-                                ]
-                                Buttons.SaveButton(
-                                    key = $"%s{key}-dialog-confirm-price",
-                                    label = dialogTranslations.Confirm,
-                                    tooltipOk = translations.Home.Completed,
-                                    tooltipError = (fun err -> translations.Home.Error(err.ErrorMessage)),
-                                    tooltipProps = [ tooltip.left ],
-                                    saveDate = snd model.PriceActionStatus,
-                                    disabled = false,
-                                    onClick = (fun _ -> onConfirm ())
-                                )
-                            ]
-                        ]
-                    ]
+                Html.legend [
+                    prop.key "product-actions-legend"
+                    prop.className "text-sm"
+                    prop.text $"⚡ %s{translations.Product.Actions}"
                 ]
-                Daisy.modalBackdrop [ prop.key $"%s{key}-dialog-backdrop"; prop.onClick closeModal ]
-            ]
-        ]
 
-        match model.Prices, translations with
-        | Remote.Empty, _ -> ()
-        | Remote.Loading, _
-        | _, TranslationsMissing PageCode.Product -> Daisy.skeleton [ prop.className "h-64 w-full"; prop.key "prices-skeleton" ]
-        | Remote.LoadError apiError, _ -> Alert.apiError "prices-load-error" apiError fullContext.User
-        | Remote.Loaded prices, _ ->
-            Daisy.fieldset [
-                prop.key $"%s{key}-fieldset"
-                prop.className "bg-base-200 border border-base-300 rounded-box p-4"
-                prop.children [
-                    Html.legend [
-                        prop.key "product-actions-legend"
-                        prop.className "text-sm"
-                        prop.text $"⚡ %s{translations.Product.Actions}"
-                    ]
-
+                // -- Prices ----
+                match model.Prices, translations with
+                | Remote.Empty, _ -> ()
+                | Remote.Loading, _
+                | _, TranslationsMissing PageCode.Product -> Daisy.skeleton [ prop.className "h-48 w-full"; prop.key "prices-skeleton" ]
+                | Remote.LoadError apiError, _ -> Alert.apiError "prices-load-error" apiError fullContext.User
+                | Remote.Loaded prices, _ ->
                     // -- ListPrice ----
                     Daisy.fieldsetLabel [ prop.key "list-price-label"; prop.text translations.Product.ListPrice ]
+
                     ActionsDropdown "list-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional prices.ListPrice) [
                         match prices.ListPrice with
                         | Some price ->
@@ -284,6 +270,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                             | _ -> ()
                         ]
                     ]
+
                     ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
                         match prices.RetailPrice with
                         | RetailPrice.Regular price ->
@@ -299,11 +286,20 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                 translations.Product.PriceAction.Decrease
                                 (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Decrease price, prices)))
 
-                            ActionProps.withIcon
-                                "mark-as-sold-out"
-                                PriceAction.Icons.soldOut
-                                translations.Product.PriceAction.MarkAsSoldOut
-                                (fun () -> openModal Action.MarkAsSoldOut)
+                            match model.Stock with
+                            | Remote.Loaded stock ->
+                                let action =
+                                    if stock.Quantity = 0 then
+                                        Action.MarkAsSoldOut
+                                    else
+                                        Action.WarnMarkAsSoldOutForbidden
+
+                                ActionProps.withIcon
+                                    "mark-as-sold-out"
+                                    PriceAction.Icons.soldOut
+                                    translations.Product.PriceAction.MarkAsSoldOut
+                                    (fun () -> openModal action)
+                            | _ -> ()
 
                         | RetailPrice.SoldOut ->
                             ActionProps.withIcon
@@ -313,15 +309,22 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                 (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
                     ]
 
-                    // -- Stock ----
+                // -- Stock ----
+                match model.Stock, translations with
+                | Remote.Empty, _ -> ()
+                | Remote.Loading, _
+                | _, TranslationsMissing PageCode.Product -> Daisy.skeleton [ prop.className "h-24 w-full"; prop.key "stock-skeleton" ]
+                | Remote.LoadError apiError, _ -> Alert.apiError "stock-load-error" apiError fullContext.User
+                | Remote.Loaded stock, _ ->
                     Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
-                    ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural 17) [ // TODO: Fetch stock
+
+                    ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural stock.Quantity) [
                         ActionProps.withIcon
                             "inventory-adjustment"
                             (icon fa6Solid.pencil)
                             (translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")
                             (fun () -> drawerControl.Open AdjustStockAfterInventory) // TODO: AdjustStockAfterInventory
                     ]
-                ]
             ]
+        ]
     ]

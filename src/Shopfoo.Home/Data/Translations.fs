@@ -31,6 +31,7 @@ let private translationPages = [
         TagCode "Save", "Save", "Enregistrer"
         TagCode "SaveOk", "{0} saved successfully", "{0} enregistré avec succès"
         TagCode "SaveError", "{0} not saved: {1}", "{0} non enregistré : {1}"
+        TagCode "Warning", "Warning", "Attention"
 
         TagCode "Colon", ":", " :"
         TagCode "Required", "Required", "Requis"
@@ -97,6 +98,9 @@ let private translationPages = [
         "Êtes-vous sûr de vouloir supprimer le prix catalogue ?"
 
         TagCode "PriceAction.MarkAsSoldOut", "Mark as sold out", "Marquer comme épuisé"
+        TagCode "PriceAction.WarnMarkAsSoldOutForbidden",
+        "'Mark as sold out' is possible only when the stock is 0.",
+        "'Marquer comme épuisé' n'est possible que lorsque le stock est à 0."
         TagCode "PriceAction.MarkAsSoldOutDialog.Confirm", "Yes, mark as sold out", "Oui, marquer comme épuisé"
         TagCode "PriceAction.MarkAsSoldOutDialog.Question",
         "Are you sure you want to mark this product as sold out?",

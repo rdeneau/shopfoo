@@ -100,15 +100,15 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 - Sales
   - List price (a.k.a. recommended price)
     - [x] Display the price fetched from the server
-    - [ ] Action: Define if not defined
+    - [x] Action: Define if not defined
     - [x] Action: Modify if defined (intent: Increase or Decrease)
     - [x] Action: Remove if defined
   - Retail price
     - [x] Display the price fetched from the server
     - [x] Display discount / list price if any
     - [ ] Display margin / Purchased price (last or average over 1Y)
-    - [ ] Action: Modify (intent: Increase or Decrease)
-    - [ ] Action: Mark as sold out
+    - [x] Action: Modify (intent: Increase or Decrease)
+    - [x] Action: Mark as sold out
   - Sales
     - [ ] Display last sale
     - [ ] Display 1Y sale: quantity, total
@@ -119,7 +119,7 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
     - [ ] Action: Receive purchased products
 - Warehouse
   - Stock
-    - [ ] Display the stock based on the stock events
+    - [x] Display the stock based on the stock events
     - [ ] Action: Inventory adjustment
       - [ ] Display difference / determined stock: losses or extras
 
