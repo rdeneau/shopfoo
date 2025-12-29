@@ -82,6 +82,11 @@ module ProgramBuilder =
 
 [<RequireQualifiedAccess>]
 module Program =
+    /// Helper to simplify the definition of an effectful program instruction
+    let inline effect (buildEffect: _ -> 'eff) (buildInstruction: _ -> Instruction<'arg, 'ret, _>) (args: 'arg) =
+        let instructionName = typeof<'eff>.Name.Replace("Effect`1", "")
+        Effect(buildEffect (buildInstruction (instructionName, args, Stop)))
+
     /// No Op program = doing nothing
     let inline noop () = program { return Ok() }
 

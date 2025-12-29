@@ -36,11 +36,6 @@ type SaveProductEffect<'a>(command: SaveProductCommand<'a>) =
 
 [<RequireQualifiedAccess>]
 module Program =
-    let getPrices args =
-        Effect(GetPricesEffect(GetPricesQuery("GetPrices", args, Stop)))
-
-    let savePrices args =
-        Effect(SavePricesEffect(SavePricesCommand("SavePrices", args, Stop)))
-
-    let saveProduct args =
-        Effect(SaveProductEffect(SaveProductCommand("SaveProduct", args, Stop)))
+    let getPrices = Program.effect GetPricesEffect GetPricesQuery
+    let savePrices = Program.effect SavePricesEffect SavePricesCommand
+    let saveProduct = Program.effect SaveProductEffect SaveProductCommand
