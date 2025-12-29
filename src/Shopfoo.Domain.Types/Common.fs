@@ -88,7 +88,7 @@ module Dictionary =
         let key = getKey item
 
         let result =
-            dict.TryGetValue key
+            dict.TryGetValue key // ↩
             |> Option.ofPair
             |> Result.requireSome $"%A{key}"
             |> Result.ignore

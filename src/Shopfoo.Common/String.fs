@@ -37,7 +37,7 @@ let toUpper s = (emptyIfNull s).ToUpperInvariant()
 
 /// From camelCase or PascalCase to kebab-case
 let toKebab s =
-    trimWhiteSpace s
+    trimWhiteSpace s // ↩
     |> Seq.splitWhen Char.IsUpper
     |> Seq.map String
     |> String.concat "-"

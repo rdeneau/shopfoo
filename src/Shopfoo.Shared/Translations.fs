@@ -197,7 +197,7 @@ type AppTranslations
     ]
 
     let pageCodes predicate =
-        sections
+        sections // ↩
         |> Seq.map snd
         |> Seq.distinct
         |> Seq.filter predicate
