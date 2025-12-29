@@ -52,7 +52,7 @@ module private Fakes =
         ]
 
 module Client =
-    let repository =
+    let private repository =
         Fakes.oneYear
         |> Seq.groupBy _.SKU
         |> Seq.map (fun (sku, sales) -> sku, sales |> Seq.toList)

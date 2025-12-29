@@ -107,7 +107,9 @@ let private translationPages = [
         "Êtes-vous sûr de vouloir marquer ce produit comme épuisé ?"
 
         TagCode "Stock", "Stock", "Stock"
-        TagCode "StockAction.AdjustStockAfterInventory", "Inventory adjustment", "Ajuster suite à inventaire"
+        TagCode "StockAfterInventory", "Stock adjusted after inventory", "Stock réel après inventaire"
+        TagCode "StockBeforeInventory", "Stock before inventory", "Stock avant inventaire"
+        TagCode "StockAction.AdjustStockAfterInventory", "Inventory adjustment", "Ajuster le stock suite à inventaire"
     ]
 ]
 

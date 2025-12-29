@@ -166,6 +166,8 @@ module TranslationPages =
             |}
 
         member this.Stock = this.Get "Stock"
+        member this.StockAfterInventory = this.Get "StockAfterInventory"
+        member this.StockBeforeInventory = this.Get "StockBeforeInventory"
 
         member this.StockAction =
             this.WithPrefix "StockAction."

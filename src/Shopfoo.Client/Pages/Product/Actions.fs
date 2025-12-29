@@ -137,7 +137,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
     // When the drawer is closed after a price modification, we refresh the prices.
     drawerControl.OnClose(fun drawer ->
         match drawer with
-        | ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
+        | Drawer.AdjustStockAfterInventory stock -> dispatch (StockFetched(Ok stock))
+        | Drawer.ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
         | _ -> ()
     )
 
@@ -322,8 +323,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                         ActionProps.withIcon
                             "inventory-adjustment"
                             (icon fa6Solid.pencil)
-                            (translations.Product.StockAction.AdjustStockAfterInventory + " 🚧")
-                            (fun () -> drawerControl.Open AdjustStockAfterInventory) // TODO: AdjustStockAfterInventory
+                            translations.Product.StockAction.AdjustStockAfterInventory
+                            (fun () -> drawerControl.Open(Drawer.AdjustStockAfterInventory stock))
                     ]
             ]
         ]

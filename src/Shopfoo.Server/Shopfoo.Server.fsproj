@@ -25,6 +25,7 @@
     <Compile Include="Remoting\Home\IndexHandler.fs" />
     <Compile Include="Remoting\Home\GetTranslationsHandler.fs" />
     <Compile Include="Remoting\Home\HomeApiBuilder.fs" />
+    <Compile Include="Remoting\Prices\AdjustStockHandler.fs" />
     <Compile Include="Remoting\Prices\DetermineStockHandler.fs" />
     <Compile Include="Remoting\Prices\GetPricesHandler.fs" />
     <Compile Include="Remoting\Prices\SavePricesHandler.fs" />

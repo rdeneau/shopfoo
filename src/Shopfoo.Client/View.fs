@@ -195,6 +195,18 @@ let AppView () =
                 ]
         ]
 
+    let onDismiss () = dispatch Msg.ToastOff
+
+    let toast name error =
+        let alertType, text =
+            match error with
+            | None -> alert.success, translations.Home.SaveOk name
+            | Some err -> alert.error, translations.Home.SaveError(name, err.ErrorMessage)
+
+        Toast.Toast $"toast-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+            Html.text text
+        ]
+
     React.router [
         router.pathMode
         router.onUrlChanged (Page.parseFromUrlSegments >> UrlChanged >> dispatch)
@@ -205,8 +217,6 @@ let AppView () =
                 prop.className "px-4 py-2"
                 prop.children pageView
             ]
-
-            let onDismiss () = dispatch Msg.ToastOff
 
             match model.Toast with
             | None -> ()
@@ -230,28 +240,13 @@ let AppView () =
                 | Remote.Loaded() -> langToast None
                 | Remote.LoadError apiError -> langToast (Some apiError)
 
-            | Some(Toast.Product(product, error)) ->
-                let productSku = $"%s{translations.Home.Product} %s{product.SKU.Value}"
+            | Some(Toast.Product(product, error)) -> // ↩
+                toast $"%s{translations.Home.Product} %s{product.SKU.Value}" error
 
-                let alertType, text =
-                    match error with
-                    | None -> alert.success, translations.Home.SaveOk productSku
-                    | Some err -> alert.error, translations.Home.SaveError(productSku, err.ErrorMessage)
+            | Some(Toast.Prices(prices, error)) -> // ↩
+                toast $"%s{translations.Product.Price} %s{prices.SKU.Value}" error
 
-                Toast.Toast $"toast-product-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
-                    Html.text text
-                ]
-
-            | Some(Toast.Prices(prices, error)) ->
-                let pricesSku = $"%s{translations.Product.Price} %s{prices.SKU.Value}"
-
-                let alertType, text =
-                    match error with
-                    | None -> alert.success, translations.Home.SaveOk pricesSku
-                    | Some err -> alert.error, translations.Home.SaveError(pricesSku, err.ErrorMessage)
-
-                Toast.Toast $"toast-prices-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
-                    Html.text text
-                ]
+            | Some(Toast.Stock(stock, error)) -> // ↩
+                toast $"%s{translations.Product.Stock} %s{stock.SKU.Value}" error
         ]
     ]

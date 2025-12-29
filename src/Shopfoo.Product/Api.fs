@@ -24,6 +24,7 @@ type IProductApi =
     abstract member MarkAsSoldOut: (SKU -> Async<Result<unit, Error>>)
     abstract member RemoveListPrice: (SKU -> Async<Result<unit, Error>>)
 
+    abstract member AdjustStock: (Stock -> Async<Result<unit, Error>>)
     abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
@@ -31,9 +32,10 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
 
     let runEffect (productEffect: IProductEffect<_>) =
         match productEffect.Instruction with
+        | AdjustStock command -> interpret.Command(command, Warehouse.Client.adjustStock)
         | GetPrices query -> interpret.Query(query, Prices.Client.getPrices)
-        | GetSales instruction -> interpret.Query(instruction, Sales.Client.getSales)
-        | GetStockEvents instruction -> interpret.Query(instruction, Warehouse.Client.getStockEvents)
+        | GetSales query -> interpret.Query(query, Sales.Client.getSales)
+        | GetStockEvents query -> interpret.Query(query, Warehouse.Client.getStockEvents)
         | SavePrices command -> interpret.Command(command, Prices.Client.savePrices)
         | SaveProduct command -> interpret.Command(command, Catalog.Client.saveProduct)
 
@@ -45,6 +47,7 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
         member val GetProduct = Catalog.Client.getProduct
         member val GetPrices = Prices.Client.getPrices
         member val GetSales = Sales.Client.getSales
+        member val AdjustStock = interpretWorkflow AdjustStockWorkflow.Instance
         member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
         member val MarkAsSoldOut = interpretWorkflow MarkAsSoldOutWorkflow.Instance
         member val RemoveListPrice = interpretWorkflow RemoveListPriceWorkflow.Instance

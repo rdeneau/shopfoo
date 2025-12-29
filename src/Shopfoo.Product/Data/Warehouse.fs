@@ -1,8 +1,8 @@
 ﻿[<RequireQualifiedAccess>]
 module internal Shopfoo.Product.Data.Warehouse
 
+open System
 open System.Linq
-open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Product.Data
@@ -51,14 +51,35 @@ module private Fakes =
         ]
 
 module Client =
-    let repository =
+    let private repository =
         Fakes.oneYear
         |> Seq.groupBy _.SKU
-        |> Seq.map (fun (sku, sales) -> sku, sales |> Seq.toList)
+        |> Seq.map (fun (sku, sales) -> sku, sales |> ResizeArray)
         |> _.ToDictionary(fst, snd)
+
+    let adjustStock { Stock.SKU = sku; Quantity = quantity } =
+        async {
+            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
+
+            let adjustmentEvent = {
+                SKU = sku
+                Date = DateOnly.FromDateTime(DateTime.UtcNow)
+                Quantity = quantity
+                Type = EventType.StockAdjusted
+            }
+
+            match repository.TryGetValue(sku) with
+            | true, events -> events.Add(adjustmentEvent)
+            | false, _ -> repository.Add(sku, ResizeArray [ adjustmentEvent ])
+
+            return Ok()
+        }
 
     let getStockEvents sku =
         async {
             do! Async.Sleep(millisecondsDueTime = 150) // Simulate latency
-            return repository.TryGetValue(sku) |> Option.ofPair
+
+            match repository.TryGetValue(sku) with
+            | true, events -> return Some(events |> List.ofSeq)
+            | false, _ -> return None
         }

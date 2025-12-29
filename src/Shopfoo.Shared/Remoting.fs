@@ -124,6 +124,7 @@ module PricesApi =
     type PriceCommand = { SKU: SKU }
 
     type PricesApi = {
+        AdjustStock: Command<Stock>
         DetermineStock: Query<SKU, Stock>
         GetPrices: Query<SKU, GetPricesResponse>
         SavePrices: Command<Prices>

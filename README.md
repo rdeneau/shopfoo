@@ -120,8 +120,7 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 - Warehouse
   - Stock
     - [x] Display the stock based on the stock events
-    - [ ] Action: Inventory adjustment
-      - [ ] Display difference / determined stock: losses or extras
+    - [x] Action: Inventory adjustment
 
 ### UI features
 

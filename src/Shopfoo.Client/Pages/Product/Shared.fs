@@ -4,6 +4,7 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
+open Shopfoo.Domain.Types.Warehouse
 
 type ProductModel = { SKU: SKU; SoldOut: bool }
 
@@ -51,7 +52,7 @@ type Drawer =
     | ManagePrice of PriceModel * Prices
     | InputSales
     | ReceivePurchasedProducts
-    | AdjustStockAfterInventory
+    | AdjustStockAfterInventory of Stock
 
 /// This object is created by the view holding the Drawer.
 /// It's passed to the components to let them open/close the drawer.

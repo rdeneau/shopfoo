@@ -6,6 +6,7 @@ open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Pages.Product.Actions
+open Shopfoo.Client.Pages.Product.AdjustStock
 open Shopfoo.Client.Pages.Product.CatalogInfo
 open Shopfoo.Client.Pages.Product.ManagePrice
 open Shopfoo.Client.Pages.Shared
@@ -54,6 +55,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
     let isDrawerOpen = model.Drawer.IsSome
     let onSavePrice (price, error) = onSave (Toast.Prices(price, error))
     let onSaveProduct (product, error) = onSave (Toast.Product(product, error))
+    let onSaveStock (stock, error) = onSave (Toast.Stock(stock, error))
 
     let setSoldOut soldOut =
         if soldOut <> productModel.SoldOut then
@@ -109,9 +111,9 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                             match model.Drawer with
                             | None -> ()
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
+                            | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
                             | Some InputSales
-                            | Some ReceivePurchasedProducts
-                            | Some AdjustStockAfterInventory ->
+                            | Some ReceivePurchasedProducts ->
                                 // TODO: [Drawer] other actions
                                 Html.text "🚧 TODO"
                         ]
