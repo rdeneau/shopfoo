@@ -6,7 +6,7 @@ open Shopfoo.Effects
 open Shopfoo.Product.Workflows.Instructions
 
 [<Sealed>]
-type internal SavePricesWorkflow() =
+type internal SavePricesWorkflow private () =
     inherit ProductWorkflow<Prices, unit>()
 
     let guardListPrice (prices: Prices) =
@@ -32,3 +32,5 @@ type internal SavePricesWorkflow() =
             do! Program.savePrices prices
             return Ok()
         }
+
+    static member val Instance = SavePricesWorkflow()

@@ -39,10 +39,10 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
         member val GetProduct = Catalog.Client.getProduct
         member val GetPrices = Prices.Client.getPrices
         member val GetSales = Sales.Client.getSales
-        member val MarkAsSoldOut = interpretWorkflow (MarkAsSoldOutWorkflow())
-        member val RemoveListPrice = interpretWorkflow (RemoveListPriceWorkflow())
-        member val SaveProduct = interpretWorkflow (SaveProductWorkflow())
-        member val SavePrices = interpretWorkflow (SavePricesWorkflow())
+        member val MarkAsSoldOut = interpretWorkflow MarkAsSoldOutWorkflow.Instance
+        member val RemoveListPrice = interpretWorkflow RemoveListPriceWorkflow.Instance
+        member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
+        member val SavePrices = interpretWorkflow SavePricesWorkflow.Instance
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection

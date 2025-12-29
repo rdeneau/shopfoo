@@ -6,7 +6,7 @@ open Shopfoo.Effects
 open Shopfoo.Product.Workflows.Instructions
 
 [<Sealed>]
-type internal SaveProductWorkflow() =
+type internal SaveProductWorkflow private () =
     inherit ProductWorkflow<Product, unit>()
 
     let validate (product: Product) =
@@ -24,3 +24,5 @@ type internal SaveProductWorkflow() =
             do! Program.saveProduct product
             return Ok()
         }
+
+    static member val Instance = SaveProductWorkflow()
