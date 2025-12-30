@@ -17,8 +17,6 @@ type IProductApi =
     abstract member GetProduct: (SKU -> Async<Product option>)
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
-    abstract member GetSales: (SKU -> Async<Sale list option>)
-
     abstract member GetPrices: (SKU -> Async<Prices option>)
     abstract member SavePrices: (Prices -> Async<Result<unit, Error>>)
     abstract member MarkAsSoldOut: (SKU -> Async<Result<unit, Error>>)
@@ -26,13 +24,13 @@ type IProductApi =
 
     abstract member AdjustStock: (Stock -> Async<Result<unit, Error>>)
     abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
+    abstract member GetSales: (SKU -> Async<Sale list option>)
 
 type internal Api(interpreterFactory: IInterpreterFactory) =
     let interpret = interpreterFactory.Create(ProductDomain)
 
     let runEffect (productEffect: IProductEffect<_>) =
         match productEffect.Instruction with
-        | AdjustStock command -> interpret.Command(command, Warehouse.Client.adjustStock)
         | GetPrices query -> interpret.Query(query, Prices.Client.getPrices)
         | GetSales query -> interpret.Query(query, Sales.Client.getSales)
         | GetStockEvents query -> interpret.Query(query, Warehouse.Client.getStockEvents)
@@ -45,14 +43,16 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
     interface IProductApi with
         member val GetProducts = Catalog.Client.getProducts
         member val GetProduct = Catalog.Client.getProduct
+        member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
+
         member val GetPrices = Prices.Client.getPrices
-        member val GetSales = Sales.Client.getSales
-        member val AdjustStock = interpretWorkflow AdjustStockWorkflow.Instance
-        member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
+        member val SavePrices = interpretWorkflow SavePricesWorkflow.Instance
         member val MarkAsSoldOut = interpretWorkflow MarkAsSoldOutWorkflow.Instance
         member val RemoveListPrice = interpretWorkflow RemoveListPriceWorkflow.Instance
-        member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
-        member val SavePrices = interpretWorkflow SavePricesWorkflow.Instance
+
+        member val AdjustStock = Warehouse.Client.adjustStock
+        member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
+        member val GetSales = Sales.Client.getSales
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection
