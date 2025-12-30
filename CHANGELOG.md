@@ -1,3 +1,10 @@
+## [1.2.0](https://github.com/rdeneau/shopfoo/compare/v1.1.0...v1.2.0) (2025-12-30)
+
+### Features
+
+* ✨ adjust stock after inventory ([9e6d0f4](https://github.com/rdeneau/shopfoo/commit/9e6d0f4160e0c49204cda3459e8dbd1178f8f88a))
+* ✨ fetch stock ; verifyZeroStock in MarkAsSoldOut workflow ([a13beb9](https://github.com/rdeneau/shopfoo/commit/a13beb9f58f0798d4f3ec13c7dad80bc173ee79c))
+
 ## [1.1.0](https://github.com/rdeneau/shopfoo/compare/v1.0.0...v1.1.0) (2025-12-24)
 
 ### Features
