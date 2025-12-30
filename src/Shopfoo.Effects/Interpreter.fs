@@ -35,13 +35,18 @@ type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipeli
     member this.Query(query: Query<_, _, _>, pipeline) =
         this.Instruction(query, timer.TimeQuery, pipeline)
 
+    member this.QueryFailable(query: QueryFailable<_, _, _>, pipeline) =
+        this.Instruction(query, timer.TimeCommand, pipeline)
+
     member this.QueryOptional(query: Query<_, _, _>, pipeline) =
         this.Instruction(query, timer.TimeQueryOptional, pipeline)
 
-    member this.QueryFailable(query: Instruction<_, Result<_, _>, _>, pipeline) =
-        this.Instruction(query, timer.TimeCommand, pipeline)
-
-    member _.Workflow<'arg, 'ret, 'effect when 'effect :> IProgramEffect<Program<Result<'ret, Error>>>>(runEffect) =
+    member _.Workflow<'arg, 'ret, 'effect, 'workflow
+        when 'effect :> IProgramEffect<Program<Result<'ret, Error>>>
+        and 'workflow :> IProgramWorkflow<'arg, 'ret>
+        and 'workflow :> IDomainWorkflow<'dom>>
+        runEffect
+        =
         let rec loop program =
             match program with
             | Stop res -> async { return res }
@@ -54,7 +59,7 @@ type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipeli
                     }
                 | _ -> failwithf $"Unsupported effect: %A{eff}"
 
-        fun (workflow: IProgramWorkflow<'arg, 'ret>) (arg: 'arg) ->
+        fun (workflow: 'workflow) (arg: 'arg) ->
             async {
                 try
                     let program = workflow.Run(arg)
