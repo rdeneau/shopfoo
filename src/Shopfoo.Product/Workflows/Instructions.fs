@@ -24,20 +24,20 @@ type IProductEffect<'a> =
     inherit IProgramEffect<'a>
     inherit IInterpretableEffect<ProductInstruction<'a>>
 
-type GetPricesEffect<'a>(command: GetPricesQuery<'a>) =
+type GetPricesEffect<'a>(query: GetPricesQuery<'a>) =
     interface IProductEffect<'a> with
-        override _.Map(f) = GetPricesEffect(command.Map f)
-        override val Instruction = GetPrices command
+        override _.Map(f) = GetPricesEffect(query.Map f)
+        override val Instruction = GetPrices query
 
-type GetSalesEffect<'a>(command: GetSalesQuery<'a>) =
+type GetSalesEffect<'a>(query: GetSalesQuery<'a>) =
     interface IProductEffect<'a> with
-        override _.Map(f) = GetSalesEffect(command.Map f)
-        override val Instruction = GetSales command
+        override _.Map(f) = GetSalesEffect(query.Map f)
+        override val Instruction = GetSales query
 
-type GetStockEventsEffect<'a>(command: GetStockEventsQuery<'a>) =
+type GetStockEventsEffect<'a>(query: GetStockEventsQuery<'a>) =
     interface IProductEffect<'a> with
-        override _.Map(f) = GetStockEventsEffect(command.Map f)
-        override val Instruction = GetStockEvents command
+        override _.Map(f) = GetStockEventsEffect(query.Map f)
+        override val Instruction = GetStockEvents query
 
 type SavePricesEffect<'a>(command: SavePricesCommand<'a>) =
     interface IProductEffect<'a> with

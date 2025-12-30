@@ -18,7 +18,10 @@ type internal DetermineStockWorkflow private () =
 
     override _.Run sku =
         program {
-            let! (sales: Sale list) = Program.getSales sku |> Program.requireSome $"SKU #%s{sku.Value}" |> Program.mapDataRelatedError
+            let! (sales: Sale list) =
+                Program.getSales sku // ↩
+                |> Program.requireSome $"SKU #%s{sku.Value}"
+                |> Program.mapDataRelatedError
 
             let! stockEvents =
                 Program.getStockEvents sku
