@@ -10,7 +10,7 @@ type IServiceCollection with
         services.AddEffects() |> ignore
 
         services
-            .AddCatalogApi() // ↩
+            .AddProductApi() // ↩
             .AddHomeApi()
             .AddSingleton<Remoting.FeatApi>()
         |> ignore

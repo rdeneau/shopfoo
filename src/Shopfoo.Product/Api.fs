@@ -58,5 +58,5 @@ module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection
 
     type IServiceCollection with
-        member services.AddCatalogApi() = // ↩
+        member services.AddProductApi() = // ↩
             services.AddSingleton<IProductApi, Api>()
