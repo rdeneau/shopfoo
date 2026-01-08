@@ -15,6 +15,7 @@
     <Compile Include="Workflows\SaveProduct.fs" />
     <Compile Include="Data\Common.fs" />
     <Compile Include="Data\Catalog.fs" />
+    <Compile Include="Data\OpenLibrary.fs" />
     <Compile Include="Data\Prices.fs" />
     <Compile Include="Data\Sales.fs" />
     <Compile Include="Data\Warehouse.fs" />
@@ -22,6 +23,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Data\Shopfoo.Data.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
     <ProjectReference Include="..\Shopfoo.Effects\Shopfoo.Effects.fsproj" />
   </ItemGroup>

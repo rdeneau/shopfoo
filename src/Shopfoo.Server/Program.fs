@@ -2,12 +2,13 @@ module Shopfoo.Server.Program
 
 open Giraffe
 open Microsoft.AspNetCore.Builder
+open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Hosting
 open Microsoft.Extensions.Logging
 open Shopfoo.Server.DependencyInjection
 
-let private configureServices (services: IServiceCollection) =
+let private configureServices (configuration: IConfiguration) (services: IServiceCollection) =
     services.AddGiraffe() |> ignore
 
 #if DEBUG
@@ -15,7 +16,7 @@ let private configureServices (services: IServiceCollection) =
     |> ignore
 #endif
 
-    services.AddRemotingApi() |> ignore
+    services.AddRemotingApi(configuration) |> ignore
 
 let private configureApp (app: WebApplication) =
     let rootApiBuilder = app.Services.GetRequiredService<Remoting.RootApiBuilder>()
@@ -29,7 +30,13 @@ let private builder = WebApplication.CreateBuilder(builderOptions)
 
 builder.Logging.AddSimpleConsole() |> ignore
 
-configureServices builder.Services
+builder.Configuration
+    .AddJsonFile("appsettings.json", optional = false, reloadOnChange = true)
+    .AddJsonFile($"appsettings.{builder.Environment.EnvironmentName}.json", optional = true, reloadOnChange = true)
+    .AddEnvironmentVariables()
+|> ignore
+
+configureServices builder.Configuration builder.Services
 
 let app = builder.Build()
 configureApp app

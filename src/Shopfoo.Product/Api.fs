@@ -1,5 +1,7 @@
 ﻿namespace Shopfoo.Product
 
+open System
+open System.Net.Http
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
@@ -54,8 +56,30 @@ type internal Api(interpreterFactory: IInterpreterFactory) =
         member val GetSales = Sales.Client.getSales
 
 module DependencyInjection =
+    open Shopfoo.Data.DependencyInjection
+    open Shopfoo.Product.Data.OpenLibrary
     open Microsoft.Extensions.DependencyInjection
+    open Microsoft.Extensions.Options
+
+    module OpenLibrary =
+        [<Literal>]
+        let SectionName = "OpenLibrary"
+
+        [<CLIMutable>]
+        type Settings = { BaseUrl: string }
 
     type IServiceCollection with
-        member services.AddProductApi() = // ↩
-            services.AddSingleton<IProductApi, Api>()
+        member private services.AddOpenLibraryClient() =
+            services.AddHttpClient<OpenLibraryClient>(fun (sp: IServiceProvider) (client: HttpClient) ->
+                let openLibrarySettings = sp.GetRequiredService<IOptions<OpenLibrary.Settings>>()
+                client.BaseAddress <- Uri(openLibrarySettings.Value.BaseUrl)
+                client.AcceptJson()
+            )
+            |> ignore
+
+            services
+
+        member services.AddProductApi() =
+            services // ↩
+                .AddOpenLibraryClient()
+                .AddSingleton<IProductApi, Api>()

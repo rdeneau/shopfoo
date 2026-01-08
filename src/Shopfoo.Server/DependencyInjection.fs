@@ -1,16 +1,18 @@
 ﻿module Shopfoo.Server.DependencyInjection
 
+open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Home.DependencyInjection
 open Shopfoo.Product.DependencyInjection
 
 type IServiceCollection with
-    member services.AddRemotingApi() =
+    member services.AddRemotingApi(configuration: IConfiguration) =
         services.AddEffects() |> ignore
 
         services
-            .AddProductApi() // ↩
+            .Configure<OpenLibrary.Settings>(configuration.GetSection(OpenLibrary.SectionName))
+            .AddProductApi()
             .AddHomeApi()
             .AddSingleton<Remoting.FeatApi>()
         |> ignore

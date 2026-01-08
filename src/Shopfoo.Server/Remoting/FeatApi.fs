@@ -1,7 +1,7 @@
 ﻿namespace Shopfoo.Server.Remoting
 
-open Shopfoo.Catalog
 open Shopfoo.Home
+open Shopfoo.Product
 
 /// Singleton providing access to each of the Feat project APIs
 type FeatApi(home: IHomeApi, product: IProductApi) =
