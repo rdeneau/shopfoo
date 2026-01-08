@@ -8,11 +8,12 @@ nuget Fable.Remoting.Giraffe
 nuget Feliz.DaisyUI
 nuget Feliz.Router
 nuget Feliz.UseElmish
+nuget FSharp.SystemTextJson
 nuget FsToolkit.ErrorHandling.TaskResult
 nuget Giraffe.GoodRead
 nuget Glutinum.Feliz.Iconify
 nuget Glutinum.IconifyIcons.Fa6Solid
-nuget Microsoft.Extensions.Logging
+nuget Microsoft.Extensions.Http
 
 group Build
     source https://api.nuget.org/v3/index.json

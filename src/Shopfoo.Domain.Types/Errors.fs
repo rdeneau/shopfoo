@@ -129,12 +129,85 @@ module Guards =
                 let issues = issuesWithRank |> List.sortBy fst |> List.map snd |> String.concat ", "
                 this.Error $"""'%s{value}' should be a string %s{issues}, trailing whitespaces excluded"""
 
-type OperationNotAllowedError = { Operation: string; Reason: string }
+[<AutoOpen>]
+module Http =
+    [<RequireQualifiedAccess>]
+    type HttpVerb =
+        | Get
+        | Post
+        | Put
+        | Patch
+        | Delete
+
+    type HttpStatus = {
+        Code: int
+        Label: string
+        Content: string option
+        Request: string option
+        Verb: HttpVerb
+        Uri: Uri option
+    } with
+
+        member this.Explain() =
+            let verb = this.Verb.ToString() |> String.toUpper
+
+            let uri =
+                match this.Uri with
+                | Some uri -> $"\n%s{verb} %s{uri.ToString()}"
+                | _ -> String.empty
+
+            let request =
+                match this.Request with
+                | Some(String.NotEmpty as request) -> $"\nRequest: %s{request}"
+                | _ -> String.empty
+
+            let response =
+                match this.Content with
+                | Some(String.NotEmpty as content) -> $"\nResponse: %s{content}"
+                | _ -> String.empty
+
+            $"HTTP Status Code %i{this.Code} (%s{this.Label})%s{uri}%s{request}%s{response}"
+
+        static member Create(code: int, label: string, ?content) = {
+            Code = code
+            Label = label
+            Content = content
+            Request = None
+            Verb = HttpVerb.Get
+            Uri = None
+        }
+
+#if !FABLE_COMPILER
+
+    type HttpStatus with
+        /// <remarks>
+        /// This method is not available in Fable. Use the <c>HttpStatus.Create</c> method instead.
+        /// </remarks>
+        static member FromHttpStatusCode(httpStatusCode: System.Net.HttpStatusCode, ?content, ?request, ?verb, ?uri) = {
+            Code = int httpStatusCode
+            Label = httpStatusCode.ToString()
+            Content = content
+            Request = request
+            Verb = defaultArg verb HttpVerb.Get
+            Uri = uri
+        }
+
+#endif
+
+    type HttpApiName = // ↩
+        | OpenLibrary
+
+        member this.Code =
+            match this with
+            | OpenLibrary -> "openlibrary"
 
 type DataRelatedError =
     | DataException of exn
     | DataNotFound of Id: string * Type: string
     | DeserializationIssue of ContentToDeserialize: string * TargetType: string * ExceptionThrown: exn
+    | HttpApiError of apiName: HttpApiName * status: HttpStatus
+
+type OperationNotAllowedError = { Operation: string; Reason: string }
 
 type Error =
     | Bug of exn
@@ -221,6 +294,7 @@ module ErrorCategory =
         | DataError(DataException _) -> "Data Error: Query Issue"
         | DataError(DataNotFound _) -> "Data Error: Not Found"
         | DataError(DeserializationIssue _) -> "Data Error: Deserialization Issue"
+        | DataError(HttpApiError _) -> "Data Error: HTTP API Issue"
         | OperationNotAllowed _ -> "Operation Not Allowed"
         | GuardClause _ -> "Guard Clause"
         | Validation _ -> "Validation"
@@ -282,6 +356,11 @@ module ErrorMessage =
             ErrorMessage.Create(
                 $"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}",
                 ?innerMessage = innerExceptionMessage exn
+            )
+        | HttpApiError(apiName, status) ->
+            ErrorMessage.Create( // ↩
+                $"Call to %s{apiName.Code} API failed with %s{status.Explain()}",
+                ?innerMessage = status.Content
             )
 
     let ofError =
