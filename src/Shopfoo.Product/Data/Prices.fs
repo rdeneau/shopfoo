@@ -1,5 +1,5 @@
 ﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Catalog.Data.Prices
+module internal Shopfoo.Product.Data.Prices
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors

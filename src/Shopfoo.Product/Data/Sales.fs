@@ -1,5 +1,5 @@
 ﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Catalog.Data.Sales
+module internal Shopfoo.Product.Data.Sales
 
 open System.Linq
 open Shopfoo.Common
