@@ -2,6 +2,34 @@
 
 open Shopfoo.Domain.Types.Errors
 
+type Provider =
+    | FakeStore
+    | OpenLibrary
+
+type OLID = OLID of string
+
+type BookAuthor = { OLID: OLID; Name: string }
+
+type Book = {
+    ISBN: ISBN
+    Subtitle: string
+    Authors: BookAuthor list
+    Tags: string list
+}
+
+[<RequireQualifiedAccess>]
+type StoreCategory =
+    | Clothing
+    | Electronics
+    | Jewelry
+
+type StoreProduct = { FSID: FSID; Category: StoreCategory }
+
+[<RequireQualifiedAccess>]
+type Category =
+    | Books of Book
+    | Store of StoreProduct
+
 type ImageUrl = {
     Url: string
     Broken: bool
@@ -11,8 +39,9 @@ type ImageUrl = {
 
 type Product = {
     SKU: SKU
-    Name: string
+    Title: string
     Description: string
+    Category: Category
     ImageUrl: ImageUrl
 }
 

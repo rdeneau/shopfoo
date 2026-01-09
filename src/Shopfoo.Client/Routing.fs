@@ -26,7 +26,7 @@ type Page =
     | Login
     | NotFound of url: string
     | ProductIndex
-    | ProductDetail of sku: string
+    | ProductDetail of skuKey: string
 
     member this.Key =
         match this with
@@ -36,7 +36,7 @@ type Page =
         | Page.Login -> "login"
         | Page.NotFound _ -> "not-found"
         | Page.ProductIndex -> "product"
-        | Page.ProductDetail sku -> $"product-{sku}"
+        | Page.ProductDetail skuKey -> $"product-%s{skuKey.ToLowerInvariant()}"
 
     static member CurrentNotFound() =
         Router.currentUrl () |> Router.format |> Page.NotFound
@@ -53,8 +53,8 @@ module Page =
         | [ "login" ] -> Page.Login
         | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
         | [ "product" ] -> Page.ProductIndex
-        | [ "product"; sku ] -> Page.ProductDetail sku
-        | segments -> Page.NotFound(Router.formatPath (segments))
+        | [ "product"; skuKey ] -> Page.ProductDetail skuKey
+        | segments -> Page.NotFound(Router.formatPath segments)
 
 let (|PageUrl|) =
     function
@@ -64,7 +64,7 @@ let (|PageUrl|) =
     | Page.Login -> PageUrl.WithSegments("login")
     | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
     | Page.ProductIndex -> PageUrl.WithSegments("product")
-    | Page.ProductDetail sku -> PageUrl.WithSegments("product", sku)
+    | Page.ProductDetail skuKey -> PageUrl.WithSegments("product", skuKey)
 
 [<RequireQualifiedAccess>]
 module Router =

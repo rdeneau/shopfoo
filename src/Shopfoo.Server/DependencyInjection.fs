@@ -2,6 +2,7 @@
 
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
+open Shopfoo.Data.DependencyInjection
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Home.DependencyInjection
 open Shopfoo.Product.DependencyInjection
@@ -11,7 +12,9 @@ type IServiceCollection with
         services.AddEffects() |> ignore
 
         services
-            .Configure<OpenLibrary.Settings>(configuration.GetSection(OpenLibrary.SectionName))
+            .Configure<FakeStoreSettings>(configuration.GetSection(Sections.FakeStore))
+            .Configure<OpenLibrarySettings>(configuration.GetSection(Sections.OpenLibrary))
+            .AddHttp()
             .AddProductApi()
             .AddHomeApi()
             .AddSingleton<Remoting.FeatApi>()

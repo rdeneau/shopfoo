@@ -4,6 +4,7 @@ open System
 open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types
 open Shopfoo.Shared.Translations
 
 type private Nav(currentPage, translations: AppTranslations) =
@@ -38,8 +39,9 @@ type private Nav(currentPage, translations: AppTranslations) =
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
     member nav.Products = nav.page (Page.ProductIndex, translate _.Home.Products)
 
-    member nav.Product(sku) =
-        nav.page (Page.ProductDetail sku, text = sku, cssClass = "font-semibold")
+    member nav.Product(skuKey) =
+        let sku = SKU.ParseKey(skuKey)
+        nav.page (Page.ProductDetail skuKey, text = sku.Value, cssClass = "font-semibold")
 
 [<ReactComponent>]
 let AppNavBar key currentPage pageDisplayedInline translations children =
@@ -64,9 +66,9 @@ let AppNavBar key currentPage pageDisplayedInline translations children =
                             | Page.Admin -> nav.Admin
                             | Page.Login -> nav.Login
                             | Page.ProductIndex -> nav.Products
-                            | Page.ProductDetail sku ->
+                            | Page.ProductDetail skuKey ->
                                 nav.Products
-                                nav.Product(sku)
+                                nav.Product(skuKey)
                         ]
                     ]
                 ]

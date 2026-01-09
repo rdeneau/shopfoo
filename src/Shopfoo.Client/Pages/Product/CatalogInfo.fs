@@ -167,7 +167,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                     Daisy.fieldset [
                                         prop.key "name-fieldset"
                                         prop.children [
-                                            let props = Product.Guard.Name.props (product.Name, translations)
+                                            let props = Product.Guard.Name.props (product.Title, translations)
 
                                             Daisy.fieldsetLabel [
                                                 prop.key "name-label"
@@ -185,7 +185,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                 prop.placeholder translations.Product.Name
                                                 props.value
                                                 yield! props.validation
-                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Name = name }))
+                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
                                             ]
                                         ]
                                     ]

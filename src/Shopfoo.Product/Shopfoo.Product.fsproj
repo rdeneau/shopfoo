@@ -14,12 +14,15 @@
     <Compile Include="Workflows\SavePrices.fs" />
     <Compile Include="Workflows\SaveProduct.fs" />
     <Compile Include="Data\Common.fs" />
-    <Compile Include="Data\Catalog.fs" />
     <Compile Include="Data\OpenLibrary.fs" />
+    <Compile Include="Data\Books.fs" />
+    <Compile Include="Data\FakeStore.fs" />
+    <Compile Include="Data\Catalog.fs" />
     <Compile Include="Data\Prices.fs" />
     <Compile Include="Data\Sales.fs" />
     <Compile Include="Data\Warehouse.fs" />
     <Compile Include="Api.fs" />
+    <Compile Include="DependencyInjection.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />

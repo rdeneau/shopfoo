@@ -97,7 +97,7 @@ module CatalogApi =
     type GetProductResponse = { Product: Product option }
 
     type CatalogApi = {
-        GetProducts: QueryWithTranslations<unit, GetProductsResponse>
+        GetProducts: QueryWithTranslations<Provider, GetProductsResponse>
         GetProduct: QueryWithTranslations<SKU, GetProductResponse>
         SaveProduct: Command<Product>
     } with

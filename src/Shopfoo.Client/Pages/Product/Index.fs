@@ -4,8 +4,10 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
@@ -14,17 +16,24 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Msg = // ↩
+type private Msg =
+    | SelectProvider of Provider
     | ProductsFetched of ApiResult<GetProductsResponse * Translations>
 
-type private Model = { Products: Remote<Product list> }
+type private Model = { Provider: Provider option; Products: Remote<Product list> }
 
 [<RequireQualifiedAccess>]
 module private Product =
+    let private fs0 = { // ↩
+        FSID = FSID 0
+        Category = StoreCategory.Jewelry
+    }
+
     let notFound: Product = {
-        SKU = SKU "99999"
-        Name = "❗"
+        SKU = fs0.FSID
+        Title = "❗"
         Description = "Fake product to demo how the page handles a product not found"
+        Category = Category.Store fs0
         ImageUrl = ImageUrl.None
     }
 
@@ -37,12 +46,13 @@ module private Cmd =
             Success = Ok >> ProductsFetched
         }
 
-let private init (fullContext: FullContext) =
-    { Products = Remote.Loading }, // ↩
-    Cmd.loadProducts (fullContext.PrepareQueryWithTranslations())
+let private init () =
+    { Provider = None; Products = Remote.Empty }, Cmd.none
 
-let private update fillTranslations msg (model: Model) =
+let private update fillTranslations (fullContext: FullContext) msg (model: Model) =
     match msg with
+    | SelectProvider provider ->
+        { model with Provider = Some provider; Products = Remote.Loading }, Cmd.loadProducts (fullContext.PrepareQueryWithTranslations(provider))
     | Msg.ProductsFetched(Ok(data, translations)) ->
         { model with Products = Remote.Loaded(data.Products @ [ Product.notFound ]) }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations translations)
@@ -58,12 +68,33 @@ let IndexView (fullContext: FullContext, fillTranslations) =
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
-        let model, _ = React.useElmish (init fullContext, update fillTranslations, [||])
+        let model, dispatch =
+            React.useElmish (init (), update fillTranslations fullContext, [||])
+
         let translations = fullContext.Translations
 
         Html.section [
             prop.key "products-page"
             prop.children [
+                Daisy.tabs [
+                    tabs.border
+                    prop.key "tabs-providers"
+                    prop.children [
+                        Daisy.tab [
+                            prop.key "tab-open-library"
+                            prop.className "gap-2"
+                            prop.onClick (fun _ -> dispatch (SelectProvider OpenLibrary))
+                            prop.children [ icon fa6Solid.book; Html.text "Open Library" ]
+                        ]
+                        Daisy.tab [
+                            prop.key "tab-fake-store"
+                            prop.className "gap-2"
+                            prop.onClick (fun _ -> dispatch (SelectProvider FakeStore))
+                            prop.children [ icon fa6Solid.store; Html.text "Fake Store" ]
+                        ]
+                    ]
+                ]
+
                 match model.Products with
                 | Remote.Empty -> ()
                 | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
@@ -90,10 +121,10 @@ let IndexView (fullContext: FullContext, fillTranslations) =
                                         Html.tr [
                                             prop.key $"product-%i{i}"
                                             prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
-                                            prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Value))
+                                            prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Key))
                                             prop.children [
                                                 Html.td [ prop.key $"product-%i{i}-num"; prop.text (i + 1) ]
-                                                Html.td [ prop.key $"product-%i{i}-name"; prop.text product.Name ]
+                                                Html.td [ prop.key $"product-%i{i}-name"; prop.text product.Title ]
                                                 Html.td [ prop.key $"product-%i{i}-desc"; prop.text product.Description ]
                                             ]
                                         ]

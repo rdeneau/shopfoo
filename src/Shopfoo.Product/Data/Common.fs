@@ -5,13 +5,20 @@ open System
 open Shopfoo.Domain.Types
 
 [<RequireQualifiedAccess>]
-module SKU =
-    let CleanArchitecture = SKU "9780134494166"
-    let DomainDrivenDesign = SKU "9780321125217"
-    let DomainModelingMadeFunctional = SKU "9781680502541"
-    let JavaScriptTheGoodParts = SKU "9780596517748"
-    let ThePragmaticProgrammer = SKU "9780135957059"
-    let none = SKU null
+module ISBN =
+    let CleanArchitecture = ISBN "9780134494166"
+    let CleanCode = ISBN "9780132350884"
+    let CodeThatFitsInYourHead = ISBN "9780137464326"
+    let DependencyInjection = ISBN "9781617294730"
+    let DomainDrivenDesign = ISBN "9780321125217"
+    let DomainDrivenDesignReference = ISBN "9781457501197"
+    let DomainModelingMadeFunctional = ISBN "9781680502541"
+    let FsharpInActions = ISBN "9781638355212"
+    let HowJavaScriptWorks = ISBN "9781949815009"
+    let JavaScriptTheGoodParts = ISBN "9780596517748"
+    let Refactoring = ISBN "9780134757599"
+    let ThePragmaticProgrammer = ISBN "9780135957059"
+    let UnitTesting = ISBN "9781617296277"
 
 let daysAgo (days: int) =
     DateOnly.FromDateTime(DateTime.Now.AddDays(-days))

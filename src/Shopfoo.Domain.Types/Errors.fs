@@ -194,11 +194,13 @@ module Http =
 
 #endif
 
-    type HttpApiName = // ↩
+    type HttpApiName =
+        | FakeStore
         | OpenLibrary
 
         member this.Code =
             match this with
+            | FakeStore -> "fakestore"
             | OpenLibrary -> "openlibrary"
 
 type DataRelatedError =

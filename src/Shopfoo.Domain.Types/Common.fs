@@ -67,9 +67,64 @@ type Lang =
     | French
     | Latin
 
+[<Interface>]
 type SKU =
-    | SKU of string
-    member this.Value = let (SKU value) = this in value
+    abstract member Type: SKUType
+    abstract member Value: string
+
+/// FakeStore Product Identifier
+and FSID =
+    | FSID of int
+
+    member this.Value =
+        let (FSID fsid) = this
+        $"FS%i{fsid}"
+
+    interface SKU with
+        member this.Type = SKUType.FSID this
+        member this.Value = this.Value
+
+/// International Standard Book Number
+and ISBN =
+    | ISBN of string
+
+    member this.Value =
+        let (ISBN isbn) = this
+        isbn
+
+    interface SKU with
+        member this.Type = SKUType.ISBN this
+        member this.Value = this.Value
+
+and SKUUnknown =
+    | SKUUnknown
+    interface SKU with
+        member _.Type = SKUType.Unknown
+        member _.Value = String.empty
+
+and [<RequireQualifiedAccess>] SKUType =
+    | FSID of FSID
+    | ISBN of ISBN
+    | Unknown
+
+type SKU with
+    static member ParseKey(key: string) : SKU =
+        match key |> String.split '-' with
+        | [| "FS"; String.Int fsid |] -> FSID fsid
+        | [| "BN"; isbn |] -> ISBN isbn
+        | _ -> SKUUnknown
+
+    member this.Key =
+        match this.Type with
+        | SKUType.FSID _ -> $"FS-%s{this.Value}"
+        | SKUType.ISBN _ -> $"BN-%s{this.Value}"
+        | SKUType.Unknown -> ""
+
+    member this.Match(withFSID, withISBN) =
+        match this.Type with
+        | SKUType.FSID fsid -> withFSID fsid
+        | SKUType.ISBN isbn -> withISBN isbn
+        | SKUType.Unknown -> failwith "SKU type is unknown"
 
 #if !FABLE_COMPILER
 

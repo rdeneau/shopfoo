@@ -163,7 +163,7 @@ let AppView () =
         | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
         | Page.ProductIndex -> Pages.Product.Index.IndexView(fullContext, fillTranslations)
-        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, SKU sku, fillTranslations, showToast)
+        | Page.ProductDetail skuKey -> Pages.Product.Details.DetailsView(fullContext, SKU.ParseKey skuKey, fillTranslations, showToast)
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [

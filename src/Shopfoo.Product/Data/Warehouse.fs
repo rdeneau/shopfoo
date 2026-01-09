@@ -10,7 +10,7 @@ open Shopfoo.Product.Data
 module private Fakes =
     type private Units =
         static member private For eventType date quantity : StockEvent = {
-            SKU = SKU.none
+            SKU = SKUUnknown
             Date = date
             Quantity = quantity
             Type = eventType
@@ -27,30 +27,30 @@ module private Fakes =
     let oneYear =
         ResizeArray [
             yield!
-                SKU.CleanArchitecture.Events [ // ↩
+                ISBN.CleanArchitecture.Events [ // ↩
                     10 |> Units.Purchased (Dollars 24.99m) (365 |> daysAgo)
                 ]
             yield!
-                SKU.DomainDrivenDesign.Events [ // ↩
+                ISBN.DomainDrivenDesign.Events [ // ↩
                     8 |> Units.Purchased (44.30m |> Euros) (365 |> daysAgo)
                 ]
             yield!
-                SKU.DomainModelingMadeFunctional.Events [
+                ISBN.DomainModelingMadeFunctional.Events [
                     15 |> Units.Purchased (25.99m |> Euros) (365 |> daysAgo)
                     10 |> Units.Purchased (25.99m |> Euros) (100 |> daysAgo)
                     11 |> Units.Remaining(50 |> daysAgo) // 2 units lost
                 ]
             yield!
-                SKU.JavaScriptTheGoodParts.Events [ // ↩
+                ISBN.JavaScriptTheGoodParts.Events [ // ↩
                     8 |> Units.Purchased (15.10m |> Euros) (365 |> daysAgo)
                 ]
             yield!
-                SKU.ThePragmaticProgrammer.Events [ // ↩
+                ISBN.ThePragmaticProgrammer.Events [ // ↩
                     8 |> Units.Purchased (27.80m |> Euros) (365 |> daysAgo)
                 ]
         ]
 
-module Client =
+module Pipeline =
     let private repository =
         Fakes.oneYear
         |> Seq.groupBy _.SKU
