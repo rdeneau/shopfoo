@@ -1,10 +1,13 @@
-﻿import { defineConfig } from 'vite'
+﻿import {defineConfig} from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from "@tailwindcss/vite";
 
 /** @type {import('vite').UserConfig} */
 export default defineConfig({
-    plugins: [react({ jsxRuntime: 'classic'}),tailwindcss()], // jsxRuntime: 'classic' is required for fast-refresh for .js files
+    plugins: [
+        react({ jsxRuntime: 'classic' }), // 'classic' is required for fast-refresh for .js files
+        tailwindcss()
+    ],
     root: "./src/Shopfoo.Client",
     server: {
         port: 8080,
@@ -17,7 +20,10 @@ export default defineConfig({
             ]
         }
     },
+    css: {devSourcemap: true},
     build: {
-        outDir:"../../publish/app/public"
-    }
+        outDir: "../../publish/app/public",
+        sourcemap: true
+    },
+    debug: true
 })

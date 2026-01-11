@@ -14,9 +14,9 @@
   "version": "1.2.0",
   "scripts": {
     "prestart": "dotnet tool restore",
-    "start": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --run vite",
+    "start": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --sourceMaps --run vite dev",
     "prestart:fast": "dotnet tool restore",
-    "start:fast": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --noRestore --run vite",
+    "start:fast": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --noRestore --sourceMaps --run vite dev",
     "prebuild": "dotnet tool restore",
     "build": "dotnet fable ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --run vite build"
   },
