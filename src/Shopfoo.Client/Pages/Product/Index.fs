@@ -10,6 +10,7 @@ open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
+open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
@@ -52,7 +53,9 @@ let private init () =
 let private update fillTranslations (fullContext: FullContext) msg (model: Model) =
     match msg with
     | SelectProvider provider ->
-        { model with Provider = Some provider; Products = Remote.Loading }, Cmd.loadProducts (fullContext.PrepareQueryWithTranslations(provider))
+        { model with Provider = Some provider; Products = Remote.Loading }, // ↩
+        Cmd.loadProducts (fullContext.PrepareQueryWithTranslations(provider))
+
     | Msg.ProductsFetched(Ok(data, translations)) ->
         { model with Products = Remote.Loaded(data.Products @ [ Product.notFound ]) }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations translations)
@@ -76,22 +79,24 @@ let IndexView (fullContext: FullContext, fillTranslations) =
         Html.section [
             prop.key "products-page"
             prop.children [
+                let providerTab provider text iconifyIcon =
+                    let key = String.toKebab $"%A{provider}"
+                    Daisy.tab [
+                        match model.Provider with
+                        | Some selectedProvider when selectedProvider = provider -> tab.active
+                        | _ -> ()
+                        prop.key $"tab-%s{key}"
+                        prop.className "gap-2"
+                        prop.onClick (fun _ -> dispatch (SelectProvider provider))
+                        prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
+                    ]
+
                 Daisy.tabs [
                     tabs.border
                     prop.key "tabs-providers"
                     prop.children [
-                        Daisy.tab [
-                            prop.key "tab-open-library"
-                            prop.className "gap-2"
-                            prop.onClick (fun _ -> dispatch (SelectProvider OpenLibrary))
-                            prop.children [ icon fa6Solid.book; Html.text "Open Library" ]
-                        ]
-                        Daisy.tab [
-                            prop.key "tab-fake-store"
-                            prop.className "gap-2"
-                            prop.onClick (fun _ -> dispatch (SelectProvider FakeStore))
-                            prop.children [ icon fa6Solid.store; Html.text "Fake Store" ]
-                        ]
+                        providerTab OpenLibrary "Open Library" fa6Solid.book
+                        providerTab FakeStore "Fake Store" fa6Solid.store
                     ]
                 ]
 
