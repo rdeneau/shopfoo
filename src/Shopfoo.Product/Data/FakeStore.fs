@@ -30,7 +30,7 @@ type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApi
 
     member _.GetProductsAsync() =
         task {
-            use request = HttpRequestMessage.Get(Uri "/products")
+            use request = HttpRequestMessage.Get(Uri.Relative "products")
             use! response = httpClient.SendAsync(request)
             let! content = response.TryReadContentAsStringAsync(request)
             return serializer.TryDeserializeResult<ProductDto list>(content)

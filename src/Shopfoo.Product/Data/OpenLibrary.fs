@@ -79,7 +79,7 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFact
 
     member private _.GetByKeyAsync<'dto>(key) =
         task {
-            use request = HttpRequestMessage.Get(Uri $"%s{key}")
+            use request = HttpRequestMessage.Get(Uri.Relative $"%s{key}")
             use! response = httpClient.SendAsync(request)
             let! content = response.TryReadContentAsStringAsync(request)
             return serializer.TryDeserializeResult<'dto>(content)

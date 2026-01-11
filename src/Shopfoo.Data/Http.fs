@@ -142,3 +142,6 @@ type HttpApiSerializerFactory(jsonSerializer: IJsonSerializer, xmlSerializer: IX
 
     member _.Xml(httpApiName) =
         HttpApiSerializer(xmlSerializer, httpApiName)
+
+type Uri with
+    static member Relative(path: string) = Uri(path, UriKind.Relative)
