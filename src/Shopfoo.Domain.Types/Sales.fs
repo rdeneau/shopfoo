@@ -38,6 +38,9 @@ type Prices = {
         ListPrice = listPrice |> Option.map (Money.ByCurrency currency)
     }
 
+    static member Create(isbn: ISBN, currency, retailPrice, ?listPrice) =
+        Prices.Create(isbn.AsSKU, currency, retailPrice, ?listPrice = listPrice)
+
 type Sale = {
     SKU: SKU
     Date: DateOnly

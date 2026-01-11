@@ -153,6 +153,6 @@ module internal Pipeline =
             let coverKey = bookDto.Covers |> Mappers.DtoToModel.mapCoverKey isbn
             let imageUrl = client.GetCoverUrl(coverKey, CoverSize.Small) |> ImageUrl.Valid
 
-            return bookDto |> Mappers.DtoToModel.mapBook isbn category imageUrl
+            return bookDto |> Mappers.DtoToModel.mapBook isbn.AsSKU category imageUrl
         }
         |> Async.AwaitTask

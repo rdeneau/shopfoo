@@ -9,14 +9,14 @@ open Shopfoo.Product.Data
 
 module private Fakes =
     let private unitsSold price date quantity : Sale = {
-        SKU = SKUUnknown
+        SKU = SKUUnknown.SKUUnknown.AsSKU
         Date = date
         Price = price
         Quantity = quantity
     }
 
-    type SKU with
-        member sku.Sales(sales: Sale seq) = [ for sale in sales -> { sale with SKU = sku } ]
+    type ISBN with
+        member isbn.Sales(sales: Sale seq) = [ for sale in sales -> { sale with SKU = isbn.AsSKU } ]
 
     let oneYear =
         ResizeArray [

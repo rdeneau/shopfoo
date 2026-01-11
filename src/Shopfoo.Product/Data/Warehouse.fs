@@ -10,7 +10,7 @@ open Shopfoo.Product.Data
 module private Fakes =
     type private Units =
         static member private For eventType date quantity : StockEvent = {
-            SKU = SKUUnknown
+            SKU = SKUUnknown.SKUUnknown.AsSKU
             Date = date
             Quantity = quantity
             Type = eventType
@@ -21,8 +21,8 @@ module private Fakes =
 
         static member Remaining = Units.For EventType.StockAdjusted
 
-    type SKU with
-        member sku.Events stockEvents : StockEvent list = [ for stockEvent in stockEvents -> { stockEvent with SKU = sku } ]
+    type ISBN with
+        member isbn.Events stockEvents : StockEvent list = [ for stockEvent in stockEvents -> { stockEvent with SKU = isbn.AsSKU } ]
 
     let oneYear =
         ResizeArray [

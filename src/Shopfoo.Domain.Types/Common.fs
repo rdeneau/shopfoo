@@ -67,52 +67,24 @@ type Lang =
     | French
     | Latin
 
-[<Interface>]
-type SKU =
-    abstract member Type: SKUType
-    abstract member Value: string
-
-/// FakeStore Product Identifier
-and FSID =
-    | FSID of int
-
-    member this.Value =
-        let (FSID fsid) = this
-        $"FS%i{fsid}"
-
-    interface SKU with
-        member this.Type = SKUType.FSID this
-        member this.Value = this.Value
-
-/// International Standard Book Number
-and ISBN =
-    | ISBN of string
-
-    member this.Value =
-        let (ISBN isbn) = this
-        isbn
-
-    interface SKU with
-        member this.Type = SKUType.ISBN this
-        member this.Value = this.Value
-
-and SKUUnknown =
-    | SKUUnknown
-    interface SKU with
-        member _.Type = SKUType.Unknown
-        member _.Value = String.empty
-
-and [<RequireQualifiedAccess>] SKUType =
-    | FSID of FSID
-    | ISBN of ISBN
-    | Unknown
-
-type SKU with
+// ⚠️ SKU is a record, not an interface, due to Fable.Remoting limitations.
+/// <summary>
+/// Stock Keeping Unit
+/// </summary>
+/// <remarks>
+/// Common abstraction for <c>FSID</c>, <c>ISBN</c>, and <c>SKUUnknown</c>.
+/// Defined as a record instead of an interface to overcome serialization issue with Fable.Remoting V5 (that does not accept custom Coders anymore)!
+/// Use <c>AsSKU</c> property to convert to SKU from <c>FSID</c>, <c>ISBN</c>, and <c>SKUUnknown</c>.
+/// </remarks>
+type SKU = {
+    Type: SKUType
+    Value: string
+} with
     static member ParseKey(key: string) : SKU =
         match key |> String.split '-' with
-        | [| "FS"; String.Int fsid |] -> FSID fsid
-        | [| "BN"; isbn |] -> ISBN isbn
-        | _ -> SKUUnknown
+        | [| "FS"; String.Int fsid |] -> (FSID fsid).AsSKU
+        | [| "BN"; isbn |] -> (ISBN isbn).AsSKU
+        | _ -> SKUUnknown.SKUUnknown.AsSKU
 
     member this.Key =
         match this.Type with
@@ -125,6 +97,28 @@ type SKU with
         | SKUType.FSID fsid -> withFSID fsid
         | SKUType.ISBN isbn -> withISBN isbn
         | SKUType.Unknown -> failwith "SKU type is unknown"
+
+/// FakeStore Product Identifier
+and FSID =
+    | FSID of int
+    member this.Value = let (FSID fsid) = this in $"FS%i{fsid}"
+    member this.AsSKU = { Type = SKUType.FSID this; Value = this.Value }
+
+/// International Standard Book Number
+and ISBN =
+    | ISBN of string
+    member this.Value = let (ISBN isbn) = this in isbn
+    member this.AsSKU = { Type = SKUType.ISBN this; Value = this.Value }
+
+and SKUUnknown =
+    | SKUUnknown
+    member this.Value = String.empty
+    member this.AsSKU = { Type = SKUType.Unknown; Value = this.Value }
+
+and [<RequireQualifiedAccess>] SKUType =
+    | FSID of FSID
+    | ISBN of ISBN
+    | Unknown
 
 #if !FABLE_COMPILER
 

@@ -200,7 +200,7 @@ module private Mappers =
         }
 
         let mapBook (dto: BookDto) : Product = {
-            SKU = dto.ISBN
+            SKU = dto.ISBN.AsSKU
             Title = dto.Title
             Description = dto.Description
             Category = Category.Books(mapBookDetails dto)

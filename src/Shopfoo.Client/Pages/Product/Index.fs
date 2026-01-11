@@ -30,7 +30,7 @@ module private Product =
     }
 
     let notFound: Product = {
-        SKU = fs0.FSID
+        SKU = fs0.FSID.AsSKU
         Title = "❗"
         Description = "Fake product to demo how the page handles a product not found"
         Category = Category.Store fs0
