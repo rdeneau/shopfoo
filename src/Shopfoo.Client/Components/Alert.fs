@@ -34,7 +34,13 @@ let private errorDetail apiError key user =
             prop.tabIndex 0
             prop.className "border"
             prop.children [
-                Daisy.collapseTitle [ Html.text "[Admin]"; title ]
+                Daisy.collapseTitle [
+                    prop.key $"{key}-collapse-title"
+                    prop.children [ // ↩
+                        Html.text "[Admin]"
+                        title
+                    ]
+                ]
                 match content with
                 | None -> ()
                 | Some content ->
@@ -51,7 +57,16 @@ let apiError key (apiError: ApiError) user =
         alert.error
         prop.key $"%s{key}-alert"
         prop.children [ // ↩
-            Html.text apiError.ErrorMessage
-            errorDetail apiError key user
+            Html.div [
+                prop.key $"%s{key}-alert-content"
+                prop.children [
+                    Html.div [
+                        prop.key $"%s{key}-message"
+                        prop.className "pb-2"
+                        prop.text apiError.ErrorMessage
+                    ]
+                    errorDetail apiError key user
+                ]
+            ]
         ]
     ]

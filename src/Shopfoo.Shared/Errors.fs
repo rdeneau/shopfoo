@@ -16,7 +16,12 @@ type ErrorDetail = { Exception: string }
 type System.Exception with
     member this.AsErrorDetail(?level) =
         match level with
-        | Some ErrorDetailLevel.Admin -> Some { Exception = $"%A{exn}" }
+        | Some ErrorDetailLevel.Admin ->
+#if FABLE_COMPILER
+            Some { Exception = $"%A{this}" }
+#else
+            Some { Exception = $"%s{this.GetType().FullName} %s{this.StackTrace}" }
+#endif
         | _ -> None
 
 type ApiErrorBuilder private (errorType) =
