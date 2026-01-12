@@ -146,16 +146,16 @@ module internal Pipeline =
                 return entries |> List.map (fun (_, product, _) -> product)
         }
 
-    let getPrice sku =
+    let getPrice fsid =
         async {
             do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
-            return cache.TryGetPrice(sku)
+            return cache.TryGetPrice(fsid)
         }
 
-    let getProduct sku =
+    let getProduct fsid =
         async {
             do! Async.Sleep(millisecondsDueTime = 150) // Simulate latency
-            return cache.TryGetProduct(sku)
+            return cache.TryGetProduct(fsid)
         }
 
     let savePrices prices =

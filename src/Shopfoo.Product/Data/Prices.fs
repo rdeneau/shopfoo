@@ -50,11 +50,15 @@ module private Fakes =
 module Pipeline =
     let repository = Fakes.all |> Dictionary.ofListBy _.SKU
 
-    let getPrices sku =
+    let getPrices (sku: SKU) =
         async {
-            do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
-            let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
-            return prices
+            match sku.Type with
+            | SKUType.ISBN _ ->
+                do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
+                let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
+                return prices
+            | SKUType.FSID fsid -> return! FakeStore.Pipeline.getPrice fsid
+            | SKUType.Unknown -> return None
         }
 
     let savePrices (prices: Prices) =
