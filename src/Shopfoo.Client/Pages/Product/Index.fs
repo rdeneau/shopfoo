@@ -130,10 +130,11 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                 | Remote.Loaded(provider, products) ->
                     let columns = [
                         Col.Num
+                        if provider = FakeStore then
+                            Col.Category
                         Col.Name
-                        match provider with
-                        | FakeStore -> Col.Category
-                        | OpenLibrary -> Col.Authors
+                        if provider = OpenLibrary then
+                            Col.Authors
                         Col.Description
                     ]
 
@@ -209,6 +210,7 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                                                                 prop.className "hidden group-hover:inline"
                                                                                 prop.text ":"
                                                                             ]
+
                                                                             Html.div [
                                                                                 prop.key $"%s{productKey}-subtitle"
                                                                                 prop.text book.Subtitle
@@ -237,9 +239,12 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                                             prop.key $"%s{productKey}-category"
                                                             prop.className "w-30"
                                                             match storeProduct with
-                                                            | Some { Category = StoreCategory.Clothing} -> prop.text translations.Product.StoreCategory.Clothing
-                                                            | Some { Category = StoreCategory.Electronics} -> prop.text translations.Product.StoreCategory.Electronics
-                                                            | Some { Category = StoreCategory.Jewelry} -> prop.text translations.Product.StoreCategory.Jewelry
+                                                            | Some { Category = StoreCategory.Clothing } ->
+                                                                prop.text translations.Product.StoreCategory.Clothing
+                                                            | Some { Category = StoreCategory.Electronics } ->
+                                                                prop.text translations.Product.StoreCategory.Electronics
+                                                            | Some { Category = StoreCategory.Jewelry } ->
+                                                                prop.text translations.Product.StoreCategory.Jewelry
                                                             | None -> ()
                                                         ]
                                                     | Col.Description ->
