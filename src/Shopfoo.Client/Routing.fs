@@ -7,6 +7,31 @@ open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 
+[<AutoOpen>]
+module private Keys =
+    type SKU with
+        member this.Key =
+            match this.Type, this.Value with
+            | SKUType.FSID _, (String.StartsWith "FS-" as value) -> value
+            | SKUType.FSID _, value -> $"FS-%s{value}"
+            | SKUType.ISBN _, value -> $"BN-%s{value}"
+            | SKUType.Unknown, _ -> ""
+
+    [<RequireQualifiedAccess>]
+    module StoreCategory =
+        let key =
+            function
+            | StoreCategory.Clothing -> "clothing"
+            | StoreCategory.Electronics -> "electronics"
+            | StoreCategory.Jewelry -> "jewelry"
+
+        let tryFromKey (key: string) : StoreCategory option =
+            match key.ToLowerInvariant() with
+            | "clothing" -> Some StoreCategory.Clothing
+            | "electronics" -> Some StoreCategory.Electronics
+            | "jewelry" -> Some StoreCategory.Jewelry
+            | _ -> None
+
 type PageUrl = {
     Segments: string list
     Query: (string * string) list
@@ -21,6 +46,16 @@ type PageUrl = {
     member this.WithQueryParam(name: string, value: string) = // ↩
         { this with Query = (name, value) :: this.Query }
 
+    member this.WithQueryParamOptional(name: string, value: string option) =
+        match value with
+        | None -> this
+        | Some value -> this.WithQueryParam(name, value)
+
+    member this.WithSegmentOptional(segment: string option) =
+        match segment with
+        | Some(String.NotEmpty as segment) -> { this with Segments = this.Segments @ [ segment ] }
+        | _ -> this
+
 [<RequireQualifiedAccess>]
 type Page =
     | About
@@ -28,8 +63,10 @@ type Page =
     | Home
     | Login
     | NotFound of url: string
-    | ProductIndex of categoryKey: string option
-    | ProductDetail of skuKey: string
+    | ProductIndex
+    | ProductBazaar of storeCategory: StoreCategory option * searchTerm: string option
+    | ProductBooks of authorId: OLID option * searchTerm: string option
+    | ProductDetail of SKU
 
     member this.Key =
         match this with
@@ -38,12 +75,36 @@ type Page =
         | Page.Home -> "home"
         | Page.Login -> "login"
         | Page.NotFound _ -> "not-found"
-        | Page.ProductIndex None -> "products"
-        | Page.ProductIndex(Some categoryKey) -> $"products-%s{categoryKey}"
-        | Page.ProductDetail skuKey -> $"product-%s{skuKey}"
+        | Page.ProductIndex -> "products"
+        | Page.ProductBazaar _ -> "products-bazaar"
+        | Page.ProductBooks _ -> "products-books"
+        | Page.ProductDetail sku -> $"product-%s{sku.Key}"
 
     static member CurrentNotFound() =
         Router.currentUrl () |> Router.format |> Page.NotFound
+
+[<RequireQualifiedAccess>]
+module private Route =
+    let (|Author|) s : OLID option =
+        match s with
+        | Route.Query [ "author", (String.NotEmpty as olid) ] -> Some(OLID olid)
+        | _ -> None
+
+    let (|Category|) s : StoreCategory option =
+        match String.toLower s with
+        | Route.Query [ "category", storeCategoryKey ] -> StoreCategory.tryFromKey storeCategoryKey
+        | _ -> None
+
+    let (|Search|) s : string option =
+        match s with
+        | Route.Query [ "search", searchTerm ] -> Some searchTerm
+        | _ -> None
+
+    let (|SKU|_|) s : SKU option =
+        match s |> String.split '-' with
+        | [| "FS"; Route.Int fsid |] -> Some (FSID fsid).AsSKU
+        | [| "BN"; isbn |] -> Some (ISBN isbn).AsSKU
+        | _ -> None
 
 [<RequireQualifiedAccess>]
 module Page =
@@ -54,11 +115,15 @@ module Page =
         | [] -> Page.Home
         | [ "about" ] -> Page.About
         | [ "admin" ] -> Page.Admin
+        | [ "bazaar" ] -> Page.ProductBazaar(storeCategory = None, searchTerm = None)
+        | [ "bazaar"; Route.SKU sku ] -> Page.ProductDetail sku
+        | [ "bazaar"; (Route.Category storeCategory & Route.Search searchTerm) ] -> Page.ProductBazaar(storeCategory, searchTerm = searchTerm)
+        | [ "books" ] -> Page.ProductBooks(authorId = None, searchTerm = None)
+        | [ "books"; Route.SKU sku ] -> Page.ProductDetail sku
+        | [ "books"; (Route.Author authorId & Route.Search searchTerm) ] -> Page.ProductBooks(authorId, searchTerm = searchTerm)
         | [ "login" ] -> Page.Login
         | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
-        | [ "products" ] -> Page.ProductIndex None
-        | [ "products"; categoryKey ] -> Page.ProductIndex(Some categoryKey)
-        | [ "product"; skuKey ] -> Page.ProductDetail skuKey
+        | [ "products" ] -> Page.ProductIndex
         | segments -> Page.NotFound(Router.formatPath segments)
 
 let (|PageUrl|) =
@@ -68,9 +133,23 @@ let (|PageUrl|) =
     | Page.Home -> PageUrl.Root
     | Page.Login -> PageUrl.WithSegments("login")
     | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
-    | Page.ProductIndex None -> PageUrl.WithSegments("products")
-    | Page.ProductIndex(Some categoryKey) -> PageUrl.WithSegments("products", categoryKey)
-    | Page.ProductDetail skuKey -> PageUrl.WithSegments("product", skuKey)
+
+    | Page.ProductBazaar(storeCategory, searchTerm) ->
+        PageUrl
+            .WithSegments("bazaar")
+            .WithQueryParamOptional("category", storeCategory |> Option.map StoreCategory.key)
+            .WithQueryParamOptional("search", searchTerm)
+
+    | Page.ProductBooks(authorId, searchTerm) ->
+        PageUrl
+            .WithSegments("books")
+            .WithQueryParamOptional("author", authorId |> Option.map (fun (OLID authorId) -> authorId))
+            .WithQueryParamOptional("search", searchTerm)
+
+    | Page.ProductIndex -> PageUrl.WithSegments("products")
+    | Page.ProductDetail({ Type = SKUType.FSID _ } as sku) -> PageUrl.WithSegments("bazaar", sku.Key)
+    | Page.ProductDetail({ Type = SKUType.ISBN _ } as sku) -> PageUrl.WithSegments("books", sku.Key)
+    | Page.ProductDetail { Type = SKUType.Unknown } -> PageUrl.WithSegments("notfound").WithQueryParam("url", Router.currentUrl () |> Router.format)
 
 [<RequireQualifiedAccess>]
 module Router =
@@ -86,31 +165,3 @@ module Router =
 module Cmd =
     let navigatePage (PageUrl pageUrl) =
         Cmd.navigatePath (pageUrl.Segments, queryString = pageUrl.Query)
-
-[<AutoOpen>]
-module Keys =
-    type SKU with
-        static member FromKey(skuKey: string) : SKU =
-            match skuKey |> String.split '-' with
-            | [| "FS"; String.Int fsid |] -> (FSID fsid).AsSKU
-            | [| "BN"; isbn |] -> (ISBN isbn).AsSKU
-            | _ -> SKUUnknown.SKUUnknown.AsSKU
-
-        member this.Key =
-            match this.Type, this.Value with
-            | SKUType.FSID _, (String.StartsWith "FS-" as value) -> value
-            | SKUType.FSID _, value -> $"FS-%s{value}"
-            | SKUType.ISBN _, value -> $"BN-%s{value}"
-            | SKUType.Unknown, _ -> ""
-
-    type Provider with
-        static member FromCategoryKey(categoryKey: string) : Provider option =
-            match categoryKey.ToLowerInvariant() with
-            | "bazaar" -> Some Provider.FakeStore
-            | "books" -> Some Provider.OpenLibrary
-            | _ -> None
-
-        member this.CategoryKey =
-            match this with
-            | Provider.FakeStore -> "bazaar"
-            | Provider.OpenLibrary -> "books"

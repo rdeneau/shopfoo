@@ -99,7 +99,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.Login user ->
         { model with Model.FullContext.User = user },
         match model.Page with
-        | Page.Login -> Cmd.navigatePage (Page.ProductIndex(categoryKey = None))
+        | Page.Login -> Cmd.navigatePage Page.ProductIndex
         | _ -> Cmd.none
 
     | Msg.Logout ->
@@ -112,6 +112,9 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.ToastOn toast -> { model with Toast = Some toast }, Cmd.none
     // `Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)` is not needed because the ToastOff is done with the Toast onDismiss
     | Msg.ToastOff -> { model with Toast = None }, Cmd.none
+
+type private Page with
+    member page.IndexFilters = Pages.Product.Index.Filters.ofPage page
 
 [<ReactComponent>]
 let AppView () =
@@ -127,19 +130,23 @@ let AppView () =
         | Page.Login, User.Anonymous -> model.Page, None
 
         // Requested page consistent with the authentication but subject to an access check
-        | Page.ProductIndex _, User.LoggedIn _
+        | Page.ProductBazaar _, User.LoggedIn _
+        | Page.ProductBooks _, User.LoggedIn _
+        | Page.ProductIndex, User.LoggedIn _
         | Page.ProductDetail _, User.LoggedIn _ -> model.Page, Some Feat.Catalog
         | Page.Admin, User.LoggedIn _ -> model.Page, Some Feat.Admin
 
         // Default page when logged in
         | Page.Home, User.LoggedIn _
-        | Page.Login, User.LoggedIn _ -> Page.ProductIndex(categoryKey = None), Some Feat.Catalog
+        | Page.Login, User.LoggedIn _ -> Page.ProductIndex, Some Feat.Catalog
 
         // Authentication needed prior to the access check
         // -> Display the login page inline, without redirection.
         | Page.Admin, User.Anonymous
         | Page.Home, User.Anonymous
-        | Page.ProductIndex _, User.Anonymous
+        | Page.ProductBazaar _, User.Anonymous
+        | Page.ProductBooks _, User.Anonymous
+        | Page.ProductIndex, User.Anonymous
         | Page.ProductDetail _, User.Anonymous -> Page.Login, None
 
     React.useEffect (fun () ->
@@ -162,8 +169,10 @@ let AppView () =
         | Page.Admin -> Pages.Admin.AdminView(fullContext)
         | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
-        | Page.ProductIndex categoryKey -> Pages.Product.Index.IndexView(categoryKey, fullContext, fillTranslations)
-        | Page.ProductDetail skuKey -> Pages.Product.Details.DetailsView(fullContext, SKU.FromKey skuKey, fillTranslations, showToast)
+        | Page.ProductBazaar _
+        | Page.ProductBooks _
+        | Page.ProductIndex -> Pages.Product.Index.IndexView(pageToDisplayInline.IndexFilters, fullContext, fillTranslations)
+        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, sku, fillTranslations, showToast)
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [

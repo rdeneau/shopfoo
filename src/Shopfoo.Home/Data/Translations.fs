@@ -33,6 +33,7 @@ let private translationPages = [
         TagCode "Save", "Save", "Enregistrer"
         TagCode "SaveOk", "{0} saved successfully", "{0} enregistré avec succès"
         TagCode "SaveError", "{0} not saved: {1}", "{0} non enregistré : {1}"
+        TagCode "Search", "Search", "Rechercher"
         TagCode "Warning", "Warning", "Attention"
 
         TagCode "Colon", ":", " :"

@@ -1,6 +1,7 @@
 ﻿module Shopfoo.Client.Pages.Product.Index
 
 open System
+open System.Text.RegularExpressions
 open Elmish
 open Feliz
 open Feliz.DaisyUI
@@ -18,11 +19,47 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
+// TODO RDE: add sorting options (by name, by author, etc.)
+type Filters = {
+    Provider: Provider option
+    BooksAuthorId: OLID option
+    StoreCategory: StoreCategory option
+    SearchTerm: string option
+}
+
+module Filters =
+    let none: Filters = {
+        Provider = None
+        BooksAuthorId = None
+        StoreCategory = None
+        SearchTerm = None
+    }
+
+    let bazaar storeCategory searchTerm : Filters = {
+        none with
+            Provider = Some FakeStore
+            StoreCategory = storeCategory
+            SearchTerm = searchTerm
+    }
+
+    let books authorId searchTerm : Filters = {
+        none with
+            Provider = Some OpenLibrary
+            BooksAuthorId = authorId
+            SearchTerm = searchTerm
+    }
+
+    let ofPage page : Filters =
+        match page with
+        | Page.ProductBazaar(storeCategory, searchTerm) -> bazaar storeCategory searchTerm
+        | Page.ProductBooks(authorId, searchTerm) -> books authorId searchTerm
+        | _ -> none
+
+type private Model = { Products: Remote<Provider * Product list> }
+
 type private Msg =
     | SelectProvider of Provider
     | ProductsFetched of Provider * ApiResult<GetProductsResponse * Translations>
-
-type private Model = { Products: Remote<Provider * Product list> }
 
 [<RequireQualifiedAccess>]
 module private Product =
@@ -52,10 +89,10 @@ module private Cmd =
             Success = fun data -> ProductsFetched(provider, Ok data)
         }
 
-let private init categoryKey =
+let private init (filters: Filters) =
     { Products = Remote.Empty },
     Cmd.batch [
-        match (categoryKey |> Option.bind Provider.FromCategoryKey) with
+        match filters.Provider with
         | Some provider -> Cmd.ofMsg (SelectProvider provider)
         | None -> ()
     ]
@@ -74,52 +111,194 @@ let private update fillTranslations (fullContext: FullContext) msg (model: Model
         { model with Products = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
+let private highlight (term: string option) (fullText: string) (key: string) = [
+    match term with
+    | None
+    | Some String.NullOrWhiteSpace ->
+        // No highlighting
+        Html.text fullText
+
+    | Some term ->
+        // Highlight occurrences of 'term' in 'fullText' (case-insensitive)
+
+        // If fullText = "Clean Code" and term = "code" then
+        // - parts = [| "Clean "; "" |]
+        // - matches = [| "Code" |]
+        // Result: <span>Clean </span><mark class="...">Code</mark>
+        let pattern = Regex.Escape(term)
+        let options = RegexOptions.IgnoreCase ||| RegexOptions.Multiline
+        let parts = Regex.Split(fullText, pattern, options)
+        let matches = Regex.Matches(fullText, pattern, options) |> Seq.toArray
+
+        for i in 0 .. parts.Length - 1 do
+            // Regular text
+            Html.text parts[i]
+
+            // Matched text (highlighted)
+            if i < matches.Length then
+                Html.mark [
+                    prop.key $"%s{key}-match-%i{i}"
+                    prop.className "bg-yellow-200 text-black rounded-sm"
+                    prop.text matches[i].Value
+                ]
+]
+
 [<RequireQualifiedAccess>]
 type private Col =
-    | Num
+    | Num // TODO RDE: Col.Num -> Col.SKU
     | Name
     | Authors
+    // TODO RDE: Col.Tags
     | Category
     | Description
 
 [<ReactComponent>]
-let IndexView (categoryKey: string option, fullContext: FullContext, fillTranslations) =
+let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
     match fullContext.User with
     | UserCanNotAccess Feat.Catalog ->
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
         let model, dispatch =
-            React.useElmish (init categoryKey, update fillTranslations fullContext, [||])
+            React.useElmish (init filters, update fillTranslations fullContext, [||])
 
         let translations = fullContext.Translations
 
         Html.section [
             prop.key "products-page"
             prop.children [
-                let providerTab provider text iconifyIcon =
+                let providerTab provider text iconifyIcon page =
                     let key = String.toKebab $"%A{provider}"
 
                     Daisy.tab [
                         match model.Products with
                         | Remote.Loaded(selectedProvider, _) when selectedProvider = provider -> tab.active
                         | _ -> ()
-                        prop.key $"tab-%s{key}"
+                        prop.key $"tab-provider-%s{key}"
                         prop.className "gap-2"
                         prop.onClick (fun _ ->
                             dispatch (SelectProvider provider)
-                            Router.navigatePage (Page.ProductIndex(Some provider.CategoryKey))
+                            Router.navigatePage page
                         )
+                        prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
+                    ]
+
+                let storeCategoryTab storeCategory text iconifyIcon page =
+                    let key = String.toKebab $"%A{storeCategory}"
+
+                    Daisy.tab [
+                        if filters.StoreCategory = Some storeCategory then
+                            tab.active
+                        prop.key $"tab-store-category-%s{key}"
+                        prop.className "gap-2"
+                        prop.onClick (fun _ -> Router.navigatePage page)
                         prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
                     ]
 
                 Daisy.tabs [
                     tabs.border
                     prop.key "tabs-providers"
-                    prop.className "mb-2"
-                    prop.children [ // ↩
-                        providerTab OpenLibrary translations.Home.Books fa6Solid.book
-                        providerTab FakeStore translations.Home.Bazaar fa6Solid.store
+                    prop.className "pb-2 border-b border-gray-200"
+                    prop.children [
+                        providerTab OpenLibrary translations.Home.Books fa6Solid.book (Page.ProductBooks(filters.BooksAuthorId, filters.SearchTerm))
+                        providerTab FakeStore translations.Home.Bazaar fa6Solid.store (Page.ProductBazaar(filters.StoreCategory, filters.SearchTerm))
+
+                        Daisy.divider [
+                            divider.horizontal
+                            prop.key "tabs-divider"
+                            prop.className "mx-1"
+                        ]
+
+                        match model.Products with
+                        | Remote.Loaded(FakeStore, _) ->
+                            storeCategoryTab
+                                StoreCategory.Clothing
+                                translations.Product.StoreCategory.Clothing
+                                fa6Solid.shirt
+                                (Page.ProductBazaar(Some StoreCategory.Clothing, filters.SearchTerm))
+
+                            storeCategoryTab
+                                StoreCategory.Electronics
+                                translations.Product.StoreCategory.Electronics
+                                fa6Solid.tv
+                                (Page.ProductBazaar(Some StoreCategory.Electronics, filters.SearchTerm))
+
+                            storeCategoryTab
+                                StoreCategory.Jewelry
+                                translations.Product.StoreCategory.Jewelry
+                                fa6Solid.gem
+                                (Page.ProductBazaar(Some StoreCategory.Jewelry, filters.SearchTerm))
+
+                        | Remote.Loaded(OpenLibrary, products) ->
+                            let authors =
+                                products
+                                |> List.collect (fun p ->
+                                    match p.Category with
+                                    | Category.Books book -> book.Authors
+                                    | _ -> []
+                                )
+                                |> List.distinct
+                                |> List.sortBy _.Name
+
+                            let selectedAuthor =
+                                match filters.BooksAuthorId with
+                                | Some authorId -> authors |> List.tryFind (fun author -> author.OLID = authorId)
+                                | None -> None
+
+                            let navigateToBooksPage authorId =
+                                Router.navigatePage (Page.ProductBooks(authorId, searchTerm = filters.SearchTerm))
+
+                            Filter.FilterTab(
+                                key = "filter-tab-authors",
+                                label = translations.Product.Authors,
+                                iconifyIcon = Some fa6Solid.penFancy,
+                                items = authors,
+                                selectedItem = selectedAuthor,
+                                formatItem = _.Name,
+                                onSelect = (fun author -> navigateToBooksPage (Some author.OLID)),
+                                onReset = (fun () -> navigateToBooksPage None)
+                            )
+
+                            // TODO RDE: add tags filter tab too
+
+                        | _ -> ()
+
+                        match model.Products with
+                        | Remote.Loaded(provider, _) ->
+                            let setSearchTerm searchTerm =
+                                match provider with
+                                | OpenLibrary -> Page.ProductBooks(filters.BooksAuthorId, searchTerm)
+                                | FakeStore -> Page.ProductBazaar(filters.StoreCategory, searchTerm)
+                                |> Router.navigatePage
+
+                            Daisy.label.input [
+                                prop.key "search-box"
+                                prop.className "ml-2"
+                                prop.children [
+                                    icon fa6Solid.magnifyingGlass
+                                    Html.input [
+                                        prop.key "search-input"
+                                        prop.type' "text"
+                                        prop.placeholder translations.Home.Search
+                                        match filters.SearchTerm with
+                                        | Some value -> prop.value value
+                                        | None -> prop.value ""
+                                        prop.onChange (fun (searchTerm: string) ->
+                                            match String.trimWhiteSpace searchTerm with
+                                            | "" -> setSearchTerm None
+                                            | s -> setSearchTerm (Some s)
+                                        )
+                                    ]
+                                    if filters.SearchTerm.IsSome then
+                                        Daisy.button.a [
+                                            prop.key "search-tab-close-button"
+                                            prop.className "btn btn-ghost btn-sm btn-circle mr-[-8px]"
+                                            prop.onClick (fun _ -> setSearchTerm None)
+                                            prop.text "✕"
+                                    ]
+                                ]
+                            ]
+                        | _ -> ()
                     ]
                 ]
 
@@ -137,6 +316,45 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                             Col.Authors
                         Col.Description
                     ]
+
+                    let filteredProducts =
+                        products
+                        |> List.filter (fun product ->
+                            let isSearchTermMatched =
+                                match filters.SearchTerm with
+                                | None -> true
+                                | Some searchTerm ->
+                                    let searchTermLower = searchTerm.ToLowerInvariant()
+
+                                    let matchesSearchTerm (s: string) =
+                                        s.ToLowerInvariant().Contains(searchTermLower)
+
+                                    let subtitle =
+                                        match provider, product.Category with
+                                        | OpenLibrary, Category.Books book -> book.Subtitle
+                                        | _ -> String.empty
+
+                                    // TODO RDE: consider searching in authors, sku and tags too
+                                    (product.Title |> matchesSearchTerm)
+                                    || (subtitle |> matchesSearchTerm)
+                                    || (product.Description |> matchesSearchTerm)
+
+                            let isAuthorMatched =
+                                match filters.BooksAuthorId, product.Category with
+                                | Some authorId, Category.Books book -> book.Authors |> List.exists (fun author -> author.OLID = authorId)
+                                | None, Category.Books _ -> true
+                                | _ -> true
+
+                            let isStoreCategoryMatched =
+                                match filters.StoreCategory, product.Category with
+                                | Some storeCategory, Category.Store storeProduct -> storeProduct.Category = storeCategory
+                                | None, Category.Store _ -> true
+                                | _ -> true
+
+                            isSearchTermMatched && isAuthorMatched && isStoreCategoryMatched
+                        )
+
+                    let highlight = highlight filters.SearchTerm
 
                     Daisy.table [
                         prop.key "product-table"
@@ -159,7 +377,7 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                             Html.tbody [
                                 prop.key "product-table-tbody"
                                 prop.children [
-                                    for i, product in List.indexed products do
+                                    for i, product in List.indexed filteredProducts do
                                         let productKey = $"product-%i{i}"
 
                                         let book =
@@ -179,7 +397,7 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                         Html.tr [
                                             prop.key productKey
                                             prop.className "group hover:bg-accent hover:fg-accent hover:cursor-pointer"
-                                            prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU.Key))
+                                            prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail product.SKU))
                                             prop.children [
                                                 for col in columns do
                                                     match col with
@@ -200,7 +418,7 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                                                         Html.div [
                                                                             prop.key $"%s{productKey}-title"
                                                                             prop.className "group-hover:inline"
-                                                                            prop.text product.Title
+                                                                            prop.children (highlight product.Title $"%s{productKey}-title-text")
                                                                         ]
 
                                                                         match book with
@@ -213,14 +431,15 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
 
                                                                             Html.div [
                                                                                 prop.key $"%s{productKey}-subtitle"
-                                                                                prop.text book.Subtitle
                                                                                 prop.className "italic ml-1 group-hover:inline"
+                                                                                prop.children (highlight book.Subtitle $"%s{productKey}-subtitle-text")
                                                                             ]
                                                                         | _ -> ()
                                                                     ]
                                                                 ]
                                                             ]
                                                         ]
+
                                                     | Col.Authors ->
                                                         Html.td [
                                                             prop.key $"%s{productKey}-authors"
@@ -234,6 +453,7 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                                                 ]
                                                             ]
                                                         ]
+
                                                     | Col.Category ->
                                                         Html.td [
                                                             prop.key $"%s{productKey}-category"
@@ -247,14 +467,15 @@ let IndexView (categoryKey: string option, fullContext: FullContext, fillTransla
                                                                 prop.text translations.Product.StoreCategory.Jewelry
                                                             | None -> ()
                                                         ]
+
                                                     | Col.Description ->
                                                         Html.td [
                                                             prop.key $"%s{productKey}-desc"
                                                             prop.children [
                                                                 Html.div [
                                                                     prop.key $"%s{productKey}-desc-content"
-                                                                    prop.text product.Description
                                                                     prop.className "line-clamp-2 group-hover:line-clamp-3"
+                                                                    prop.children (highlight product.Description $"%s{productKey}-desc-text")
                                                                 ]
                                                             ]
                                                         ]

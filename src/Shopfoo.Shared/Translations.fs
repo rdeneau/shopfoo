@@ -73,6 +73,7 @@ module TranslationPages =
         member this.Save = this.Get "Save"
         member this.SaveOk(name: string) = this.Format("SaveOk", name)
         member this.SaveError(name: string, error: string) = this.Format("SaveError", name, error)
+        member this.Search = this.Get "Search"
         member this.Warning = this.Get "Warning"
 
         member this.Colon = this.Get "Colon"
