@@ -1,6 +1,7 @@
 ﻿namespace Shopfoo.Product.Workflows
 
 open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects
@@ -20,12 +21,12 @@ type internal DetermineStockWorkflow private () =
         program {
             let! (sales: Sale list) =
                 Program.getSales sku // ↩
-                |> Program.requireSome $"SKU #%s{sku.Value}"
+                |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Sales")
                 |> Program.mapDataRelatedError
 
             let! stockEvents =
                 Program.getStockEvents sku
-                |> Program.requireSome $"SKU #%s{sku.Value}"
+                |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Stock")
                 |> Program.mapDataRelatedError
 
             let allEvents =

@@ -113,6 +113,9 @@ module Program =
     let requireSome info (queryResult: Program<'a option>) =
         queryResult |> map (Result.requireSome info)
 
+    let requireSomeData info (queryResult: Program<'a option>) =
+        queryResult |> map (Result.requireSomeData info)
+
     /// Run the given command and return the eventual error without blocking the program
     let runCommandWithNonBlockingError (xProg: Program<Result<unit, 'e>>) =
         program {

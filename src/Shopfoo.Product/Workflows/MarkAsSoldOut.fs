@@ -25,7 +25,12 @@ type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineSt
         program {
             let! stock = determineStockWorkflow.Run sku
             do! verifyZeroStock stock |> liftGuardClauses
-            let! prices = Program.getPrices sku |> Program.requireSome $"SKU #%s{sku.Value}" |> Program.mapDataRelatedError
+
+            let! prices =
+                Program.getPrices sku
+                |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
+                |> Program.mapDataRelatedError
+
             do! Program.savePrices { prices with RetailPrice = RetailPrice.SoldOut }
             return Ok()
         }
