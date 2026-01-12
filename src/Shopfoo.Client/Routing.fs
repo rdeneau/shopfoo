@@ -3,6 +3,9 @@
 open Browser.Types
 open Feliz.Router
 open Fable.Core.JsInterop
+open Shopfoo.Common
+open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Catalog
 
 type PageUrl = {
     Segments: string list
@@ -25,7 +28,7 @@ type Page =
     | Home
     | Login
     | NotFound of url: string
-    | ProductIndex
+    | ProductIndex of categoryKey: string option
     | ProductDetail of skuKey: string
 
     member this.Key =
@@ -35,8 +38,9 @@ type Page =
         | Page.Home -> "home"
         | Page.Login -> "login"
         | Page.NotFound _ -> "not-found"
-        | Page.ProductIndex -> "product"
-        | Page.ProductDetail skuKey -> $"product-%s{skuKey.ToLowerInvariant()}"
+        | Page.ProductIndex None -> "products"
+        | Page.ProductIndex(Some categoryKey) -> $"products-%s{categoryKey}"
+        | Page.ProductDetail skuKey -> $"product-%s{skuKey}"
 
     static member CurrentNotFound() =
         Router.currentUrl () |> Router.format |> Page.NotFound
@@ -52,7 +56,8 @@ module Page =
         | [ "admin" ] -> Page.Admin
         | [ "login" ] -> Page.Login
         | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
-        | [ "product" ] -> Page.ProductIndex
+        | [ "products" ] -> Page.ProductIndex None
+        | [ "products"; categoryKey ] -> Page.ProductIndex(Some categoryKey)
         | [ "product"; skuKey ] -> Page.ProductDetail skuKey
         | segments -> Page.NotFound(Router.formatPath segments)
 
@@ -63,7 +68,8 @@ let (|PageUrl|) =
     | Page.Home -> PageUrl.Root
     | Page.Login -> PageUrl.WithSegments("login")
     | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
-    | Page.ProductIndex -> PageUrl.WithSegments("product")
+    | Page.ProductIndex None -> PageUrl.WithSegments("products")
+    | Page.ProductIndex(Some categoryKey) -> PageUrl.WithSegments("products", categoryKey)
     | Page.ProductDetail skuKey -> PageUrl.WithSegments("product", skuKey)
 
 [<RequireQualifiedAccess>]
@@ -80,3 +86,31 @@ module Router =
 module Cmd =
     let navigatePage (PageUrl pageUrl) =
         Cmd.navigatePath (pageUrl.Segments, queryString = pageUrl.Query)
+
+[<AutoOpen>]
+module Keys =
+    type SKU with
+        static member FromKey(skuKey: string) : SKU =
+            match skuKey |> String.split '-' with
+            | [| "FS"; String.Int fsid |] -> (FSID fsid).AsSKU
+            | [| "BN"; isbn |] -> (ISBN isbn).AsSKU
+            | _ -> SKUUnknown.SKUUnknown.AsSKU
+
+        member this.Key =
+            match this.Type, this.Value with
+            | SKUType.FSID _, (String.StartsWith "FS-" as value) -> value
+            | SKUType.FSID _, value -> $"FS-%s{value}"
+            | SKUType.ISBN _, value -> $"BN-%s{value}"
+            | SKUType.Unknown, _ -> ""
+
+    type Provider with
+        static member FromCategoryKey(categoryKey: string) : Provider option =
+            match categoryKey.ToLowerInvariant() with
+            | "bazaar" -> Some Provider.FakeStore
+            | "books" -> Some Provider.OpenLibrary
+            | _ -> None
+
+        member this.CategoryKey =
+            match this with
+            | Provider.FakeStore -> "bazaar"
+            | Provider.OpenLibrary -> "books"

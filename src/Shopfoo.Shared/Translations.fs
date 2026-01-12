@@ -55,10 +55,10 @@ module TranslationPages =
 
         member this.About = this.Get "About"
         member this.AboutDisclaimer = this.Get "AboutDisclaimer"
-
         member this.Admin = this.Get "Admin"
         member this.AdminDisclaimer = this.Get "AdminDisclaimer"
-
+        member this.Bazaar = this.Get "Bazaar"
+        member this.Books = this.Get "Books"
         member this.Login = this.Get "Login"
         member this.Logout = this.Get "Logout"
         member this.Page = this.Get "Page"
@@ -132,7 +132,9 @@ module TranslationPages =
         inherit Base(PageCode.Product, ?translations = translations)
 
         member this.Actions = this.Get "Actions"
+        member this.Authors = this.Get "Authors"
         member this.CatalogInfo = this.Get "CatalogInfo"
+        member this.Category = this.Get "Category"
         member this.Description = this.Get "Description"
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
@@ -163,6 +165,14 @@ module TranslationPages =
                 RemoveListPriceDialog =
                     this.WithPrefix "RemoveListPriceDialog."
                     <| fun this -> {| Confirm = this.Get "Confirm"; Question = this.Get "Question" |}
+            |}
+
+        member this.StoreCategory =
+            this.WithPrefix "StoreCategory."
+            <| fun this -> {|
+                Clothing = this.Get "Clothing"
+                Electronics = this.Get "Electronics"
+                Jewelry = this.Get "Jewelry"
             |}
 
         member this.Stock = this.Get "Stock"

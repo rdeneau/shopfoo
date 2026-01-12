@@ -5,6 +5,7 @@ open Feliz
 open Feliz.DaisyUI
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
 type private Nav(currentPage, translations: AppTranslations) =
@@ -37,11 +38,20 @@ type private Nav(currentPage, translations: AppTranslations) =
     member nav.About = nav.page (Page.About, translate _.Home.About)
     member nav.Admin = nav.page (Page.Admin, translate _.Home.Admin)
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
-    member nav.Products = nav.page (Page.ProductIndex, translate _.Home.Products)
+    member nav.Products = nav.page (Page.ProductIndex None, translate _.Home.Products)
 
     member nav.Product(skuKey) =
-        let sku = SKU.ParseKey(skuKey)
+        let sku = SKU.FromKey(skuKey)
         nav.page (Page.ProductDetail skuKey, text = sku.Value, cssClass = "font-semibold")
+
+    member nav.ProductCategory(categoryKey) =
+        let text =
+            match Provider.FromCategoryKey(categoryKey) with
+            | None -> String.Empty
+            | Some Provider.FakeStore -> translate _.Home.Bazaar
+            | Some Provider.OpenLibrary -> translate _.Home.Books
+
+        nav.page (Page.ProductIndex(Some categoryKey), text)
 
 [<ReactComponent>]
 let AppNavBar key currentPage pageDisplayedInline translations children =
@@ -65,9 +75,20 @@ let AppNavBar key currentPage pageDisplayedInline translations children =
                             | Page.About -> nav.About
                             | Page.Admin -> nav.Admin
                             | Page.Login -> nav.Login
-                            | Page.ProductIndex -> nav.Products
+                            | Page.ProductIndex None -> nav.Products
+
+                            | Page.ProductIndex(Some categoryKey) ->
+                                nav.Products
+                                nav.ProductCategory categoryKey
+
                             | Page.ProductDetail skuKey ->
                                 nav.Products
+
+                                match SKU.FromKey(skuKey).Type with
+                                | SKUType.FSID _ -> nav.ProductCategory Provider.FakeStore.CategoryKey
+                                | SKUType.ISBN _ -> nav.ProductCategory Provider.OpenLibrary.CategoryKey
+                                | SKUType.Unknown -> ()
+
                                 nav.Product(skuKey)
                         ]
                     ]

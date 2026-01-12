@@ -80,18 +80,6 @@ type SKU = {
     Type: SKUType
     Value: string
 } with
-    static member ParseKey(key: string) : SKU =
-        match key |> String.split '-' with
-        | [| "FS"; String.Int fsid |] -> (FSID fsid).AsSKU
-        | [| "BN"; isbn |] -> (ISBN isbn).AsSKU
-        | _ -> SKUUnknown.SKUUnknown.AsSKU
-
-    member this.Key =
-        match this.Type with
-        | SKUType.FSID _ -> $"FS-%s{this.Value}"
-        | SKUType.ISBN _ -> $"BN-%s{this.Value}"
-        | SKUType.Unknown -> ""
-
     member this.Match(withFSID, withISBN) =
         match this.Type with
         | SKUType.FSID fsid -> withFSID fsid
@@ -101,7 +89,7 @@ type SKU = {
 /// FakeStore Product Identifier
 and FSID =
     | FSID of int
-    member this.Value = let (FSID fsid) = this in $"FS%i{fsid}"
+    member this.Value = let (FSID fsid) = this in $"FS-%i{fsid}"
     member this.AsSKU = { Type = SKUType.FSID this; Value = this.Value }
 
 /// International Standard Book Number

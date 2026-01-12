@@ -265,27 +265,29 @@ type GuardExtensions =
 type TypeName<'a> =
     | FullName
     | Empty
+    | Custom of typeName: string
 
     member this.Value =
         match this with
         | FullName -> typeof<'a>.FullName
         | Empty -> String.empty
+        | Custom typeName -> typeName
 
 [<RequireQualifiedAccess>]
 module Result =
     /// <summary>
     /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeName.Value))</c>.
     /// </summary>
-    let requireSomeData (info: string, typeName: TypeName<'a>) (option: 'a option) : Result<'a, DataRelatedError> =
-        match option with
+    let requireSomeData (info: string, typeName: TypeName<'a>) (value: 'a option) : Result<'a, DataRelatedError> =
+        match value with
         | Some value -> Ok value
         | None -> Error(DataNotFound(Id = info, Type = typeName.Value))
 
     /// <summary>
     /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeof{'a}.FullName))</c>.
     /// </summary>
-    let requireSome info (option: 'a option) =
-        requireSomeData (info, TypeName.FullName) option
+    let requireSome info (value: 'a option) =
+        requireSomeData (info, TypeName.FullName) value
 
 #endif
 

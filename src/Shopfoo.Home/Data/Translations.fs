@@ -17,6 +17,8 @@ let private translationPages = [
         "This page is only used to verify the user access. Refresh the page, log in with a non-admin user, and check the redirection to the NotFound page.",
         "Cette page n'a d'autre intérêt que de servir à vérifier les droits d'accès utilisateur. Pour cela, rafraîchir la page, se connecter avec un utilisateur non admin et vérifier la redirection vers la page NotFound."
 
+        TagCode "Bazaar", "Bazaar", "Bazar"
+        TagCode "Books", "Books", "Livres"
         TagCode "Login", "Login", "Connexion"
         TagCode "Logout", "Logout", "Se déconnecter"
         TagCode "Page", "Page", "Page"
@@ -71,7 +73,9 @@ let private translationPages = [
     PageCode.Product,
     [
         TagCode "Actions", "Actions", "Actions"
+        TagCode "Authors", "Authors", "Auteurs"
         TagCode "CatalogInfo", "Catalog Info", "Info Catalogue"
+        TagCode "Category", "Category", "Catégorie"
         TagCode "Description", "Description", "Description"
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
@@ -105,6 +109,10 @@ let private translationPages = [
         TagCode "PriceAction.MarkAsSoldOutDialog.Question",
         "Are you sure you want to mark this product as sold out?",
         "Êtes-vous sûr de vouloir marquer ce produit comme épuisé ?"
+
+        TagCode "StoreCategory.Clothing", "Clothing", "Vêtements"
+        TagCode "StoreCategory.Electronics", "Electronics", "Électronique"
+        TagCode "StoreCategory.Jewelry", "Jewelry", "Bijoux"
 
         TagCode "Stock", "Stock", "Stock"
         TagCode "StockAfterInventory", "Stock adjusted after inventory", "Stock réel après inventaire"

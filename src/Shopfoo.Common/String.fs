@@ -97,6 +97,7 @@ let (|CI|_|) (s1: string) (s2: string) =
 
 let (|NotEmpty|_|) s = not (isEmpty s) |> Option.ofBool
 let (|NullOrWhiteSpace|_|) s = isEmpty s |> Option.ofBool
+let (|StartsWith|_|) (prefix: string) (s: string) = s.StartsWith(prefix) |> Option.ofBool
 
 let (|Lower|) = toLower
 
