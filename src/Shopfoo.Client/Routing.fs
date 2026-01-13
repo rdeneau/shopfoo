@@ -3,6 +3,7 @@
 open Browser.Types
 open Feliz.Router
 open Fable.Core.JsInterop
+open Shopfoo.Client.Shared
 open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
@@ -16,6 +17,35 @@ module private Keys =
             | SKUType.FSID _, value -> $"FS-%s{value}"
             | SKUType.ISBN _, value -> $"BN-%s{value}"
             | SKUType.Unknown, _ -> ""
+
+    [<RequireQualifiedAccess>]
+    module ProductSort =
+        let key =
+            function
+            | ProductSort.Num -> "num"
+            | ProductSort.Title -> "name"
+            | ProductSort.BookAuthors -> "authors"
+            | ProductSort.StoreCategory -> "category"
+
+    let (|Column|_|) key : ProductSort option =
+        match String.toLower key with
+        | "num" -> Some ProductSort.Num
+        | "name" -> Some ProductSort.Title
+        | "authors" -> Some ProductSort.BookAuthors
+        | "category" -> Some ProductSort.StoreCategory
+        | _ -> None
+
+    [<RequireQualifiedAccess>]
+    module SortBy =
+        let key =
+            function
+            | col, Ascending -> col |> ProductSort.key
+            | col, Descending -> $"{col |> ProductSort.key}-desc"
+
+    let (|Desc|_|) s =
+        match String.toLower s with
+        | "desc" -> Some()
+        | _ -> None
 
     [<RequireQualifiedAccess>]
     module StoreCategory =
@@ -64,8 +94,8 @@ type Page =
     | Login
     | NotFound of url: string
     | ProductIndex
-    | ProductBazaar of storeCategory: StoreCategory option * searchTerm: string option
-    | ProductBooks of authorId: OLID option * searchTerm: string option
+    | ProductBazaar of category: StoreCategory option * searchTerm: string option * sortBy: (ProductSort * SortDirection) option
+    | ProductBooks of authorId: OLID option * searchTerm: string option * sortBy: (ProductSort * SortDirection) option
     | ProductDetail of SKU
 
     member this.Key =
@@ -95,15 +125,24 @@ module private Route =
         | Route.Query [ "category", storeCategoryKey ] -> StoreCategory.tryFromKey storeCategoryKey
         | _ -> None
 
+    let private (|Dashed|) s = // ↩
+        s |> String.split '-' |> Array.toList
+
     let (|Search|) s : string option =
         match s with
         | Route.Query [ "search", searchTerm ] -> Some searchTerm
         | _ -> None
 
+    let (|Sort|) s : (ProductSort * SortDirection) option =
+        match s with
+        | Route.Query [ "sort", Dashed [ Column col; Desc ] ] -> Some(col, Descending)
+        | Route.Query [ "sort", Column col ] -> Some(col, Ascending)
+        | _ -> None
+
     let (|SKU|_|) s : SKU option =
-        match s |> String.split '-' with
-        | [| "FS"; Route.Int fsid |] -> Some (FSID fsid).AsSKU
-        | [| "BN"; isbn |] -> Some (ISBN isbn).AsSKU
+        match s with
+        | Dashed [ "FS"; Route.Int fsid ] -> Some (FSID fsid).AsSKU
+        | Dashed [ "BN"; isbn ] -> Some (ISBN isbn).AsSKU
         | _ -> None
 
 [<RequireQualifiedAccess>]
@@ -115,12 +154,12 @@ module Page =
         | [] -> Page.Home
         | [ "about" ] -> Page.About
         | [ "admin" ] -> Page.Admin
-        | [ "bazaar" ] -> Page.ProductBazaar(storeCategory = None, searchTerm = None)
+        | [ "bazaar" ] -> Page.ProductBazaar(category = None, searchTerm = None, sortBy = None)
         | [ "bazaar"; Route.SKU sku ] -> Page.ProductDetail sku
-        | [ "bazaar"; (Route.Category storeCategory & Route.Search searchTerm) ] -> Page.ProductBazaar(storeCategory, searchTerm = searchTerm)
-        | [ "books" ] -> Page.ProductBooks(authorId = None, searchTerm = None)
+        | [ "bazaar"; (Route.Category category & Route.Search searchTerm & Route.Sort sortBy) ] -> Page.ProductBazaar(category, searchTerm, sortBy)
+        | [ "books" ] -> Page.ProductBooks(authorId = None, searchTerm = None, sortBy = None)
         | [ "books"; Route.SKU sku ] -> Page.ProductDetail sku
-        | [ "books"; (Route.Author authorId & Route.Search searchTerm) ] -> Page.ProductBooks(authorId, searchTerm = searchTerm)
+        | [ "books"; (Route.Author authorId & Route.Search searchTerm & Route.Sort sortBy) ] -> Page.ProductBooks(authorId, searchTerm, sortBy)
         | [ "login" ] -> Page.Login
         | [ "notfound"; Route.Query [ "url", url ] ] -> Page.NotFound url
         | [ "products" ] -> Page.ProductIndex
@@ -134,17 +173,19 @@ let (|PageUrl|) =
     | Page.Login -> PageUrl.WithSegments("login")
     | Page.NotFound url -> PageUrl.WithSegments("notfound").WithQueryParam("url", url)
 
-    | Page.ProductBazaar(storeCategory, searchTerm) ->
+    | Page.ProductBazaar(storeCategory, searchTerm, sortBy) ->
         PageUrl
             .WithSegments("bazaar")
             .WithQueryParamOptional("category", storeCategory |> Option.map StoreCategory.key)
             .WithQueryParamOptional("search", searchTerm)
+            .WithQueryParamOptional("sort", sortBy |> Option.map SortBy.key)
 
-    | Page.ProductBooks(authorId, searchTerm) ->
+    | Page.ProductBooks(authorId, searchTerm, sortBy) ->
         PageUrl
             .WithSegments("books")
             .WithQueryParamOptional("author", authorId |> Option.map (fun (OLID authorId) -> authorId))
             .WithQueryParamOptional("search", searchTerm)
+            .WithQueryParamOptional("sort", sortBy |> Option.map SortBy.key)
 
     | Page.ProductIndex -> PageUrl.WithSegments("products")
     | Page.ProductDetail({ Type = SKUType.FSID _ } as sku) -> PageUrl.WithSegments("bazaar", sku.Key)

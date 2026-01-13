@@ -40,10 +40,10 @@ type private Nav(currentPage, translations: AppTranslations) =
     member nav.Products = nav.page (Page.ProductIndex, translate _.Home.Products)
 
     member nav.Bazaar =
-        nav.page (Page.ProductBazaar(storeCategory = None, searchTerm = None), translate _.Home.Bazaar)
+        nav.page (Page.ProductBazaar(category = None, searchTerm = None, sortBy = None), translate _.Home.Bazaar)
 
     member nav.Books =
-        nav.page (Page.ProductBooks(authorId = None, searchTerm = None), translate _.Home.Books)
+        nav.page (Page.ProductBooks(authorId = None, searchTerm = None, sortBy = None), translate _.Home.Books)
 
     member nav.Product sku =
         nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")

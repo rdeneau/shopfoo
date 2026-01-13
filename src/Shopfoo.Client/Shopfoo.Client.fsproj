@@ -14,6 +14,7 @@
     <Compile Include="Package.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Remoting.fs" />
+    <Compile Include="Shared.fs" />
     <Compile Include="Routing.fs" />
     <Compile Include="UI.fs" />
     <Compile Include="Components\Actions.fs" />
@@ -38,6 +39,8 @@
     <Compile Include="Pages\Product\ManagePrice.fs" />
     <Compile Include="Pages\Product\CatalogInfo.fs" />
     <Compile Include="Pages\Product\Details.fs" />
+    <Compile Include="Pages\Product\Filters.fs" />
+    <Compile Include="Pages\Product\Columns.fs" />
     <Compile Include="Pages\Product\Index.fs" />
     <Compile Include="View.fs" />
     <Compile Include="App.fs" />

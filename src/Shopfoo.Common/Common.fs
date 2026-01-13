@@ -117,6 +117,9 @@ module ActivePatterns =
     let (|In|_|) values value =
         Option.ofBool (Seq.contains value values)
 
+    let (|Is|_|) otherValue value = // ↩
+        Option.ofBool (value = otherValue)
+
     let inline (|IsNegative|_|) number =
         Option.ofBool (number < LanguagePrimitives.GenericZero)
 

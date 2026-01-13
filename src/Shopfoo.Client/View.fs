@@ -113,8 +113,43 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     // `Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)` is not needed because the ToastOff is done with the Toast onDismiss
     | Msg.ToastOff -> { model with Toast = None }, Cmd.none
 
+// -- View --------------------------------------------------------
+
+module private Filters =
+    open Shopfoo.Client.Pages.Product.Filters
+
+    let private none: FiltersModel = {
+        Provider = None
+        BooksAuthorId = None
+        StoreCategory = None
+        SearchTerm = None
+        SortBy = None
+    }
+
+    let private bazaar storeCategory searchTerm sortBy : FiltersModel = {
+        none with
+            Provider = Some FakeStore
+            StoreCategory = storeCategory
+            SearchTerm = searchTerm
+            SortBy = sortBy
+    }
+
+    let private books authorId searchTerm sortBy : FiltersModel = {
+        none with
+            Provider = Some OpenLibrary
+            BooksAuthorId = authorId
+            SearchTerm = searchTerm
+            SortBy = sortBy
+    }
+
+    let ofPage page : FiltersModel =
+        match page with
+        | Page.ProductBazaar(category, searchTerm, sortBy) -> bazaar category searchTerm sortBy
+        | Page.ProductBooks(authorId, searchTerm, sortBy) -> books authorId searchTerm sortBy
+        | _ -> none
+
 type private Page with
-    member page.IndexFilters = Pages.Product.Index.Filters.ofPage page
+    member page.IndexFilters = Filters.ofPage page
 
 [<ReactComponent>]
 let AppView () =
