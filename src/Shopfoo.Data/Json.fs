@@ -20,9 +20,5 @@ type Serializer() =
 
     interface IJsonSerializer with
         member val ContentType = MediaType
-
-        member _.Serialize(source: obj) =
-            JsonSerializer.Serialize(source, options)
-
-        member _.Deserialize<'a>(content: string) =
-            JsonSerializer.Deserialize<'a>(content, options)
+        member _.Serialize(source: obj) = JsonSerializer.Serialize(source, options)
+        member _.Deserialize<'a>(content: string) = JsonSerializer.Deserialize<'a>(content, options)

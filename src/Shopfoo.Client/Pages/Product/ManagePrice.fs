@@ -63,8 +63,7 @@ let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
 
 [<ReactComponent>]
 let ManagePriceForm key (fullContext: FullContext) price prices drawerControl onSave =
-    let model, dispatch =
-        React.useElmish (init price prices, update fullContext onSave, [||])
+    let model, dispatch = React.useElmish (init price prices, update fullContext onSave, [||])
 
     // Close the drawer after success with a short delay (500ms),
     // time to let the user get this result visually.
@@ -96,8 +95,7 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
         | Decrease -> (abs priceChange) >= 0.01m
         | Define -> newPrice >= 0.01m
 
-    let currencyLabel priceKey symbol =
-        Daisy.label [ prop.key $"%s{key}-%s{priceKey}-symbol-left"; prop.text $"%s{symbol}" ]
+    let currencyLabel priceKey symbol = Daisy.label [ prop.key $"%s{key}-%s{priceKey}-symbol-left"; prop.text $"%s{symbol}" ]
 
     let icon, title =
         match price.Intent with

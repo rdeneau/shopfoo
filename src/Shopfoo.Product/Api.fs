@@ -37,7 +37,7 @@ type internal Api(interpreterFactory: IInterpreterFactory, fakeStoreClient: Fake
         | SavePrices command -> interpret.Command(command, Prices.Pipeline.savePrices)
         | SaveProduct command -> interpret.Command(command, Catalog.Pipeline.saveProduct)
 
-    let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args =
+    let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args = // ↩
         interpret.Workflow runEffect workflow args
 
     interface IProductApi with

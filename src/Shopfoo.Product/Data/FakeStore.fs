@@ -58,11 +58,8 @@ module private Mappers =
 type private InMemoryProductCache() =
     let cache = ConcurrentDictionary<FSID, Product * Prices>()
 
-    member _.TryGetProduct(fsid) =
-        cache.TryGetValue(fsid) |> Option.ofPair |> Option.map fst
-
-    member _.TryGetPrice(fsid) =
-        cache.TryGetValue(fsid) |> Option.ofPair |> Option.map snd
+    member _.TryGetProduct(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map fst
+    member _.TryGetPrice(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map snd
 
     member _.TryGetAllProducts() =
         match cache.Values |> Seq.toList with
@@ -89,11 +86,8 @@ type private InMemoryProductCache() =
             withISBN = (fun _ -> Error(GuardClause { EntityName = nameof SKU; ErrorMessage = "Expected FSID type" }))
         )
 
-    member this.SetProduct(product: Product) =
-        this.WhenFromFakeStore(product.SKU, fun fsid -> this.Set(fsid, product = product))
-
-    member this.SetPrices(prices: Prices) =
-        this.WhenFromFakeStore(prices.SKU, fun fsid -> this.Set(fsid, prices = prices))
+    member this.SetProduct(product: Product) = this.WhenFromFakeStore(product.SKU, fun fsid -> this.Set(fsid, product = product))
+    member this.SetPrices(prices: Prices) = this.WhenFromFakeStore(prices.SKU, fun fsid -> this.Set(fsid, prices = prices))
 
     member this.SetAll(entries) =
         cache.Clear()

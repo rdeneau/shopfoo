@@ -41,11 +41,8 @@ type User =
 
     member user.CanAccess feat = user.AccessTo feat |> Option.isSome
 
-let (|UserCanAccess|_|) feat (user: User) = // ↩
-    user.CanAccess feat |> Option.ofBool
-
-let (|UserCanNotAccess|_|) feat (user: User) =
-    not (user.CanAccess feat) |> Option.ofBool
+let (|UserCanAccess|_|) feat (user: User) = user.CanAccess feat |> Option.ofBool
+let (|UserCanNotAccess|_|) feat (user: User) = not (user.CanAccess feat) |> Option.ofBool
 
 [<RequireQualifiedAccess>]
 module UserNames =

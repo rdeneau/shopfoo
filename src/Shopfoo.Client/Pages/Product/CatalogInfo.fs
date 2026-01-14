@@ -70,8 +70,7 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
 let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslations onSaveProduct =
     let sku = productModel.SKU
 
-    let model, dispatch =
-        React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
+    let model, dispatch = React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
 
     let translations = fullContext.Translations
     let catalogAccess = fullContext.User.AccessTo Feat.Catalog

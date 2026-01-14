@@ -27,27 +27,13 @@ type InvariantCulture =
     static member TryParseDecimal(s: string) = Decimal.TryParse(s)
 #else
     static member ListSeparator = CultureInfo.InvariantCulture.TextInfo.ListSeparator
-
-    static member Format(value: 't) =
-        String.Format(CultureInfo.InvariantCulture, "{0}", value)
-
-    static member ParseDateOnly(s: string) =
-        DateOnly.Parse(s, CultureInfo.InvariantCulture)
-
-    static member ParseDateTime(s: string) =
-        DateTime.Parse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
-
-    static member ParseDecimal(s: string) =
-        Decimal.Parse(s, CultureInfo.InvariantCulture)
-
-    static member TryParseDateOnly(s: string) =
-        DateOnly.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
-
-    static member TryParseDateTime(s: string) =
-        DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
-
-    static member TryParseDecimal(s: string) =
-        Decimal.TryParse(s, CultureInfo.InvariantCulture)
+    static member Format(value: 't) = String.Format(CultureInfo.InvariantCulture, "{0}", value)
+    static member ParseDateOnly(s: string) = DateOnly.Parse(s, CultureInfo.InvariantCulture)
+    static member ParseDateTime(s: string) = DateTime.Parse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
+    static member ParseDecimal(s: string) = Decimal.Parse(s, CultureInfo.InvariantCulture)
+    static member TryParseDateOnly(s: string) = DateOnly.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
+    static member TryParseDateTime(s: string) = DateTime.TryParse(s, CultureInfo.InvariantCulture, DateTimeStyles.None)
+    static member TryParseDecimal(s: string) = Decimal.TryParse(s, CultureInfo.InvariantCulture)
 #endif
 
 [<RequireQualifiedAccess>]
@@ -111,23 +97,13 @@ module Result =
 
 [<AutoOpen>]
 module ActivePatterns =
-    let (|Between|_|) min max value =
-        Option.ofBool (value >= min && value <= max)
+    let (|Between|_|) min max value = Option.ofBool (value >= min && value <= max)
+    let (|In|_|) values value = Option.ofBool (Seq.contains value values)
+    let (|Is|_|) otherValue value = Option.ofBool (value = otherValue)
 
-    let (|In|_|) values value =
-        Option.ofBool (Seq.contains value values)
-
-    let (|Is|_|) otherValue value = // ↩
-        Option.ofBool (value = otherValue)
-
-    let inline (|IsNegative|_|) number =
-        Option.ofBool (number < LanguagePrimitives.GenericZero)
-
-    let inline (|IsPositive|_|) number =
-        Option.ofBool (number > LanguagePrimitives.GenericZero)
-
-    let inline (|IsZero|_|) number =
-        Option.ofBool (number = LanguagePrimitives.GenericZero)
+    let inline (|IsNegative|_|) number = Option.ofBool (number < LanguagePrimitives.GenericZero)
+    let inline (|IsPositive|_|) number = Option.ofBool (number > LanguagePrimitives.GenericZero)
+    let inline (|IsZero|_|) number = Option.ofBool (number = LanguagePrimitives.GenericZero)
 
     let (|Null|NotNull|) value =
         match isNull (box value) with
@@ -168,20 +144,14 @@ module Nullable =
 [<AutoOpen>]
 module DateOnlyExtensions =
     type DateOnly with
-        member this.ToDateTime() = // ↩
-            this.ToDateTime(TimeOnly.MinValue)
-
+        member this.ToDateTime() = this.ToDateTime(TimeOnly.MinValue)
         static member Today = DateOnly.FromDateTime(DateTime.Today)
 
 [<RequireQualifiedAccess>]
 module DateOnly =
     let Default = DateOnly(1900, 1, 1)
-
-    let toInvariantString (d: DateOnly) = // ↩
-        InvariantCulture.Format d
-
-    let tryParse (s: String) =
-        InvariantCulture.TryParseDateOnly s |> Option.ofPair
+    let toInvariantString (d: DateOnly) = InvariantCulture.Format d
+    let tryParse (s: String) = InvariantCulture.TryParseDateOnly s |> Option.ofPair
 
 [<RequireQualifiedAccess>]
 module TimeOnly =
@@ -211,7 +181,7 @@ module Enum =
     let inline values<'enum when 'enum :> Enum and 'enum: comparison> =
         Enum.GetValues(typeof<'enum>) :?> 'enum array |> Set.ofArray
 
-    let inline flags<'enum when 'enum :> Enum and 'enum: comparison> (enumValue: 'enum) =
+    let inline flags<'enum when 'enum :> Enum and 'enum: comparison> (enumValue: 'enum) = // ↩
         values<'enum> |> Set.filter enumValue.HasFlag
 
 #if !FABLE_COMPILER
@@ -285,8 +255,7 @@ module PrettyPrint =
         | None -> "None"
         | Some o -> prettyPrintObject o
 
-    let prettyConcat texts =
-        String.concat InvariantCulture.ListSeparator texts
+    let prettyConcat texts = String.concat InvariantCulture.ListSeparator texts
 
 #if !FABLE_COMPILER
 

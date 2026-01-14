@@ -8,7 +8,7 @@ open Shopfoo.Common
 module Validation =
     type Validation<'t, 'e> = Result<'t, 'e list>
 
-    let toValidation (result: Result<'t, 'e>) : Validation<'t, 'e> =
+    let toValidation (result: Result<'t, 'e>) : Validation<'t, 'e> = // ↩
         result |> Result.mapError List.singleton
 
     type ValidationBuilder() =
@@ -95,7 +95,7 @@ module Guards =
             | Some value -> Ok value
             | None -> this.Error $"should have exactly one element but had {Seq.length sequence}"
 
-        member this.NotSupported(value) =
+        member this.NotSupported(value) = // ↩
             this.Error $"{prettyPrintObject value} is not supported"
 
         member this.Satisfies(value, condition, error) =
@@ -220,21 +220,14 @@ type Error =
 
 [<AutoOpen>]
 module Helpers =
-    let bug exn = Bug exn |> Error
-
-    let operationNotAllowed operation reason =
-        { Operation = operation; Reason = reason } |> Error
-
+    let bug exn = Error(Bug exn)
+    let operationNotAllowed operation reason = Error { Operation = operation; Reason = reason }
     let dataException exn = Error(DataException exn)
 
     let liftDataRelatedError result = Result.mapError DataError result
     let liftGuardClause result = Result.mapError GuardClause result
-
-    let liftGuardClauses (validation: Validation<'a, GuardClauseError>) =
-        validation |> Result.mapError Validation
-
-    let liftOperationNotAllowed result =
-        Result.mapError OperationNotAllowed result
+    let liftGuardClauses (validation: Validation<'a, GuardClauseError>) = validation |> Result.mapError Validation
+    let liftOperationNotAllowed result = Result.mapError OperationNotAllowed result
 
     let createAndLiftGuardClause constructor input = constructor input |> liftGuardClause
 
@@ -253,11 +246,12 @@ module Helpers =
 
 type GuardExtensions =
     [<Extension>]
-    static member LiftError(guardResult: Result<'a, GuardClauseError>) : Result<unit, Error> =
+    static member LiftError(guardResult: Result<'a, GuardClauseError>) : Result<unit, Error> = // ↩
         guardResult |> Result.ignore |> liftGuardClause
 
     [<Extension>]
-    static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> = guardResult |> toValidation
+    static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> = // ↩
+        guardResult |> toValidation
 
 #if !FABLE_COMPILER
 
@@ -286,8 +280,7 @@ module Result =
     /// <summary>
     /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeof{'a}.FullName))</c>.
     /// </summary>
-    let requireSome info (value: 'a option) =
-        requireSomeData (info, TypeName.FullName) value
+    let requireSome info (value: 'a option) = requireSomeData (info, TypeName.FullName) value
 
 #endif
 
@@ -339,14 +332,9 @@ module ErrorMessage =
         exn.InnerException |> Option.ofObj |> Option.map _.Message
 #endif
 
-    let inline ofBug (exn: exn) =
-        ErrorMessage.Create $"[Program] Oops, something went wrong: {exn.Message}"
-
-    let inline private ofException (exn: exn) =
-        ErrorMessage.Create(exn.Message, ?innerMessage = innerExceptionMessage exn)
-
-    let inline private ofGuardClause { EntityName = name; ErrorMessage = message } =
-        ErrorMessage.Create $"Guard %s{name}: %s{message}"
+    let inline ofBug (exn: exn) = ErrorMessage.Create $"[Program] Oops, something went wrong: {exn.Message}"
+    let inline private ofException (exn: exn) = ErrorMessage.Create(exn.Message, ?innerMessage = innerExceptionMessage exn)
+    let inline private ofGuardClause { EntityName = name; ErrorMessage = message } = ErrorMessage.Create $"Guard %s{name}: %s{message}"
 
     let inline private ofOperationNotAllowed { Operation = op; Reason = reason } =
         ErrorMessage.Create $"Operation [%s{op}] is not allowed. Reason: %s{reason}"

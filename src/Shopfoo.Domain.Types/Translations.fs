@@ -40,5 +40,5 @@ module Translations =
 
         { translations with Pages = translations.Pages |> Map.add pageCode tagMap }
 
-    let add (key: TranslationKey) value translations =
+    let add (key: TranslationKey) value translations = // ↩
         translations |> addByCodes key.Page key.Tag value

@@ -208,8 +208,8 @@ module private Mappers =
         }
 
     module ModelToDto =
-        let mapAuthors (details: Book) : AuthorDto list =
-            details.Authors |> List.map (fun author -> { Id = author.OLID; Name = author.Name })
+        let mapAuthors (book: Book) : AuthorDto list = // ↩
+            book.Authors |> List.map (fun author -> { Id = author.OLID; Name = author.Name })
 
         let mapBook (product: Product) : BookDto =
             match product.Category with

@@ -85,14 +85,9 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFact
             return serializer.TryDeserializeResult<'dto>(content)
         }
 
-    member this.GetAuthorAsync(authorKey) =
-        this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
-
-    member this.GetBookByIsbnAsync(ISBN isbn) =
-        this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
-
-    member this.GetWorkAsync(workKey) =
-        this.GetByKeyAsync<WorkDto>($"/works/%s{workKey}")
+    member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
+    member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
+    member this.GetWorkAsync(workKey) = this.GetByKeyAsync<WorkDto>($"/works/%s{workKey}")
 
     member _.GetCoverUrl(coverKey, coverSize) =
         let key =
@@ -138,21 +133,23 @@ module private Mappers =
             ImageUrl = imageUrl
         }
 
-        let mapCoverKey (ISBN isbn) covers =
-            covers |> List.tryHead |> Option.map CoverKey.Id |> Option.defaultValue (CoverKey.ISBN isbn)
+        let mapCoverKey (ISBN isbn) covers : CoverKey =
+            covers // ↩
+            |> List.tryHead
+            |> Option.map CoverKey.Id
+            |> Option.defaultValue (CoverKey.ISBN isbn)
 
 module internal Pipeline =
     let getProduct (client: OpenLibraryClient) isbn =
         taskResult {
             let! bookDto = client.GetBookByIsbnAsync isbn
-
             let! workDto = client.GetWorkAsync bookDto.Works[0].Key
             let! authorDtos = workDto.Authors |> List.traverseTaskResultM (fun x -> client.GetAuthorAsync x.Author.Key)
-            let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
 
-            let coverKey = bookDto.Covers |> Mappers.DtoToModel.mapCoverKey isbn
+            let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
+            let coverKey = Mappers.DtoToModel.mapCoverKey isbn bookDto.Covers
             let imageUrl = client.GetCoverUrl(coverKey, CoverSize.Small) |> ImageUrl.Valid
 
-            return bookDto |> Mappers.DtoToModel.mapBook isbn.AsSKU category imageUrl
+            return Mappers.DtoToModel.mapBook isbn.AsSKU category imageUrl bookDto
         }
         |> Async.AwaitTask

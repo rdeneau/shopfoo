@@ -92,8 +92,7 @@ type private Users =
 
 [<ReactComponent>]
 let LoginView (fullContext, fillTranslations, loginUser) =
-    let model, dispatch =
-        React.useElmish (init fullContext, update fillTranslations loginUser, dependencies = [||])
+    let model, dispatch = React.useElmish (init fullContext, update fillTranslations loginUser, dependencies = [||])
 
     let translations = fullContext.Translations
 

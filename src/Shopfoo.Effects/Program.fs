@@ -110,11 +110,8 @@ module Program =
     let defaultValue value prog = prog |> map (Option.defaultValue value)
     let ignore prog = prog |> map Result.ignore
 
-    let requireSome info (queryResult: Program<'a option>) =
-        queryResult |> map (Result.requireSome info)
-
-    let requireSomeData info (queryResult: Program<'a option>) =
-        queryResult |> map (Result.requireSomeData info)
+    let requireSome info (queryResult: Program<'a option>) = queryResult |> map (Result.requireSome info)
+    let requireSomeData info (queryResult: Program<'a option>) = queryResult |> map (Result.requireSomeData info)
 
     /// Run the given command and return the eventual error without blocking the program
     let runCommandWithNonBlockingError (xProg: Program<Result<unit, 'e>>) =

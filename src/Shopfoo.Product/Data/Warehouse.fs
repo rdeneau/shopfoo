@@ -16,9 +16,7 @@ module private Fakes =
             Type = eventType
         }
 
-        static member Purchased price =
-            Units.For(EventType.ProductSupplyReceived price)
-
+        static member Purchased price = Units.For(EventType.ProductSupplyReceived price)
         static member Remaining = Units.For EventType.StockAdjusted
 
     type ISBN with

@@ -31,8 +31,7 @@ let private update msg (model: Model) =
 let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast -> unit) =
     let model, dispatch = React.useElmish (init, update)
 
-    let productModel, updateProductModel =
-        React.useState { ProductModel.SKU = sku; SoldOut = false }
+    let productModel, updateProductModel = React.useState { ProductModel.SKU = sku; SoldOut = false }
 
     let drawerControl =
         DrawerControl( // ↩

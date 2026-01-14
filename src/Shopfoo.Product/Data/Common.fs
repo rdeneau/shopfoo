@@ -20,5 +20,4 @@ module ISBN =
     let ThePragmaticProgrammer = ISBN "9780135957059"
     let UnitTesting = ISBN "9781617296277"
 
-let daysAgo (days: int) =
-    DateOnly.FromDateTime(DateTime.Now.AddDays(-days))
+let daysAgo (days: int) = DateOnly.FromDateTime(DateTime.Now.AddDays(-days))

@@ -38,13 +38,11 @@ module private Implementation =
 
     type PipelineLogger(logger: ILogger) =
         interface IPipelineLogger with
-            member _.LogPipeline name pipeline arg =
-                logifyPlainAsync logger name pipeline arg
+            member _.LogPipeline name pipeline arg = logifyPlainAsync logger name pipeline arg
 
     type PipelineLoggerFactory(loggerFactory: ILoggerFactory) =
         interface IPipelineLoggerFactory with
-            member _.CreateLogger categoryName =
-                PipelineLogger(logger = loggerFactory.CreateLogger categoryName)
+            member _.CreateLogger categoryName = PipelineLogger(logger = loggerFactory.CreateLogger categoryName)
 
     type PipelineTimer(metricsSender: IMetricsSender) =
         member private this.timeAsync(funcName, funcAsync: _ -> Async<'response>, args, buildStatus: 'response -> MetricsStatus) =
@@ -61,20 +59,14 @@ module private Implementation =
             }
 
         interface IPipelineTimer with
-            member this.TimeCommand name pipeline args =
-                this.timeAsync (name, pipeline, args, MetricsStatus.ofResult)
-
-            member this.TimeQuery name pipeline args =
-                this.timeAsync (name, pipeline, args, MetricsStatus.ofOptionExpected)
-
-            member this.TimeQueryOptional name pipeline args =
-                this.timeAsync (name, pipeline, args, MetricsStatus.ofOption)
+            member this.TimeCommand name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofResult)
+            member this.TimeQuery name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofOptionExpected)
+            member this.TimeQueryOptional name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofOption)
 
     [<Sealed>]
     type InterpreterFactory(loggerFactory: IPipelineLoggerFactory, timer: IPipelineTimer) =
         interface IInterpreterFactory with
-            member _.Create(domain) =
-                Interpreter(domain, loggerFactory, timer)
+            member _.Create(domain) = Interpreter(domain, loggerFactory, timer)
 
 type IServiceCollection with
     member services.AddEffects() =

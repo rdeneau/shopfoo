@@ -31,7 +31,7 @@ type prop with
     ]
 
     /// Adds a single child with an automatically generated key.
-    static member inline child(element: ReactElement) =
+    static member inline child(element: ReactElement) = // ↩
         prop.children [ element |> React.withKeyAuto ]
 
 type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations, ?invalid) =
@@ -80,7 +80,7 @@ type GuardProps(criteria: GuardCriteria, value: string, translations: AppTransla
     member _.value = prop.value value
 
 type GuardCriteria with
-    member this.props(value, translations, ?invalid) =
+    member this.props(value, translations, ?invalid) = // ↩
         GuardProps(this, value, translations, ?invalid = invalid)
 
 type Html with
@@ -116,7 +116,6 @@ module JS =
 [<RequireQualifiedAccess>]
 module Cmd =
     let ofMsgDelayed (msg: 'msg) (delay: TimeSpan) =
-        let effect dispatch =
-            JS.runAfter delay (fun () -> dispatch msg)
+        let effect dispatch = JS.runAfter delay (fun () -> dispatch msg)
 
         Cmd.ofEffect effect

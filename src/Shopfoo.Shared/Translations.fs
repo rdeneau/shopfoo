@@ -15,11 +15,8 @@ module TranslationPages =
 
     type Base internal (pageCode: PageCode, ?translations: Translations, ?buildTagCode: string -> TagCode) =
         let buildTagCode = defaultArg buildTagCode TagCode
-
         let translations = defaultArg translations Translations.Empty
-
-        let tagMap =
-            translations.Pages |> Map.tryFind pageCode |> Option.defaultValue Map.empty
+        let tagMap = translations.Pages |> Map.tryFind pageCode |> Option.defaultValue Map.empty
 
         member val internal PageCode = pageCode
 
@@ -29,13 +26,11 @@ module TranslationPages =
 
         member internal _.TranslationPath(TagCode tag) = $"%A{pageCode}.%s{tag}"
 
-        member internal this.FallbackValue tag =
-            $"[*** %s{this.TranslationPath tag} ***]"
+        member internal this.FallbackValue tag = $"[*** %s{this.TranslationPath tag} ***]"
 
         member internal this.Format(tag: string, [<ParamArray>] args: obj[]) = String.Format(this.Get(tag), args)
 
-        member internal this.Get(tag: string, ?defaultValue) =
-            this.Get(buildTagCode tag, ?defaultValue = defaultValue)
+        member internal this.Get(tag: string, ?defaultValue) = this.Get(buildTagCode tag, ?defaultValue = defaultValue)
 
         member internal this.Get(tagCode, ?defaultValue) =
             this.GetOrNone tagCode
@@ -46,9 +41,7 @@ module TranslationPages =
         member internal this.GetOrNone(tagCode) = tagMap |> Map.tryFind tagCode
 
         member internal this.WithPrefix (tagPrefix: string) (useNesting: Base -> _) =
-            let newBase =
-                Base(pageCode, translations, buildTagCode = (fun tag -> buildTagCode $"{tagPrefix}{tag}"))
-
+            let newBase = Base(pageCode, translations, buildTagCode = (fun tag -> buildTagCode $"{tagPrefix}{tag}"))
             useNesting newBase
 
     type Home internal (?translations) =
@@ -80,11 +73,8 @@ module TranslationPages =
         member this.Colon = this.Get "Colon"
         member this.Required = this.Get "Required"
 
-        member this.ChangeLangError(lang: string, error: string) =
-            this.Format("ChangeLangError", lang, error)
-
+        member this.ChangeLangError(lang: string, error: string) = this.Format("ChangeLangError", lang, error)
         member this.ChangeLangOk = this.Get "ChangeLangOk"
-
         member this.ErrorNotFound(what: string) = this.Format("ErrorNotFound", what)
 
         member this.Theme =
@@ -254,12 +244,10 @@ type AppTranslations
 
     member val DebugInfo =
         sections
-        |> List.groupBy (fun (_, info) -> info.PageCode)
-        |> List.map (fun (pageCode, infos) ->
+        |> Seq.groupBy (fun (_, info) -> info.PageCode)
+        |> Seq.map (fun (pageCode, infos) ->
             let count = infos |> Seq.map (snd >> _.Count) |> Seq.head
-
-            let sections =
-                infos |> Seq.map (fun (Section section, _) -> section) |> String.concat ", "
+            let sections = infos |> Seq.map (fun (Section section, _) -> section) |> String.concat ", "
 
             let sectionsIfRelevant =
                 if sections <> $"%A{pageCode}" then
@@ -271,5 +259,5 @@ type AppTranslations
         )
         |> Seq.toArray
 
-let (|TranslationsMissing|_|) pageCode (translations: AppTranslations) =
+let (|TranslationsMissing|_|) pageCode (translations: AppTranslations) = // ↩
     translations.PopulatedPages.Contains pageCode |> not |> Option.ofBool

@@ -4,8 +4,11 @@ open Shopfoo.Domain.Types.Errors
 
 type internal Serializer =
     static member inline TryDeserialize
-        (content: 'content, [<InlineIfLambda>] deserialize: 'content -> 'out, [<InlineIfLambda>] stringify: 'content -> string)
-        =
+        (
+            content: 'content, // ↩
+            [<InlineIfLambda>] deserialize: 'content -> 'out,
+            [<InlineIfLambda>] stringify: 'content -> string
+        ) =
         try
             Ok(deserialize content)
         with exn ->
@@ -33,5 +36,5 @@ type IXmlSerializer =
 [<AutoOpen>]
 module SerializerExtensions =
     type ISerializer with
-        member this.TryDeserialize<'a>(content: string) =
+        member this.TryDeserialize<'a>(content: string) = // ↩
             Serializer.TryDeserialize(content, this.Deserialize<'a>, stringify = id)

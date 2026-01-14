@@ -75,7 +75,8 @@ module ResponseBuilder =
                 |> Response.Error
 
             member _.Ok response =
-                Response.Ok response |> Result.map (fun response -> response, translations)
+                Response.Ok response // ↩
+                |> Result.map (fun response -> response, translations)
         }
 
 type QueryDataAndTranslations<'query> = { // ↩

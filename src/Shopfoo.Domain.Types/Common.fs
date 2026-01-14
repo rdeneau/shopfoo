@@ -119,7 +119,12 @@ module Dictionary =
     /// <param name="getKey">Determine the key for each item.</param>
     /// <param name="items">Items to put in the dictionary</param>
     let ofListBy getKey items =
-        Dictionary<'k, 'v>(seq { for item in items -> KeyValuePair.Create(getKey item, item) })
+        Dictionary<'k, 'v>(
+            seq {
+                for item in items do
+                    KeyValuePair.Create(getKey item, item)
+            }
+        )
 
     let tryUpdateBy getKey item (dict: Dictionary<'k, 'v>) =
         let key = getKey item

@@ -5,7 +5,7 @@ open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Data.Serialization
 
 type HttpClient with
-    member private client.Accept mediaType =
+    member private client.Accept mediaType = // ↩
         client.DefaultRequestHeaders.Accept.Add(Headers.MediaTypeWithQualityHeaderValue mediaType)
 
     member client.AcceptJson() = client.Accept Json.MediaType

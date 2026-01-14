@@ -21,11 +21,8 @@ module SecureRequestHandlerAliases =
 module JsonFSharp =
     let private options = JsonFSharpOptions.Default().ToJsonSerializerOptions()
 
-    let deserialize<'T> (json: string) =
-        JsonSerializer.Deserialize<'T>(json, options)
-
-    let serialize (x: 'T) =
-        JsonSerializer.Serialize<'T>(x, options)
+    let deserialize<'T> (json: string) = JsonSerializer.Deserialize<'T>(json, options)
+    let serialize (x: 'T) = JsonSerializer.Serialize<'T>(x, options)
 
 let private checkToken (claims: Claims) (token: AuthToken option) =
     try

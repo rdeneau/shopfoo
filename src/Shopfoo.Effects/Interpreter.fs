@@ -25,21 +25,16 @@ type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipeli
 
     member private _.Instruction(instruction: Instruction<_, _, _>, withTiming, pipeline: 'arg -> Async<_>) =
         let pipelineWithMonitoring =
-            pipeline |> logger.LogPipeline instruction.Name |> withTiming instruction.Name
+            pipeline // ↩
+            |> logger.LogPipeline instruction.Name
+            |> withTiming instruction.Name
 
         instruction.RunAsync(pipelineWithMonitoring)
 
-    member this.Command(command: Command<_, _>, pipeline) =
-        this.Instruction(command, timer.TimeCommand, pipeline)
-
-    member this.Query(query: Query<_, _, _>, pipeline) =
-        this.Instruction(query, timer.TimeQuery, pipeline)
-
-    member this.QueryFailable(query: QueryFailable<_, _, _>, pipeline) =
-        this.Instruction(query, timer.TimeCommand, pipeline)
-
-    member this.QueryOptional(query: Query<_, _, _>, pipeline) =
-        this.Instruction(query, timer.TimeQueryOptional, pipeline)
+    member this.Command(command: Command<_, _>, pipeline) = this.Instruction(command, timer.TimeCommand, pipeline)
+    member this.Query(query: Query<_, _, _>, pipeline) = this.Instruction(query, timer.TimeQuery, pipeline)
+    member this.QueryFailable(query: QueryFailable<_, _, _>, pipeline) = this.Instruction(query, timer.TimeCommand, pipeline)
+    member this.QueryOptional(query: Query<_, _, _>, pipeline) = this.Instruction(query, timer.TimeQueryOptional, pipeline)
 
     member _.Workflow<'arg, 'ret, 'effect, 'workflow
         when 'effect :> IProgramEffect<Program<Result<'ret, Error>>>

@@ -70,23 +70,13 @@ type StringHttpRequest = {
 type HttpRequestMessage with
     member this.WithHeaders(headers) =
         headers |> List.iter (fun (key, value) -> this.Headers.Add(name = key, value = value))
-
         this
 
-    static member Get(uri: Uri, ?content) =
-        new HttpRequestMessage(HttpMethod.Get, uri, Content = Option.toObj content)
-
-    static member Post(uri: Uri, ?content) =
-        new HttpRequestMessage(HttpMethod.Post, uri, Content = Option.toObj content)
-
-    static member Put(uri: Uri, ?content) =
-        new HttpRequestMessage(HttpMethod.Put, uri, Content = Option.toObj content)
-
-    static member Patch(uri: Uri, ?content) =
-        new HttpRequestMessage(HttpMethod.Patch, uri, Content = Option.toObj content)
-
-    static member Delete(uri: Uri, ?content) =
-        new HttpRequestMessage(HttpMethod.Delete, uri, Content = Option.toObj content)
+    static member Get(uri: Uri, ?content) = new HttpRequestMessage(HttpMethod.Get, uri, Content = Option.toObj content)
+    static member Post(uri: Uri, ?content) = new HttpRequestMessage(HttpMethod.Post, uri, Content = Option.toObj content)
+    static member Put(uri: Uri, ?content) = new HttpRequestMessage(HttpMethod.Put, uri, Content = Option.toObj content)
+    static member Patch(uri: Uri, ?content) = new HttpRequestMessage(HttpMethod.Patch, uri, Content = Option.toObj content)
+    static member Delete(uri: Uri, ?content) = new HttpRequestMessage(HttpMethod.Delete, uri, Content = Option.toObj content)
 
 type HttpResponseMessage with
     member private this.TryAsync(readContent, ?rq: StringHttpRequest) =
@@ -105,7 +95,7 @@ type HttpResponseMessage with
                     return Error(HttpStatus.FromHttpStatusCode(this.StatusCode, content))
         }
 
-    member this.TryReadContentAsStreamAsync() =
+    member this.TryReadContentAsStreamAsync() = // ↩
         this.TryAsync(_.Content.ReadAsStreamAsync())
 
     member this.TryReadContentAsStringAsync(rq: HttpRequestMessage) =
@@ -117,31 +107,18 @@ type HttpResponseMessage with
     member this.TryReadGZippableContentAsStringAsync(rq: HttpRequestMessage) =
         this.TryAsync(_.Content.ReadAsGZippableStringAsync(), StringHttpRequest.OfRequestMessage(rq))
 
-    member this.ToResultAsync(rq: StringHttpRequest) =
-        this.TryAsync((fun _ -> task { return () }), rq)
-
-    member this.ToResultAsync(verb, uri, ?request) =
-        this.ToResultAsync(StringHttpRequest.Create(verb, uri, ?content = request))
-
-    member this.ToResultAsync(rq: HttpRequestMessage) =
-        this.ToResultAsync(StringHttpRequest.OfRequestMessage(rq))
+    member this.ToResultAsync(rq: StringHttpRequest) = this.TryAsync((fun _ -> task { return () }), rq)
+    member this.ToResultAsync(rq: HttpRequestMessage) = this.ToResultAsync(StringHttpRequest.OfRequestMessage(rq))
+    member this.ToResultAsync(verb, uri, ?request) = this.ToResultAsync(StringHttpRequest.Create(verb, uri, ?content = request))
 
 type HttpApiSerializer(serializer: ISerializer, httpApiName) =
-    member _.Encode(payLoad) =
-        new StringContent(serializer.Serialize payLoad, Encoding.UTF8, serializer.ContentType)
-
-    member _.Serialize(payLoad) = // ↩
-        serializer.Serialize payLoad
-
-    member _.TryDeserializeResult<'a>(result) =
-        Serializer.TryDeserializeApiResult(result, httpApiName, serializer.TryDeserialize<'a>)
+    member _.Encode(payLoad) = new StringContent(serializer.Serialize payLoad, Encoding.UTF8, serializer.ContentType)
+    member _.Serialize(payLoad) = serializer.Serialize payLoad
+    member _.TryDeserializeResult<'a>(result) = Serializer.TryDeserializeApiResult(result, httpApiName, serializer.TryDeserialize<'a>)
 
 type HttpApiSerializerFactory(jsonSerializer: IJsonSerializer, xmlSerializer: IXmlSerializer) =
-    member _.Json(httpApiName) =
-        HttpApiSerializer(jsonSerializer, httpApiName)
-
-    member _.Xml(httpApiName) =
-        HttpApiSerializer(xmlSerializer, httpApiName)
+    member _.Json(httpApiName) = HttpApiSerializer(jsonSerializer, httpApiName)
+    member _.Xml(httpApiName) = HttpApiSerializer(xmlSerializer, httpApiName)
 
 type Uri with
     static member Relative(path: string) = Uri(path, UriKind.Relative)

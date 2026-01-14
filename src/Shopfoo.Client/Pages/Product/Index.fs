@@ -78,8 +78,7 @@ let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
-        let model, dispatch =
-            React.useElmish (init filters, update fillTranslations fullContext, [||])
+        let model, dispatch = React.useElmish (init filters, update fillTranslations fullContext, [||])
 
         let translations = fullContext.Translations
 

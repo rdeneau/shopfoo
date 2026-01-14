@@ -75,8 +75,7 @@ type FullContext with
 
         this.Cmder, secureRequest
 
-    member this.PrepareQueryWithTranslations query =
-        this.PrepareRequest { Query = query; TranslationPages = this.Translations.EmptyPages }
+    member this.PrepareQueryWithTranslations query = this.PrepareRequest { Query = query; TranslationPages = this.Translations.EmptyPages }
 
 /// <summary>
 /// Helper type to indicate a property in the MVU <c>Model</c>

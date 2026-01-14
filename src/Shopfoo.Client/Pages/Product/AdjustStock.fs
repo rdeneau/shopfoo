@@ -38,8 +38,7 @@ module private Cmd =
             Success = AdjustStock << Done << Ok
         }
 
-let private init stock =
-    { Stock = stock; SaveDate = Remote.Empty }, Cmd.none
+let private init stock = { Stock = stock; SaveDate = Remote.Empty }, Cmd.none
 
 let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
     match msg with

@@ -31,14 +31,14 @@ type Prices = {
     /// A.k.a. Recommended price
     ListPrice: Money option
 } with
-    static member Create(sku, currency, retailPrice, ?listPrice) = {
+    static member Create(sku, currency, retailPrice, ?listPrice) : Prices = {
         SKU = sku
         Currency = currency
         RetailPrice = RetailPrice.Regular(Money.ByCurrency currency retailPrice)
         ListPrice = listPrice |> Option.map (Money.ByCurrency currency)
     }
 
-    static member Create(isbn: ISBN, currency, retailPrice, ?listPrice) =
+    static member Create(isbn: ISBN, currency, retailPrice, ?listPrice) = // ↩
         Prices.Create(isbn.AsSKU, currency, retailPrice, ?listPrice = listPrice)
 
 type Sale = {

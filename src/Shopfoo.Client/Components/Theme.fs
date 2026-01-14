@@ -30,8 +30,7 @@ let private keyOf x = $"{x}".ToLowerInvariant()
 
 type Theme with
     member theme.ApplyOnHtml(?delay: TimeSpan) =
-        let setTheme () =
-            Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
+        let setTheme () = Browser.Dom.document.documentElement.setAttribute ("data-theme", keyOf theme)
 
         // Warning: setTheme works only when executed after the JS loop (React constraint?)
         setTheme |> JS.runAfter (defaultArg delay TimeSpan.Zero)
