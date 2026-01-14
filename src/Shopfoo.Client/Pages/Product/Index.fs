@@ -93,12 +93,12 @@ let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
         Html.section [
             prop.key "products-page"
             prop.children [
-                IndexFilterBar filters products selectedProvider selectProvider translations
+                IndexFilterBar "products-filter-bar" filters products selectedProvider selectProvider translations
 
                 match model.Products with
                 | Remote.Empty -> ()
                 | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
                 | Remote.LoadError apiError -> Alert.apiError "products-load-error" apiError fullContext.User
-                | Remote.Loaded(provider, products) -> IndexTable filters products provider translations
+                | Remote.Loaded(provider, products) -> IndexTable "products-table" filters products provider translations
             ]
         ]

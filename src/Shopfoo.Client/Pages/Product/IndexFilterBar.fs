@@ -2,7 +2,9 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Feliz.Router
 open Glutinum.IconifyIcons.Fa6Solid
+open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Routing
@@ -13,16 +15,15 @@ open Shopfoo.Shared.Translations
 
 type private Tab(filters: Filters, translations: AppTranslations) =
     let reactKeyOf x = String.toKebab $"%A{x}"
-
-    let navigateWithFilters changeFilters = Page.ProductIndex(changeFilters filters) |> Router.navigatePage
+    let pageWithFilters changeFilters = Page.ProductIndex(changeFilters filters)
 
     member _.bazaarCategory bazaarCategory iconifyIcon text =
         Daisy.tab [
             if filters.BazaarCategory = Some bazaarCategory then
                 tab.active
-            prop.key $"tab-store-category-%s{reactKeyOf bazaarCategory}"
+            prop.key $"tab-bazaar-category-%s{reactKeyOf bazaarCategory}"
             prop.className "gap-2"
-            prop.onClick (fun _ -> navigateWithFilters _.ToBazaarWithCategory(bazaarCategory))
+            yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(bazaarCategory))
             prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
         ]
 
@@ -49,8 +50,8 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             items = authors,
             selectedItem = selectedAuthor,
             formatItem = _.Name,
-            onSelect = (fun author -> navigateWithFilters _.ToBooksWithAuthor(Some author.OLID)),
-            onReset = (fun () -> navigateWithFilters _.ToBooksWithAuthor(None))
+            onSelect = FilterAction.NavigateToPage(fun author -> pageWithFilters _.ToBooksWithAuthor(Some author.OLID)),
+            onReset = FilterAction.NavigateToPage(fun () -> pageWithFilters _.ToBooksWithAuthor(None))
         )
 
     member _.booksTags products =
@@ -71,11 +72,13 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             items = tags,
             selectedItem = filters.BooksTag,
             formatItem = id,
-            onSelect = (fun tag -> navigateWithFilters _.ToBooksWithTag(Some tag)),
-            onReset = (fun () -> navigateWithFilters _.ToBooksWithTag(None))
+            onSelect = FilterAction.NavigateToPage(fun tag -> pageWithFilters _.ToBooksWithTag(Some tag)),
+            onReset = FilterAction.NavigateToPage(fun () -> pageWithFilters _.ToBooksWithTag(None))
         )
 
     member _.provider (provider: Provider) (selectedProvider: Provider option) (selectProvider: Provider -> unit) text iconifyIcon page =
+        let (PageUrl pageUrl) = page
+
         Daisy.tab [
             prop.key $"tab-provider-%s{reactKeyOf provider}"
             prop.className "gap-2"
@@ -83,16 +86,18 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             if selectedProvider = Some provider then
                 tab.active
             else
-                prop.onClick (fun _ ->
+                prop.href (Router.formatPath (pageUrl.Segments, queryString = pageUrl.Query))
+
+                prop.onClick (fun ev ->
                     selectProvider provider
-                    Router.navigatePage page
+                    Router.goToUrl ev
                 )
         ]
 
     // TODO RDE: add checkbox Highlight search terms
     member _.search =
-        // TODO RDE: fix bug that reset the selected authors when searching
-        let setSearchTerm searchTerm = navigateWithFilters (fun x -> { x with SearchTerm = searchTerm })
+        let setSearchTerm searchTerm =
+            pageWithFilters (fun x -> { x with SearchTerm = searchTerm }) |> Router.navigatePage
 
         Daisy.label.input [
             prop.key "search-box"
@@ -123,12 +128,19 @@ type private Tab(filters: Filters, translations: AppTranslations) =
         ]
 
 [<ReactComponent>]
-let IndexFilterBar (filters: Filters) (products: Product list) (selectedProvider: Provider option) selectProvider (translations: AppTranslations) =
+let IndexFilterBar
+    key
+    (filters: Filters)
+    (products: Product list)
+    (selectedProvider: Provider option)
+    selectProvider
+    (translations: AppTranslations)
+    =
     let tab = Tab(filters, translations)
 
     Daisy.tabs [
         tabs.border
-        prop.key "tabs-providers"
+        prop.key $"%s{key}-content"
         prop.className "pb-2 border-b border-gray-200"
         prop.children [
             tab.provider OpenLibrary selectedProvider selectProvider translations.Home.Books fa6Solid.book (Page.ProductIndex(filters.ToBooks()))

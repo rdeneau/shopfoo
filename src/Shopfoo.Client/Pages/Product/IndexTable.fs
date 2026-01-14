@@ -20,8 +20,8 @@ type Col =
     | Description
     | BazaarCategory
     | BookAuthors
-    // TODO RDE: | BookTags
-    // TODO RDE: | SKU
+    | BookTags
+    | SKU
 
 type ColDef = { // ↩
     Col: Col
@@ -49,7 +49,7 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
     let highlightBorder = "rounded-sm border-2 border-yellow-400"
     let highlightColors = "bg-yellow-200 text-black"
 
-    let highlight (fullText: string) (key: string) = [
+    let highlight (fullText: string) (reactKey: string) : ReactElement list = [
         match filters.SearchTerm with
         | None
         | Some String.NullOrWhiteSpace ->
@@ -75,14 +75,14 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                 // Matched text (highlighted)
                 if i < matches.Length then
                     Html.mark [
-                        prop.key $"%s{key}-match-%i{i}"
+                        prop.key $"%s{reactKey}-match-%i{i}"
                         prop.className $"%s{highlightColors} %s{highlightBorder}"
                         prop.text matches[i].Value
                     ]
     ]
 
     member _.num = Html.td [ prop.key $"%s{row.Key}-num"; prop.text (row.Index + 1) ]
-    member _.sku = Html.td [ prop.key $"%s{row.Key}-sku"; prop.text row.Product.SKU.Value ]
+    member _.sku = Html.td [ prop.key $"%s{row.Key}-sku"; prop.children (highlight row.Product.SKU.Value $"%s{row.Key}-sku-text") ]
 
     member _.bazaarCategory =
         Html.td [
@@ -99,7 +99,7 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
             prop.children [
                 Html.div [
                     prop.key $"%s{row.Key}-authors-content"
-                    prop.className "w-40 gap-2 line-clamp-2 group-hover:line-clamp-3"
+                    prop.className "w-40 flex gap-2 line-clamp-2 group-hover:line-clamp-3"
                     prop.children [
                         match book with
                         | None -> Html.text " "
@@ -107,9 +107,9 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                             for author in book.Authors do
                                 Html.span [
                                     prop.key $"%s{row.Key}-author-%s{String.toKebab author.Name}"
-                                    prop.text author.Name
                                     if filters.BooksAuthorId = Some author.OLID then
                                         prop.className $"%s{highlightColors} %s{highlightBorder}"
+                                    prop.children (highlight author.Name $"%s{row.Key}-author-%s{String.toKebab author.Name}-text")
                                 ]
                     ]
                 ]
@@ -119,18 +119,33 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
     member _.bookTags =
         Html.td [
             prop.key $"%s{row.Key}-tags"
-            prop.className "gap-2"
             prop.children [
-                match book with
-                | None -> Html.text " "
-                | Some book ->
-                    for tag in book.Tags do
-                        Daisy.badge [
-                            prop.key $"%s{row.Key}-tag-%s{tag}"
-                            prop.text tag
-                            if filters.BooksTag = Some tag then
-                                prop.className highlightColors
-                        ]
+                Html.div [
+                    prop.key $"%s{row.Key}-tags-content"
+                    prop.className "flex flex-wrap gap-2"
+                    prop.children [
+                        match book with
+                        | None -> Html.text " "
+                        | Some book ->
+                            for tag in book.Tags do
+                                Daisy.badge [
+                                    badge.ghost
+                                    prop.key $"%s{row.Key}-tag-%s{tag}"
+                                    prop.classes [
+                                        "max-w-[150px] group-hover:max-w-none"
+                                        if filters.BooksTag = Some tag then
+                                            highlightColors
+                                    ]
+                                    prop.children [
+                                        Html.span [
+                                            prop.key $"%s{row.Key}-tags-text"
+                                            prop.className "truncate"
+                                            prop.text tag
+                                        ]
+                                    ]
+                                ]
+                    ]
+                ]
             ]
         ]
 
@@ -181,10 +196,10 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
         ]
 
 [<ReactComponent>]
-let IndexTable (filters: Filters) products provider (translations: AppTranslations) =
+let IndexTable key (filters: Filters) products provider (translations: AppTranslations) =
     let columnDefinitions = [
         Col.Num.SortableBy ProductSort.Num
-        // TODO RDE: Col.SKU.SortableBy ProductSort.SKU
+        Col.SKU.SortableBy ProductSort.SKU
 
         if provider = FakeStore then
             Col.BazaarCategory.SortableBy ProductSort.StoreCategory
@@ -193,7 +208,7 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
 
         if provider = OpenLibrary then
             Col.BookAuthors.SortableBy ProductSort.BookAuthors
-            // TODO RDE: Col.BookTags.SortableBy ProductSort.BookTags
+            Col.BookTags.SortableBy ProductSort.BookTags
 
         Col.Description.NotSortable
     ]
@@ -202,12 +217,12 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
         let key, text =
             match colDef.Col with
             | Col.Num -> "num", "#"
-            // TODO RDE: | Col.SKU -> "sku", "SKU"
+            | Col.SKU -> "sku", "SKU"
             | Col.Name -> "name", translations.Product.Name
             | Col.Description -> "description", translations.Product.Description
             | Col.BazaarCategory -> "category", translations.Product.Category
             | Col.BookAuthors -> "authors", translations.Product.Authors
-            // TODO RDE: | Col.BookTags -> "tags", translations.Product.Tags
+            | Col.BookTags -> "tags", translations.Product.Tags
 
         Html.th [
             prop.key $"product-th-%s{key}"
@@ -258,7 +273,7 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
         ]
 
     Daisy.table [
-        prop.key "product-table"
+        prop.key $"%s{key}-content"
         prop.className "table-pin-rows w-full border-collapse"
         prop.children [
             Html.thead [
@@ -288,8 +303,8 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
                                     | Col.Description -> td.description
                                     | Col.BazaarCategory -> td.bazaarCategory
                                     | Col.BookAuthors -> td.bookAuthors
-                                    // TODO RDE: | Col.BookTags -> td.bookTags
-                                    // TODO RDE: | Col.SKU -> td.sku
+                                    | Col.BookTags -> td.bookTags
+                                    | Col.SKU -> td.sku
                             ]
                         ]
                 ]

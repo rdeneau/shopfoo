@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <GenerateProgramFile>false</GenerateProgramFile>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="paket.references" />
+    <Compile Include="FsCheckArbs\Common.fs" />
+    <Compile Include="FsCheckArbs\Domain.fs" />
+    <Compile Include="FsCheckArbs\UI.fs" />
+    <Compile Include="FsCheckArbs\Shopfoo.fs" />
+    <Compile Include="RoutingTests.fs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Shopfoo.Client\Shopfoo.Client.fsproj" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

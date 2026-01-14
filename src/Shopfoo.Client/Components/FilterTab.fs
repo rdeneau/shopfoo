@@ -3,7 +3,13 @@
 open Feliz
 open Feliz.DaisyUI
 open Glutinum.Iconify
+open Shopfoo.Client
 open Shopfoo.Client.Components.Icon
+open Shopfoo.Client.Routing
+
+type FilterAction<'item> =
+    | Click of onClick: ('item -> unit)
+    | NavigateToPage of getPage: ('item -> Page)
 
 [<RequireQualifiedAccess>]
 type Filter =
@@ -16,8 +22,8 @@ type Filter =
             items: 'item list,
             selectedItem: 'item option,
             formatItem: 'item -> string,
-            onSelect: 'item -> unit,
-            onReset: unit -> unit
+            onSelect: FilterAction<'item>,
+            onReset: FilterAction<unit>
         ) =
         match selectedItem with
         | None ->
@@ -50,7 +56,9 @@ type Filter =
                                         Html.a [
                                             prop.key $"%s{key}-menu-item-%s{itemLabel}-a"
                                             prop.text itemLabel
-                                            prop.onClick (fun _ -> onSelect item)
+                                            match onSelect with
+                                            | Click onClick -> prop.onClick (fun _ -> onClick item)
+                                            | NavigateToPage getPage -> yield! prop.hrefRouted (getPage item)
                                         ]
                                     ]
                                 ]
@@ -72,8 +80,10 @@ type Filter =
                     Daisy.button.a [
                         prop.key $"%s{key}-tab-close-button"
                         prop.className "btn btn-ghost btn-sm btn-circle ml-[-4px]"
-                        prop.onClick (fun _ -> onReset ())
                         prop.text "✕"
+                        match onReset with
+                        | Click onClick -> prop.onClick (fun _ -> onClick ())
+                        | NavigateToPage getPage -> yield! prop.hrefRouted (getPage ())
                     ]
                 ]
             ]

@@ -9,10 +9,10 @@ open Shopfoo.Shared.Translations
 type ProductSort =
     | Num
     | Title
-    // TODO RDE: | BookTags
+    | BookTags
     | BookAuthors
     | StoreCategory
-    // TODO RDE: | SKU
+    | SKU
 
 type SortDirection =
     | Ascending
@@ -112,7 +112,7 @@ module Filters =
             match filters.SortBy with
             | None -> ()
             | Some(ProductSort.Num, _) -> SortKeyPart.Num row.Index
-            // TODO RDE: | Some(ProductSort.SKU, _) -> SortKeyPart.Text row.Product.SKU.Value
+            | Some(ProductSort.SKU, _) -> SortKeyPart.Text row.Product.SKU.Value
             | Some(ProductSort.Title, _) -> SortKeyPart.Text row.Product.Title
 
             | Some(ProductSort.BookAuthors, _) ->
@@ -124,15 +124,14 @@ module Filters =
 
                 SortKeyPart.Text row.Product.Title
 
-            // TODO RDE:
-            // | Some(ProductSort.BookTags, _) ->
-            //     match row.Product.Category with
-            //     | Category.Books book ->
-            //         for tag in book.Tags do
-            //             SortKeyPart.Text tag
-            //     | _ -> ()
-            //
-            //     SortKeyPart.Text row.Product.Title
+            | Some(ProductSort.BookTags, _) ->
+                match row.Product.Category with
+                | Category.Books book ->
+                    for tag in book.Tags do
+                        SortKeyPart.Text tag
+                | _ -> ()
+
+                SortKeyPart.Text row.Product.Title
 
             | Some(ProductSort.StoreCategory, _) ->
                 match row.Product.Category with
@@ -190,7 +189,7 @@ module Filters =
                     | Some selectedCategory, Category.Bazaar storeProduct -> storeProduct.Category = selectedCategory
                     | _ -> true
 
-                if isSearchTermFound || isAuthorMatched || isTagMatched || isBazaarCategoryMatched then
+                if isSearchTermFound && isAuthorMatched && isTagMatched && isBazaarCategoryMatched then
                     rowBuilder.Build(product, provider)
         ]
 
