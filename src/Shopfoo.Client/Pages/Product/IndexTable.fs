@@ -7,9 +7,8 @@ open Feliz.DaisyUI
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components.Icon
-open Shopfoo.Client.Pages.Product.Filters
 open Shopfoo.Client.Routing
-open Shopfoo.Client.Shared
+open Shopfoo.Client.Filters
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
@@ -18,11 +17,11 @@ open Shopfoo.Shared.Translations
 type Col =
     | Num
     | Name
-    | Authors
-    | Category
     | Description
-// TODO RDE: Col.SKU
-// TODO RDE: Col.Tags
+    | BazaarCategory
+    | BookAuthors
+    // TODO RDE: | BookTags
+    // TODO RDE: | SKU
 
 type ColDef = { // ↩
     Col: Col
@@ -44,17 +43,14 @@ type private Row with
 type private Td(filters: Filters, translations: AppTranslations, row: Row) =
     let book =
         match row.Product.Category with
-        | Category.Books book ->
-            Some {|
-                Subtitle = book.Subtitle // ↩
-                Authors = book.Authors |> List.map _.Name |> String.concat ", "
-            |}
+        | Category.Books book -> Some book
         | _ -> None
 
-    let highlight (fullText: string) (key: string) = [
-        let term = filters.SearchTerm
+    let highlightBorder = "rounded-sm border-2 border-yellow-400"
+    let highlightColors = "bg-yellow-200 text-black"
 
-        match term with
+    let highlight (fullText: string) (key: string) = [
+        match filters.SearchTerm with
         | None
         | Some String.NullOrWhiteSpace ->
             // No highlighting
@@ -80,32 +76,62 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                 if i < matches.Length then
                     Html.mark [
                         prop.key $"%s{key}-match-%i{i}"
-                        prop.className "bg-yellow-200 text-black rounded-sm"
+                        prop.className $"%s{highlightColors} %s{highlightBorder}"
                         prop.text matches[i].Value
                     ]
     ]
 
-    member _.authors =
+    member _.num = Html.td [ prop.key $"%s{row.Key}-num"; prop.text (row.Index + 1) ]
+    member _.sku = Html.td [ prop.key $"%s{row.Key}-sku"; prop.text row.Product.SKU.Value ]
+
+    member _.bazaarCategory =
+        Html.td [
+            prop.key $"%s{row.Key}-category"
+            prop.className "w-30"
+            match row.Product.Category with
+            | Category.Bazaar storeProduct -> prop.text (translations.Product.StoreCategoryOf storeProduct.Category)
+            | _ -> ()
+        ]
+
+    member _.bookAuthors =
         Html.td [
             prop.key $"%s{row.Key}-authors"
             prop.children [
                 Html.div [
                     prop.key $"%s{row.Key}-authors-content"
-                    prop.className "w-40 line-clamp-2 group-hover:line-clamp-3"
-                    match book with
-                    | Some book -> prop.text book.Authors
-                    | None -> prop.text " "
+                    prop.className "w-40 gap-2 line-clamp-2 group-hover:line-clamp-3"
+                    prop.children [
+                        match book with
+                        | None -> Html.text " "
+                        | Some book ->
+                            for author in book.Authors do
+                                Html.span [
+                                    prop.key $"%s{row.Key}-author-%s{String.toKebab author.Name}"
+                                    prop.text author.Name
+                                    if filters.BooksAuthorId = Some author.OLID then
+                                        prop.className $"%s{highlightColors} %s{highlightBorder}"
+                                ]
+                    ]
                 ]
             ]
         ]
 
-    member _.category =
+    member _.bookTags =
         Html.td [
-            prop.key $"%s{row.Key}-category"
-            prop.className "w-30"
-            match row.Product.Category with
-            | Category.Store storeProduct -> prop.text (translations.Product.StoreCategoryOf storeProduct.Category)
-            | _ -> ()
+            prop.key $"%s{row.Key}-tags"
+            prop.className "gap-2"
+            prop.children [
+                match book with
+                | None -> Html.text " "
+                | Some book ->
+                    for tag in book.Tags do
+                        Daisy.badge [
+                            prop.key $"%s{row.Key}-tag-%s{tag}"
+                            prop.text tag
+                            if filters.BooksTag = Some tag then
+                                prop.className highlightColors
+                        ]
+            ]
         ]
 
     member _.description =
@@ -118,12 +144,6 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                     prop.children (highlight row.Product.Description $"%s{row.Key}-desc-text")
                 ]
             ]
-        ]
-
-    member _.num =
-        Html.td [ // ↩
-            prop.key $"%s{row.Key}-num"
-            prop.text (row.Index + 1)
         ]
 
     member _.name =
@@ -167,13 +187,13 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
         // TODO RDE: Col.SKU.SortableBy ProductSort.SKU
 
         if provider = FakeStore then
-            Col.Category.SortableBy ProductSort.StoreCategory
+            Col.BazaarCategory.SortableBy ProductSort.StoreCategory
 
         Col.Name.SortableBy ProductSort.Title
 
         if provider = OpenLibrary then
-            // TODO RDE: Col.Tags.SortableBy ProductSort.Tags
-            Col.Authors.SortableBy ProductSort.BookAuthors
+            Col.BookAuthors.SortableBy ProductSort.BookAuthors
+            // TODO RDE: Col.BookTags.SortableBy ProductSort.BookTags
 
         Col.Description.NotSortable
     ]
@@ -182,10 +202,12 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
         let key, text =
             match colDef.Col with
             | Col.Num -> "num", "#"
+            // TODO RDE: | Col.SKU -> "sku", "SKU"
             | Col.Name -> "name", translations.Product.Name
-            | Col.Authors -> "authors", translations.Product.Authors
-            | Col.Category -> "category", translations.Product.Category
             | Col.Description -> "description", translations.Product.Description
+            | Col.BazaarCategory -> "category", translations.Product.Category
+            | Col.BookAuthors -> "authors", translations.Product.Authors
+            // TODO RDE: | Col.BookTags -> "tags", translations.Product.Tags
 
         Html.th [
             prop.key $"product-th-%s{key}"
@@ -201,12 +223,7 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
                         | _ -> Ascending
 
                     let nextSortBy = colDef.SortableBy |> Option.map (fun key -> key, nextDir)
-
-                    let nextPage =
-                        match provider with
-                        | OpenLibrary -> Page.ProductBooks(filters.BooksAuthorId, filters.SearchTerm, nextSortBy)
-                        | FakeStore -> Page.ProductBazaar(filters.StoreCategory, filters.SearchTerm, nextSortBy)
-
+                    let nextPage = Page.ProductIndex { filters with SortBy = nextSortBy }
                     Router.navigatePage nextPage
                 )
 
@@ -268,9 +285,11 @@ let IndexTable (filters: Filters) products provider (translations: AppTranslatio
                                     match colDef.Col with
                                     | Col.Num -> td.num
                                     | Col.Name -> td.name
-                                    | Col.Authors -> td.authors
-                                    | Col.Category -> td.category
                                     | Col.Description -> td.description
+                                    | Col.BazaarCategory -> td.bazaarCategory
+                                    | Col.BookAuthors -> td.bookAuthors
+                                    // TODO RDE: | Col.BookTags -> td.bookTags
+                                    // TODO RDE: | Col.SKU -> td.sku
                             ]
                         ]
                 ]

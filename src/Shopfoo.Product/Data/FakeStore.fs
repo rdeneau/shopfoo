@@ -40,19 +40,19 @@ type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApi
 module private Mappers =
     module DtoToModel =
         let mapProduct storeProduct (product: ProductDto) : Product = {
-            Category = Category.Store storeProduct
+            Category = Category.Bazaar storeProduct
             SKU = storeProduct.FSID.AsSKU
             Title = product.Title
             Description = product.Description
             ImageUrl = ImageUrl.Valid product.Image
         }
 
-        let mapStoreCategory (category: string) : StoreCategory option =
+        let mapStoreCategory (category: string) : BazaarCategory option =
             match category.ToLowerInvariant() with
             | "men's clothing"
-            | "women's clothing" -> Some StoreCategory.Clothing
-            | "electronics" -> Some StoreCategory.Electronics
-            | "jewelery" -> Some StoreCategory.Jewelry
+            | "women's clothing" -> Some BazaarCategory.Clothing
+            | "electronics" -> Some BazaarCategory.Electronics
+            | "jewelery" -> Some BazaarCategory.Jewelry
             | _ -> None
 
 type private InMemoryProductCache() =
@@ -124,9 +124,9 @@ module internal Pipeline =
                         | Some storeCategory ->
                             let currency =
                                 match storeCategory with
-                                | StoreCategory.Clothing -> EUR
-                                | StoreCategory.Electronics -> USD
-                                | StoreCategory.Jewelry -> EUR
+                                | BazaarCategory.Clothing -> EUR
+                                | BazaarCategory.Electronics -> USD
+                                | BazaarCategory.Jewelry -> EUR
 
                             let storeProduct = { FSID = FSID productDto.Id; Category = storeCategory }
                             let product = Mappers.DtoToModel.mapProduct storeProduct productDto

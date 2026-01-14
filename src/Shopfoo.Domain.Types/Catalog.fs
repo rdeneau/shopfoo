@@ -3,8 +3,18 @@
 open Shopfoo.Domain.Types.Errors
 
 type Provider =
+    /// Bazaar provider
     | FakeStore
+    /// Book provider
     | OpenLibrary
+
+[<RequireQualifiedAccess>]
+type BazaarCategory =
+    | Clothing
+    | Electronics
+    | Jewelry
+
+type BazaarProduct = { FSID: FSID; Category: BazaarCategory }
 
 type OLID = OLID of string
 
@@ -18,17 +28,9 @@ type Book = {
 }
 
 [<RequireQualifiedAccess>]
-type StoreCategory =
-    | Clothing
-    | Electronics
-    | Jewelry
-
-type StoreProduct = { FSID: FSID; Category: StoreCategory }
-
-[<RequireQualifiedAccess>]
 type Category =
+    | Bazaar of BazaarProduct
     | Books of Book
-    | Store of StoreProduct
 
 type ImageUrl = {
     Url: string

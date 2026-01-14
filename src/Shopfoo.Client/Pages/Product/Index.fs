@@ -5,6 +5,7 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client.Components
+open Shopfoo.Client.Filters
 open Shopfoo.Client.Pages.Product.Table
 open Shopfoo.Client.Pages.Product.Filters
 open Shopfoo.Client.Remoting

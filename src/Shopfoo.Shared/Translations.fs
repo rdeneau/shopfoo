@@ -169,9 +169,9 @@ module TranslationPages =
 
         member this.StoreCategoryOf storeCategory =
             match storeCategory with
-            | StoreCategory.Clothing -> this.StoreCategory.Clothing
-            | StoreCategory.Electronics -> this.StoreCategory.Electronics
-            | StoreCategory.Jewelry -> this.StoreCategory.Jewelry
+            | BazaarCategory.Clothing -> this.StoreCategory.Clothing
+            | BazaarCategory.Electronics -> this.StoreCategory.Electronics
+            | BazaarCategory.Jewelry -> this.StoreCategory.Jewelry
 
         member this.Stock = this.Get "Stock"
         member this.StockAfterInventory = this.Get "StockAfterInventory"

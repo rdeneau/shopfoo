@@ -29,4 +29,4 @@ module Pipeline =
     let saveProduct (product: Product) =
         match product.Category with
         | Category.Books _ -> Books.Pipeline.saveProduct product
-        | Category.Store _ -> FakeStore.Pipeline.saveProduct product
+        | Category.Bazaar _ -> FakeStore.Pipeline.saveProduct product

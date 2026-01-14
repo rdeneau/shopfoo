@@ -3,6 +3,7 @@
 open System
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Client.Filters
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
 open Shopfoo.Shared.Translations
@@ -37,16 +38,10 @@ type private Nav(currentPage, translations: AppTranslations) =
     member nav.About = nav.page (Page.About, translate _.Home.About)
     member nav.Admin = nav.page (Page.Admin, translate _.Home.Admin)
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
-    member nav.Products = nav.page (Page.ProductIndex, translate _.Home.Products)
-
-    member nav.Bazaar =
-        nav.page (Page.ProductBazaar(category = None, searchTerm = None, sortBy = None), translate _.Home.Bazaar)
-
-    member nav.Books =
-        nav.page (Page.ProductBooks(authorId = None, searchTerm = None, sortBy = None), translate _.Home.Books)
-
-    member nav.Product sku =
-        nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")
+    member nav.Products = nav.page (Page.ProductIndex Filters.none, translate _.Home.Products)
+    member nav.Bazaar = nav.page (Page.ProductIndex(Filters.none.ToBazaar()), translate _.Home.Bazaar)
+    member nav.Books = nav.page (Page.ProductIndex(Filters.none.ToBooks()), translate _.Home.Books)
+    member nav.Product sku = nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")
 
 [<ReactComponent>]
 let AppNavBar key currentPage pageDisplayedInline translations children =
@@ -70,13 +65,13 @@ let AppNavBar key currentPage pageDisplayedInline translations children =
                             | Page.About -> nav.About
                             | Page.Admin -> nav.Admin
                             | Page.Login -> nav.Login
-                            | Page.ProductIndex -> nav.Products
+                            | Page.ProductIndex { CategoryFilters = None } -> nav.Products
 
-                            | Page.ProductBazaar _ ->
+                            | Page.ProductIndex { CategoryFilters = Some(CategoryFilters.Bazaar _) } ->
                                 nav.Products
                                 nav.Bazaar
 
-                            | Page.ProductBooks _ ->
+                            | Page.ProductIndex { CategoryFilters = Some(CategoryFilters.Books _) } ->
                                 nav.Products
                                 nav.Books
 

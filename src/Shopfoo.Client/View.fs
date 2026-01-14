@@ -13,6 +13,7 @@ open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
 open Shopfoo.Client.Components.User
+open Shopfoo.Client.Filters
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
@@ -99,7 +100,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.Login user ->
         { model with Model.FullContext.User = user },
         match model.Page with
-        | Page.Login -> Cmd.navigatePage Page.ProductIndex
+        | Page.Login -> Cmd.navigatePage (Page.ProductIndex Filters.none)
         | _ -> Cmd.none
 
     | Msg.Logout ->
@@ -115,39 +116,6 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
 // -- View --------------------------------------------------------
 
-module private Filters =
-    open Shopfoo.Client.Pages.Product.Filters
-
-    let private none: Filters = {
-        Provider = None
-        BooksAuthorId = None
-        StoreCategory = None
-        SearchTerm = None
-        SortBy = None
-    }
-
-    let private bazaar storeCategory searchTerm sortBy : Filters = {
-        none with
-            Provider = Some FakeStore
-            StoreCategory = storeCategory
-            SearchTerm = searchTerm
-            SortBy = sortBy
-    }
-
-    let private books authorId searchTerm sortBy : Filters = {
-        none with
-            Provider = Some OpenLibrary
-            BooksAuthorId = authorId
-            SearchTerm = searchTerm
-            SortBy = sortBy
-    }
-
-    let ofPage page : Filters =
-        match page with
-        | Page.ProductBazaar(category, searchTerm, sortBy) -> bazaar category searchTerm sortBy
-        | Page.ProductBooks(authorId, searchTerm, sortBy) -> books authorId searchTerm sortBy
-        | _ -> none
-
 [<ReactComponent>]
 let AppView () =
     let model, dispatch = React.useElmish (init, update)
@@ -162,23 +130,19 @@ let AppView () =
         | Page.Login, User.Anonymous -> model.Page, None
 
         // Requested page consistent with the authentication but subject to an access check
-        | Page.ProductBazaar _, User.LoggedIn _
-        | Page.ProductBooks _, User.LoggedIn _
-        | Page.ProductIndex, User.LoggedIn _
+        | Page.ProductIndex _, User.LoggedIn _
         | Page.ProductDetail _, User.LoggedIn _ -> model.Page, Some Feat.Catalog
         | Page.Admin, User.LoggedIn _ -> model.Page, Some Feat.Admin
 
         // Default page when logged in
         | Page.Home, User.LoggedIn _
-        | Page.Login, User.LoggedIn _ -> Page.ProductIndex, Some Feat.Catalog
+        | Page.Login, User.LoggedIn _ -> Page.ProductIndex Filters.none, Some Feat.Catalog
 
         // Authentication needed prior to the access check
         // -> Display the login page inline, without redirection.
         | Page.Admin, User.Anonymous
         | Page.Home, User.Anonymous
-        | Page.ProductBazaar _, User.Anonymous
-        | Page.ProductBooks _, User.Anonymous
-        | Page.ProductIndex, User.Anonymous
+        | Page.ProductIndex _, User.Anonymous
         | Page.ProductDetail _, User.Anonymous -> Page.Login, None
 
     React.useEffect (fun () ->
@@ -201,9 +165,7 @@ let AppView () =
         | Page.Admin -> Pages.Admin.AdminView(fullContext)
         | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
-        | Page.ProductBazaar _
-        | Page.ProductBooks _
-        | Page.ProductIndex -> Pages.Product.Index.IndexView(Filters.ofPage pageToDisplayInline, fullContext, fillTranslations)
+        | Page.ProductIndex filters -> Pages.Product.Index.IndexView(filters, fullContext, fillTranslations)
         | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, sku, fillTranslations, showToast)
 
     let navbar =
