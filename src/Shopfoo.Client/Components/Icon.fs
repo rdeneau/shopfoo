@@ -55,5 +55,4 @@ let iconCustom (props: IconProp list) =
 /// let myIconComponent = icon fa6Solid.brush
 /// </code>
 /// </example>
-let icon (iconifyIcon: Glutinum.Iconify.IconifyIcon) =
-    iconCustom [ IconifyIcon iconifyIcon ]
+let icon (iconifyIcon: Glutinum.Iconify.IconifyIcon) = iconCustom [ IconifyIcon iconifyIcon ]

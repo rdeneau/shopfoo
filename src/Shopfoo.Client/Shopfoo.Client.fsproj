@@ -40,7 +40,7 @@
     <Compile Include="Pages\Product\CatalogInfo.fs" />
     <Compile Include="Pages\Product\Details.fs" />
     <Compile Include="Pages\Product\Filters.fs" />
-    <Compile Include="Pages\Product\Columns.fs" />
+    <Compile Include="Pages\Product\Table.fs" />
     <Compile Include="Pages\Product\Index.fs" />
     <Compile Include="View.fs" />
     <Compile Include="App.fs" />

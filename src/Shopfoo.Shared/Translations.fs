@@ -2,6 +2,7 @@
 
 open System
 open Shopfoo.Common
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Translations
 
 module TranslationPages =
@@ -175,6 +176,12 @@ module TranslationPages =
                 Electronics = this.Get "Electronics"
                 Jewelry = this.Get "Jewelry"
             |}
+
+        member this.StoreCategoryOf storeCategory =
+            match storeCategory with
+            | StoreCategory.Clothing -> this.StoreCategory.Clothing
+            | StoreCategory.Electronics -> this.StoreCategory.Electronics
+            | StoreCategory.Jewelry -> this.StoreCategory.Jewelry
 
         member this.Stock = this.Get "Stock"
         member this.StockAfterInventory = this.Get "StockAfterInventory"

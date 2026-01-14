@@ -4,9 +4,8 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
-open Shopfoo.Client
 open Shopfoo.Client.Components
-open Shopfoo.Client.Pages.Product.Columns
+open Shopfoo.Client.Pages.Product.Table
 open Shopfoo.Client.Pages.Product.Filters
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
@@ -50,7 +49,7 @@ module private Cmd =
             Success = fun data -> ProductsFetched(provider, Ok data)
         }
 
-let private init (filters: FiltersModel) =
+let private init (filters: Filters) =
     { Products = Remote.Empty },
     Cmd.batch [
         match filters.Provider with
@@ -73,18 +72,16 @@ let private update fillTranslations (fullContext: FullContext) msg (model: Model
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
 [<ReactComponent>]
-let IndexView (filtersModel: FiltersModel, fullContext: FullContext, fillTranslations) =
+let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
     match fullContext.User with
     | UserCanNotAccess Feat.Catalog ->
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
         let model, dispatch =
-            React.useElmish (init filtersModel, update fillTranslations fullContext, [||])
+            React.useElmish (init filters, update fillTranslations fullContext, [||])
 
         let translations = fullContext.Translations
-
-        let filters = Filters(filtersModel, translations)
 
         let products, selectedProvider =
             match model.Products with
@@ -96,37 +93,12 @@ let IndexView (filtersModel: FiltersModel, fullContext: FullContext, fillTransla
         Html.section [
             prop.key "products-page"
             prop.children [
-                filters.tabs products selectedProvider selectProvider
+                IndexFilterBar filters products selectedProvider selectProvider translations
 
                 match model.Products with
                 | Remote.Empty -> ()
                 | Remote.Loading -> Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
                 | Remote.LoadError apiError -> Alert.apiError "products-load-error" apiError fullContext.User
-                | Remote.Loaded(provider, products) ->
-                    let filteredProducts = filters.apply products provider
-                    let columns = Columns(filters, provider, translations)
-
-                    Daisy.table [
-                        prop.key "product-table"
-                        prop.className "table-pin-rows w-full border-collapse"
-                        prop.children [
-                            Html.thead [
-                                prop.key "product-thead"
-                                prop.child (
-                                    Html.tr [
-                                        for colDef in columnDefinitionsFor provider do
-                                            columns.th colDef
-                                    ]
-                                )
-                            ]
-                            Html.tbody [
-                                prop.key "product-table-tbody"
-                                prop.children [
-                                    for i, product in filteredProducts do
-                                        columns.tr i product
-                                ]
-                            ]
-                        ]
-                    ]
+                | Remote.Loaded(provider, products) -> IndexTable filters products provider translations
             ]
         ]

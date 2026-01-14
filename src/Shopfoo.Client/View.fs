@@ -118,7 +118,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 module private Filters =
     open Shopfoo.Client.Pages.Product.Filters
 
-    let private none: FiltersModel = {
+    let private none: Filters = {
         Provider = None
         BooksAuthorId = None
         StoreCategory = None
@@ -126,7 +126,7 @@ module private Filters =
         SortBy = None
     }
 
-    let private bazaar storeCategory searchTerm sortBy : FiltersModel = {
+    let private bazaar storeCategory searchTerm sortBy : Filters = {
         none with
             Provider = Some FakeStore
             StoreCategory = storeCategory
@@ -134,7 +134,7 @@ module private Filters =
             SortBy = sortBy
     }
 
-    let private books authorId searchTerm sortBy : FiltersModel = {
+    let private books authorId searchTerm sortBy : Filters = {
         none with
             Provider = Some OpenLibrary
             BooksAuthorId = authorId
@@ -142,14 +142,11 @@ module private Filters =
             SortBy = sortBy
     }
 
-    let ofPage page : FiltersModel =
+    let ofPage page : Filters =
         match page with
         | Page.ProductBazaar(category, searchTerm, sortBy) -> bazaar category searchTerm sortBy
         | Page.ProductBooks(authorId, searchTerm, sortBy) -> books authorId searchTerm sortBy
         | _ -> none
-
-type private Page with
-    member page.IndexFilters = Filters.ofPage page
 
 [<ReactComponent>]
 let AppView () =
@@ -206,7 +203,7 @@ let AppView () =
         | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
         | Page.ProductBazaar _
         | Page.ProductBooks _
-        | Page.ProductIndex -> Pages.Product.Index.IndexView(pageToDisplayInline.IndexFilters, fullContext, fillTranslations)
+        | Page.ProductIndex -> Pages.Product.Index.IndexView(Filters.ofPage pageToDisplayInline, fullContext, fillTranslations)
         | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, sku, fillTranslations, showToast)
 
     let navbar =
