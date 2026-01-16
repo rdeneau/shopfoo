@@ -16,7 +16,9 @@ type BazaarCategory =
 
 type BazaarProduct = { FSID: FSID; Category: BazaarCategory }
 
-type OLID = OLID of string
+type OLID =
+    | OLID of string
+    member this.Value = let (OLID v) = this in v
 
 type BookAuthor = { OLID: OLID; Name: string }
 

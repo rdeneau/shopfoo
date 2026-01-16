@@ -1,6 +1,5 @@
 ﻿module Shopfoo.Client.Pages.Product.Table
 
-open System
 open Feliz
 open Feliz.DaisyUI
 open Glutinum.IconifyIcons.Fa6Solid
@@ -40,21 +39,16 @@ let private (|ColSorted|_|) (colDef, filters: Filters) =
 type private Row with
     member row.Key = $"product-%i{row.Index}"
 
-type private Td(filters: Filters, translations: AppTranslations, row: Row) =
+type private Td(filters: Filters, row: Row) =
+    let reactKeyOf x = String.toKebab $"%A{x}"
+
     let bazaarProduct =
         match row.Product.Category with
         | Category.Bazaar bazaarProduct -> Some bazaarProduct
         | Category.Books _ -> None
 
-    let book =
-        match row.Product.Category with
-        | Category.Books book -> Some book
-        | Category.Bazaar _ -> None
-
-    let highlightTerm = Highlight.element filters.SearchTerm
-
     member _.num = Html.td [ prop.key $"%s{row.Key}-num"; prop.text (row.Index + 1) ]
-    member _.sku = highlightTerm Html.td [ prop.key $"%s{row.Key}-sku"; prop.text row.Product.SKU.Value ]
+    member _.sku = row.SearchMatch.SKU |> Highlight.matches Html.td [ prop.key $"%s{row.Key}-sku" ]
 
     member _.bazaarCategory =
         Html.td [
@@ -64,9 +58,11 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                 if (bazaarProduct |> Option.map _.Category) = filters.BazaarCategory then
                     $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
             ]
-            match bazaarProduct with
-            | Some x -> prop.text (translations.Product.StoreCategoryOf x.Category)
-            | _ -> ()
+            prop.children [
+                match row.SearchMatch.BazaarCategory with
+                | Some category -> category |> Highlight.matches Html.span [ prop.key $"%s{row.Key}-category-content" ]
+                | _ -> ()
+            ]
         ]
 
     member _.bookAuthors =
@@ -77,16 +73,15 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                     prop.key $"%s{row.Key}-authors-content"
                     prop.className "w-40 flex gap-2 line-clamp-2 group-hover:line-clamp-3"
                     prop.children [
-                        match book with
-                        | None -> Html.text " "
-                        | Some book ->
-                            for i, author in book.Authors |> List.indexed do
-                                if i > 0 then Html.text ","
-                                highlightTerm Html.span [
-                                    prop.key $"%s{row.Key}-author-%s{String.toKebab author.Name}"
-                                    if filters.BooksAuthorId = Some author.OLID then
+                        match row.SearchMatch.BookAuthors with
+                        | [] -> Html.text " "
+                        | authors ->
+                            for author in authors do
+                                author
+                                |> Highlight.matches Html.span [
+                                    prop.key $"%s{row.Key}-author-%s{reactKeyOf author.Source.OLID.Value}"
+                                    if filters.BooksAuthorId = Some author.Source.OLID then
                                         prop.className $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
-                                    prop.text author.Name
                                 ]
                     ]
                 ]
@@ -101,24 +96,24 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                     prop.key $"%s{row.Key}-tags-content"
                     prop.className "flex flex-wrap gap-2"
                     prop.children [
-                        match book with
-                        | None -> Html.text " "
-                        | Some book ->
-                            for tag in book.Tags do
+                        match row.SearchMatch.BookTags with
+                        | [] -> Html.text " "
+                        | tags ->
+                            for tag in tags do
                                 Daisy.badge [
                                     badge.ghost
-                                    prop.key $"%s{row.Key}-tag-%s{tag}"
+                                    prop.key $"%s{row.Key}-tag-%s{reactKeyOf tag.Text}"
                                     prop.classes [
                                         "leading-tight px-1 max-w-[150px] group-hover:max-w-none"
-                                        if filters.BooksTag = Some tag then
+                                        if filters.BooksTag = Some tag.Source then
                                             Highlight.Css.BorderColor
                                             Highlight.Css.TextColors
                                     ]
                                     prop.children [
-                                        Html.span [
+                                        tag
+                                        |> Highlight.matches Html.span [ // ↩
                                             prop.key $"%s{row.Key}-tags-text"
                                             prop.className "truncate"
-                                            prop.text tag
                                         ]
                                     ]
                                 ]
@@ -131,10 +126,10 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
         Html.td [
             prop.key $"%s{row.Key}-desc"
             prop.children [
-                highlightTerm Html.div [
+                row.SearchMatch.Description
+                |> Highlight.matches Html.div [ // ↩
                     prop.key $"%s{row.Key}-desc-content"
                     prop.className "line-clamp-2 group-hover:line-clamp-3"
-                    prop.text row.Product.Description
                 ]
             ]
         ]
@@ -148,24 +143,24 @@ type private Td(filters: Filters, translations: AppTranslations, row: Row) =
                     prop.className "w-60 line-clamp-2 group-hover:line-clamp-3"
 
                     prop.children [
-                        highlightTerm Html.div [
+                        row.SearchMatch.Title
+                        |> Highlight.matches Html.div [ // ↩
                             prop.key $"%s{row.Key}-title"
                             prop.className "group-hover:inline"
-                            prop.text row.Product.Title
                         ]
 
-                        match book with
-                        | Some book when not (String.IsNullOrWhiteSpace book.Subtitle) ->
+                        match row.SearchMatch.BookSubtitle with
+                        | Some({ Source = String.NotEmpty } as subtitle) ->
                             Html.span [
                                 prop.key $"%s{row.Key}-sep"
                                 prop.className "hidden group-hover:inline"
                                 prop.text ":"
                             ]
 
-                            highlightTerm Html.div [
+                            subtitle
+                            |> Highlight.matches Html.div [ // ↩
                                 prop.key $"%s{row.Key}-subtitle"
                                 prop.className "italic ml-1 group-hover:inline"
-                                prop.text book.Subtitle
                             ]
                         | _ -> ()
                     ]
@@ -272,7 +267,7 @@ let IndexTable key (filters: Filters) products provider (translations: AppTransl
                             prop.className "group hover:bg-accent hover:fg-accent hover:cursor-pointer"
                             prop.onClick (fun _ -> Router.navigatePage (Page.ProductDetail row.Product.SKU))
                             prop.children [
-                                let td = Td(filters, translations, row)
+                                let td = Td(filters, row)
 
                                 for colDef in columnDefinitions do
                                     match colDef.Col with

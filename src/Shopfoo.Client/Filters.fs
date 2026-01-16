@@ -1,6 +1,7 @@
 ﻿module Shopfoo.Client.Filters
 
-open System
+open System.Text.RegularExpressions
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
@@ -36,19 +37,60 @@ type AutoIndex() =
         index <- index + 1
         index
 
+type MatchType =
+    | TextMatch
+    | NoMatch
+
+type MatchTexts<'a> = {
+    Source: 'a
+    GetText: 'a -> string
+    Matches: (MatchType * string) list
+} with
+    member this.Text = this.GetText this.Source
+    member this.HasMatches = this.Matches |> List.exists (fun (matchType, _) -> matchType = TextMatch)
+
+type MatchTexts =
+    static member init(source, getText) : MatchTexts<_> = {
+        Source = source
+        GetText = getText
+        Matches = []
+    }
+
+    static member init(source) : MatchTexts<string> = MatchTexts.init (source, id)
+
+type SearchMatch = {
+    Description: MatchTexts<string>
+    Title: MatchTexts<string>
+    SKU: MatchTexts<SKU>
+    BazaarCategory: MatchTexts<BazaarCategory> option
+    BookSubtitle: MatchTexts<string> option
+    BookAuthors: MatchTexts<BookAuthor> list
+    BookTags: MatchTexts<string> list
+} with
+    member this.HasMatches =
+        this.Description.HasMatches
+        || this.Title.HasMatches
+        || this.SKU.HasMatches
+        || (this.BazaarCategory |> Option.toList |> List.exists _.HasMatches)
+        || (this.BookSubtitle |> Option.toList |> List.exists _.HasMatches)
+        || (this.BookAuthors |> List.exists _.HasMatches)
+        || (this.BookTags |> List.exists _.HasMatches)
+
 type Row = {
     Index: int
     Product: Product
     Provider: Provider
+    SearchMatch: SearchMatch
 }
 
 type private RowBuilder() =
     let index = AutoIndex()
 
-    member _.Build(product, provider) : Row = {
+    member _.Build(product, provider, searchMatch) : Row = {
         Index = index.Next()
         Product = product
         Provider = provider
+        SearchMatch = searchMatch
     }
 
 [<RequireQualifiedAccess>]
@@ -107,7 +149,8 @@ module Filters =
         SortBy = None
     }
 
-    let apply products provider (translations: AppTranslations) (filters: Filters) =
+    // TODO RDE: unit tests Filters.apply
+    let apply (products: Product list) (provider: Provider) (translations: AppTranslations) (filters: Filters) : Row list =
         let getSortKey (row: Row) = [
             match filters.SortBy with
             | None -> ()
@@ -151,29 +194,64 @@ module Filters =
 
         let rows = [
             for product in products do
-                let isSearchTermFound =
+                let bazaarCategory, book =
+                    match product.Category with
+                    | Category.Bazaar storeProduct -> Some storeProduct.Category, None
+                    | Category.Books book -> None, Some book
+
+                let searchMatchToFill = {
+                    Description = MatchTexts.init product.Description
+                    Title = MatchTexts.init product.Title
+                    SKU = MatchTexts.init (product.SKU, _.Value)
+                    BazaarCategory = bazaarCategory |> Option.map (fun x -> MatchTexts.init (x, translations.Product.StoreCategoryOf))
+                    BookSubtitle = book |> Option.map (fun b -> MatchTexts.init b.Subtitle)
+                    BookAuthors = [
+                        match book with
+                        | None -> ()
+                        | Some book ->
+                            for author in book.Authors do
+                                MatchTexts.init (author, _.Name)
+                    ]
+                    BookTags = [
+                        match book with
+                        | None -> ()
+                        | Some book ->
+                            for tag in book.Tags do
+                                MatchTexts.init tag
+                    ]
+                }
+
+                let searchMatch =
                     match filters.SearchTerm with
-                    | None -> true
+                    | None -> searchMatchToFill
                     | Some searchTerm ->
-                        let fieldsToSearch = [
-                            product.Description
-                            product.Title
-                            product.SKU.Value
+                        let pattern = Regex.Escape(searchTerm)
+                        let options = RegexOptions.IgnoreCase ||| RegexOptions.Multiline
 
-                            match product.Category with
-                            | Category.Bazaar _ -> ()
-                            | Category.Books book ->
-                                book.Subtitle
+                        let fillMatches (matchToFill: MatchTexts<_>) : MatchTexts<_> =
+                            let parts = Regex.Split(matchToFill.Text, pattern, options)
+                            let matches = Regex.Matches(matchToFill.Text, pattern, options) |> Seq.toArray
 
-                                for author in book.Authors do
-                                    author.Name
+                            {
+                                matchToFill with
+                                    Matches = [
+                                        for i in 0 .. parts.Length - 1 do
+                                            NoMatch, parts[i]
 
-                                for tag in book.Tags do
-                                    tag
-                        ]
+                                            if i < matches.Length then
+                                                TextMatch, matches[i].Value
+                                    ]
+                            }
 
-                        let termLower = searchTerm.ToLower()
-                        fieldsToSearch |> List.exists _.ToLowerInvariant().Contains(termLower, StringComparison.OrdinalIgnoreCase)
+                        {
+                            Description = searchMatchToFill.Description |> fillMatches
+                            Title = searchMatchToFill.Title |> fillMatches
+                            SKU = searchMatchToFill.SKU |> fillMatches
+                            BazaarCategory = searchMatchToFill.BazaarCategory |> Option.map fillMatches
+                            BookSubtitle = searchMatchToFill.BookSubtitle |> Option.map fillMatches
+                            BookAuthors = searchMatchToFill.BookAuthors |> List.map fillMatches
+                            BookTags = searchMatchToFill.BookTags |> List.map fillMatches
+                        }
 
                 let isAuthorMatched =
                     match filters.BooksAuthorId, product.Category with
@@ -190,8 +268,13 @@ module Filters =
                     | Some selectedCategory, Category.Bazaar storeProduct -> storeProduct.Category = selectedCategory
                     | _ -> true
 
-                if isSearchTermFound && isAuthorMatched && isTagMatched && isBazaarCategoryMatched then
-                    rowBuilder.Build(product, provider)
+                if
+                    (filters.SearchTerm.IsNone || searchMatch.HasMatches)
+                    && isAuthorMatched
+                    && isTagMatched
+                    && isBazaarCategoryMatched
+                then
+                    rowBuilder.Build(product, provider, searchMatch)
         ]
 
         sortProducts rows

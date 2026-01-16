@@ -1,10 +1,9 @@
 ﻿module Shopfoo.Client.Components.Highlight
 
 open System
-open System.Text.RegularExpressions
 open Feliz
 open Shopfoo.Client
-open Shopfoo.Common
+open Shopfoo.Client.Filters
 
 [<RequireQualifiedAccess>]
 module Css =
@@ -21,16 +20,18 @@ module Css =
 /// Highlights occurrences of <c>searchTerm</c> in the text content of the given React element.
 /// </summary>
 /// <remarks>
-/// The syntax is closed to the Feliz one, just with <c>Highlight.element xxx</c> at the beginning.
+/// The syntax is closed to the Feliz one - see example below.
 /// </remarks>
 /// <example>
+/// Given `xxxMatchTexts` the result of search on "code" performed on a book title, the following code:
 /// <code lang="fsharp">
-/// Highlight.element "code" Html.span [
+/// xxxMatchTexts |> Highlight.matches Html.span [
 ///     prop.key "title"
 ///     prop.text "Clean Code by Robert C. Martin"
 /// ]
 /// </code>
-/// Renders as:
+///
+/// ...is equivalent to:
 /// <code lang="fsharp">
 /// Html.span [
 ///     prop.key "title"
@@ -46,12 +47,7 @@ module Css =
 /// ]
 /// </code>
 /// </example>
-let element (searchTerm: string option) (element: IReactProperty list -> ReactElement) (props: IReactProperty list) : ReactElement =
-    let fullText =
-        props // ↩
-        |> List.tryPick (|ReactText|_|)
-        |> Option.map string
-
+let matches (element: IReactProperty list -> ReactElement) (props: IReactProperty list) (matchTexts: MatchTexts<_>) : ReactElement =
     let reactKey =
         props
         |> List.tryPick (|ReactKey|_|)
@@ -68,38 +64,23 @@ let element (searchTerm: string option) (element: IReactProperty list -> ReactEl
         )
 
     let props =
-        match searchTerm, fullText with
-        | (None | Some String.NullOrWhiteSpace), _
-        | _, (None | Some String.NullOrWhiteSpace) ->
-            // No highlighting
-            props
+        match matchTexts with
+        | _ when String.IsNullOrWhiteSpace(matchTexts.Text) -> props
+        | { Matches = [] } -> [ yield! props; prop.text matchTexts.Text ]
 
-        | Some term, Some fullText -> [
-            // Highlight occurrences of 'term' in 'fullText' (case-insensitive)
-
-            // If fullText = "Clean Code" and term = "code" then
-            // - parts = [| "Clean "; "" |]
-            // - matches = [| "Code" |]
-            // Result: <span>Clean </span><mark class="...">Code</mark>
-            let pattern = Regex.Escape(term)
-            let options = RegexOptions.IgnoreCase ||| RegexOptions.Multiline
-            let parts = Regex.Split(fullText, pattern, options)
-            let matches = Regex.Matches(fullText, pattern, options) |> Seq.toArray
-
+        | _ -> [
             prop.key reactKey
             yield! otherProps
 
             prop.children [
-                for i in 0 .. parts.Length - 1 do
-                    // Regular text
-                    Html.text parts[i]
-
-                    // Matched text (highlighted)
-                    if i < matches.Length then
+                for i, m in matchTexts.Matches |> List.indexed do
+                    match m with
+                    | NoMatch, s -> Html.text s
+                    | TextMatch, s ->
                         Html.mark [
                             prop.key $"%s{reactKey}-match-%i{i}"
                             prop.className $"%s{Css.TextColors} %s{Css.Border}"
-                            prop.text matches[i].Value
+                            prop.text s
                         ]
             ]
           ]
