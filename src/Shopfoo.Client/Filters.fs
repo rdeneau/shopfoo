@@ -172,7 +172,8 @@ module Filters =
                                     tag
                         ]
 
-                        fieldsToSearch |> List.exists _.Contains(searchTerm, StringComparison.InvariantCultureIgnoreCase)
+                        let termLower = searchTerm.ToLower()
+                        fieldsToSearch |> List.exists _.ToLowerInvariant().Contains(termLower, StringComparison.OrdinalIgnoreCase)
 
                 let isAuthorMatched =
                     match filters.BooksAuthorId, product.Category with

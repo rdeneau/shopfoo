@@ -24,6 +24,7 @@
     <Compile Include="Components\Icon.fs" />
     <Compile Include="Components\Dialog.fs" />
     <Compile Include="Components\FilterTab.fs" />
+    <Compile Include="Components\Highlight.fs" />
     <Compile Include="Components\Lang.fs" />
     <Compile Include="Components\Theme.fs" />
     <Compile Include="Components\User.fs" />

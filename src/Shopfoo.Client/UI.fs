@@ -34,6 +34,27 @@ type prop with
     static member inline child(element: ReactElement) = // ↩
         prop.children [ element |> React.withKeyAuto ]
 
+let private (|ReactProperty|_|) (prop: IReactProperty) =
+    match box prop with
+    | :? (string * obj) as kvp -> Some kvp
+    | _ -> None
+
+let (|ReactKey|_|) (prop: IReactProperty) =
+    match prop with
+    | ReactProperty("key", value) -> Some value
+    | _ -> None
+
+let (|ReactText|_|) (prop: IReactProperty) =
+    match prop with
+    | ReactProperty("children", value) -> Some value
+    | _ -> None
+
+type IReactProperty with
+    member prop.AsKey: string option =
+        match box prop with
+        | :? (string * string) as kvp when fst kvp = "key" -> Some(snd kvp)
+        | _ -> None
+
 type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations, ?invalid) =
     let len = String.length value
 
