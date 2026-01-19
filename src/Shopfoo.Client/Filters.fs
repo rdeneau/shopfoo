@@ -67,6 +67,34 @@ type SearchMatch = {
     BookAuthors: MatchTexts<BookAuthor> list
     BookTags: MatchTexts<string> list
 } with
+    static member init (product: Product) (translations: AppTranslations) : SearchMatch =
+        let bazaarCategory, book =
+            match product.Category with
+            | Category.Bazaar storeProduct -> Some storeProduct.Category, None
+            | Category.Books book -> None, Some book
+
+        {
+            Description = MatchTexts.init product.Description
+            Title = MatchTexts.init product.Title
+            SKU = MatchTexts.init (product.SKU, _.Value)
+            BazaarCategory = bazaarCategory |> Option.map (fun x -> MatchTexts.init (x, translations.Product.StoreCategoryOf))
+            BookSubtitle = book |> Option.map (fun b -> MatchTexts.init b.Subtitle)
+            BookAuthors = [
+                match book with
+                | None -> ()
+                | Some book ->
+                    for author in book.Authors do
+                        MatchTexts.init (author, _.Name)
+            ]
+            BookTags = [
+                match book with
+                | None -> ()
+                | Some book ->
+                    for tag in book.Tags do
+                        MatchTexts.init tag
+            ]
+        }
+
     member this.HasMatches =
         this.Description.HasMatches
         || this.Title.HasMatches
@@ -149,7 +177,6 @@ module Filters =
         SortBy = None
     }
 
-    // TODO RDE: unit tests Filters.apply
     let apply (products: Product list) (provider: Provider) (translations: AppTranslations) (filters: Filters) : Row list =
         let getSortKey (row: Row) = [
             match filters.SortBy with
@@ -161,8 +188,11 @@ module Filters =
             | Some(ProductSort.BookAuthors, _) ->
                 match row.Product.Category with
                 | Category.Books book ->
-                    for author in book.Authors do
-                        SortKeyPart.Text author.Name
+                    match book.Authors with
+                    | [] -> SortKeyPart.Text ""
+                    | authors ->
+                        for author in authors do
+                            SortKeyPart.Text author.Name
                 | _ -> ()
 
                 SortKeyPart.Text row.Product.Title
@@ -170,8 +200,11 @@ module Filters =
             | Some(ProductSort.BookTags, _) ->
                 match row.Product.Category with
                 | Category.Books book ->
-                    for tag in book.Tags do
-                        SortKeyPart.Text tag
+                    match book.Tags with
+                    | [] -> SortKeyPart.Text ""
+                    | tags ->
+                        for tag in tags do
+                            SortKeyPart.Text tag
                 | _ -> ()
 
                 SortKeyPart.Text row.Product.Title

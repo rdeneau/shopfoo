@@ -14,6 +14,7 @@
     <Compile Include="Api.fs" />
   </ItemGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Shopfoo.Client.Tests" />
     <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
   </ItemGroup>

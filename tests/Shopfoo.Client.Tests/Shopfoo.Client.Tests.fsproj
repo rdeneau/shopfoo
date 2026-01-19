@@ -13,10 +13,12 @@
     <Compile Include="FsCheckArbs\Domain.fs" />
     <Compile Include="FsCheckArbs\UI.fs" />
     <Compile Include="FsCheckArbs\Shopfoo.fs" />
+    <Compile Include="FiltersShould.fs" />
     <Compile Include="RoutingTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Client\Shopfoo.Client.fsproj" />
+    <ProjectReference Include="..\..\src\Shopfoo.Home\Shopfoo.Home.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

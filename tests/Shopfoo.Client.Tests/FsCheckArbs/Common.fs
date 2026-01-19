@@ -55,5 +55,7 @@ module CommonGen =
     let genOptionalString: Gen<string option> =
         genAlphaNumString |> Gen.map _.Value |> genOption OptionFrequency.NoneOnceInTenTimes
 
+    let (|RandomFromSeed|) (seed: int) = Random(seed)
+
 type CommonArbs =
     static member AlphaNumString() = Arb.fromGenShrink (genAlphaNumString, shrinkAlphaNumString)
