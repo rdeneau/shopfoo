@@ -52,14 +52,15 @@ type private Td(filters: Filters, row: Row) =
     member _.bazaarCategory =
         Html.td [
             prop.key $"%s{row.Key}-category"
-            prop.className [
-                "w-30"
-                if (bazaarProduct |> Option.map _.Category) = filters.BazaarCategory then
-                    $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
-            ]
+            prop.className "w-30"
             prop.children [
                 for i, result in List.indexed row.SearchResult[Column.BazaarCategory] do
-                    result |> Highlight.matches Html.span [ prop.key $"%s{row.Key}-category-%i{i}" ]
+                    result
+                    |> Highlight.matches Html.span [
+                        prop.key $"%s{row.Key}-category-%i{i}"
+                        if (bazaarProduct |> Option.map _.Category) = filters.BazaarCategory then
+                            prop.className $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
+                    ]
             ]
         ]
 
@@ -69,11 +70,14 @@ type private Td(filters: Filters, row: Row) =
             prop.children [
                 Html.div [
                     prop.key $"%s{row.Key}-authors-content"
-                    prop.className "w-40 flex gap-2 line-clamp-2 group-hover:line-clamp-3"
+                    prop.className "w-40 flex-wrap comma-between-children line-clamp-2 group-hover:line-clamp-3"
                     prop.children [
                         for i, result in List.indexed row.SearchResult[Column.BookAuthors] do
                             match result.Target with
                             | SearchTarget.BookAuthor author ->
+                                if i > 0 then
+                                    Html.text ", "
+
                                 result
                                 |> Highlight.matches Html.span [
                                     prop.key $"%s{row.Key}-author-%i{i}"
@@ -144,7 +148,7 @@ type private Td(filters: Filters, row: Row) =
                     prop.children [
                         for i, result in List.indexed row.SearchResult[Column.Name] do
                             result
-                            |> Highlight.matches Html.span [ // ↩
+                            |> Highlight.matches Html.div [ // ↩
                                 prop.key $"%s{row.Key}-title-%i{i}"
                                 prop.className "group-hover:inline"
                             ]
