@@ -23,25 +23,87 @@ type CaseChange =
         | Lower -> s.ToLowerInvariant()
         | None -> s
 
+type SearchResultCheckFailure =
+    | ResultsTextDoesNotContainTerm
+    | UnexpectedMatchingResults of {| expected: SearchTargetResult array; actual: SearchTargetResult array |}
+    | UnexpectedNumberOfResults of expectedTexts: string array
+    | UnexpectedTexts of {| expected: string; actual: string |} list
+
 type FiltersShould() =
     static let translations: Translations = { Pages = Map Translations.repository[Lang.English] }
     static let appTranslations: AppTranslations = AppTranslations().Fill(translations)
+
+    let verifySearch (caseChange: CaseChange) (random: Random) products column (getExpectedTexts: Product -> string array) =
+        // Choose a random word
+        let term =
+            products
+            |> Seq.collect getExpectedTexts
+            |> Seq.collect _.Split(" ")
+            |> Seq.filter (fun s -> s.Length >= 2)
+            |> Seq.randomChoiceWith random
+            |> caseChange.Apply
+
+        let filters = { Filters.none with SearchColumns = Set [ column ]; SearchTerm = Some term }
+        let rows = filters |> Filters.apply products appTranslations
+
+        let unexpectedRows =
+            rows
+            |> List.choose (fun row ->
+                let expectedTexts = getExpectedTexts row.Product
+                let searchTargetResults = row.SearchResult[column] |> List.toArray
+
+                let checkFailure =
+                    if expectedTexts.Length <> searchTargetResults.Length then
+                        Some(UnexpectedNumberOfResults expectedTexts)
+                    else
+                        let unexpectedTexts = [
+                            for expectedText, result in Array.zip expectedTexts searchTargetResults do
+                                if not (expectedText.Equals(result.Text, StringComparison.OrdinalIgnoreCase)) then
+                                    {| expected = expectedText; actual = result.Text |}
+                        ]
+
+                        if not unexpectedTexts.IsEmpty then
+                            Some(UnexpectedTexts unexpectedTexts)
+                        else
+                            let expectedTextMatches = searchTargetResults |> Array.filter _.Text.Contains(term, StringComparison.OrdinalIgnoreCase)
+
+                            if expectedTextMatches.Length = 0 then
+                                Some ResultsTextDoesNotContainTerm
+                            else
+                                let actualTextMatches =
+                                    searchTargetResults
+                                    |> Array.filter (fun result -> result.Matches |> List.exists (fun m -> m.MatchType = TextMatch))
+
+                                if actualTextMatches <> expectedTextMatches then
+                                    Some(UnexpectedMatchingResults {| expected = expectedTextMatches; actual = actualTextMatches |})
+                                else
+                                    None
+
+                checkFailure
+                |> Option.map (fun checkFailure -> {|
+                    Row = row
+                    SearchTerm = term
+                    CheckFailure = checkFailure
+                |})
+            )
+
+        unexpectedRows =! []
 
     let sort direction products =
         match direction with
         | SortDirection.Ascending -> products |> List.sort
         | SortDirection.Descending -> products |> List.sortDescending
 
-    let performSortBy (column, direction) f (provider, products) =
+    let performSortBy (column, direction) f products =
         let filters = { Filters.none with SortBy = Some(column, direction) }
-        let filteredProducts = filters |> Filters.apply products provider appTranslations |> List.map _.Product
+        let filteredProducts = filters |> Filters.apply products appTranslations |> List.map _.Product
         let filteredValues = filteredProducts |> List.map f
         let expectedValues = products |> List.map f |> sort direction
         filteredValues, expectedValues
 
-    let verifySortBy column f (provider, products) =
-        let actualAsc, expectedAsc = performSortBy (column, SortDirection.Ascending) f (provider, products)
-        let actualDesc, expectedDesc = performSortBy (column, SortDirection.Descending) f (provider, products)
+    let verifySortBy column f products =
+        let actualAsc, expectedAsc = performSortBy (column, SortDirection.Ascending) f products
+        let actualDesc, expectedDesc = performSortBy (column, SortDirection.Descending) f products
         let actual = {| Asc = actualAsc; Desc = actualDesc |}
         let expected = {| Asc = expectedAsc; Desc = expectedDesc |}
         actual =! expected
@@ -61,17 +123,22 @@ type FiltersShould() =
         | Category.Books book -> book.Tags, product.Title
         | _ -> failwith "Expected only book products"
 
+    let bookSubtitle product =
+        match product.Category with
+        | Category.Books book -> book.Subtitle
+        | _ -> failwith "Expected only book products"
+
     [<Test; ShopfooFsCheckProperty>]
-    member _.``index products``(Products(provider, products)) =
-        let rows = Filters.none |> Filters.apply products provider appTranslations
+    member _.``index products``(Products(_, products)) =
+        let rows = Filters.none |> Filters.apply products appTranslations
         let actual = {| Products = rows |> List.map _.Product; Indexes = rows |> List.map _.Index |}
         let expected = {| Products = products; Indexes = [ 0 .. products.Length - 1 ] |}
         actual =! expected
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``filter bazaar products by category``(bazaarCategory, BazaarProducts(Products(provider, products))) =
+    member _.``filter bazaar products by category``(bazaarCategory, BazaarProducts(Products(_, products))) =
         let filters = { Filters.none with CategoryFilters = Some(CategoryFilters.Bazaar(Some bazaarCategory)) }
-        let rows = filters |> Filters.apply products provider appTranslations
+        let rows = filters |> Filters.apply products appTranslations
 
         let unexpectedRows =
             rows
@@ -84,7 +151,7 @@ type FiltersShould() =
         unexpectedRows =! []
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``filter books by author``(RandomFromSeed random, BooksProducts(Products(provider, products))) =
+    member _.``filter books by author``(RandomFromSeed random, BooksProducts(Products(_, products))) =
         let author =
             products
             |> List.collect (fun p ->
@@ -95,7 +162,7 @@ type FiltersShould() =
             |> List.randomChoiceWith random
 
         let filters = { Filters.none with CategoryFilters = Some(CategoryFilters.Books(Some author.OLID, tag = None)) }
-        let rows = filters |> Filters.apply products provider appTranslations
+        let rows = filters |> Filters.apply products appTranslations
 
         let unexpectedRows =
             rows
@@ -114,7 +181,7 @@ type FiltersShould() =
         unexpectedRows =! []
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``filter books by tag``(RandomFromSeed random, BooksProducts(Products(provider, products))) =
+    member _.``filter books by tag``(RandomFromSeed random, BooksProducts(Products(_, products))) =
         let tag =
             products
             |> List.collect (fun p ->
@@ -125,7 +192,7 @@ type FiltersShould() =
             |> List.randomChoiceWith random
 
         let filters = { Filters.none with CategoryFilters = Some(CategoryFilters.Books(authorId = None, tag = Some tag)) }
-        let rows = filters |> Filters.apply products provider appTranslations
+        let rows = filters |> Filters.apply products appTranslations
 
         let unexpectedRows =
             rows
@@ -144,70 +211,49 @@ type FiltersShould() =
         unexpectedRows =! []
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``search products by title, case insensitive``(caseChange: CaseChange, RandomFromSeed random, Products(provider, products)) =
-        let term =
-            products
-            |> Seq.collect _.Title.Split(" ")
-            |> Seq.filter (fun s -> s.Length >= 2)
-            |> Seq.randomChoiceWith random
-            |> caseChange.Apply
-
-        let filters = { Filters.none with SearchTerm = Some term }
-        let rows = filters |> Filters.apply products provider appTranslations
-        let rowsMatchedByTitle = rows |> List.filter _.SearchMatch.Title.HasMatches
-
-        // Verify Title
-        let unexpectedRows =
-            rowsMatchedByTitle
-            |> List.filter (fun row -> not (row.Product.Title.Contains(term, StringComparison.OrdinalIgnoreCase)))
-
-        test <@ unexpectedRows |> List.isEmpty @>
-
-        // Verify Matches
-        let unexpectedRows =
-            rowsMatchedByTitle
-            |> List.choose (fun row ->
-                let unexpectedMatches =
-                    row.SearchMatch.Title.Matches
-                    |> List.filter (fun (actualMatchType, text) ->
-                        let expectedMatchType =
-                            if text.Contains(term, StringComparison.OrdinalIgnoreCase) then
-                                TextMatch
-                            else
-                                NoMatch
-
-                        actualMatchType <> expectedMatchType
-                    )
-
-                match unexpectedMatches with
-                | [] -> None
-                | _ ->
-                    Some {|
-                        Index = row.Index
-                        Title = row.Product.Title
-                        SearchTerm = term
-                        UnexpectedMatches = unexpectedMatches
-                    |}
-            )
-
-        test <@ unexpectedRows |> List.isEmpty @>
+    member _.``search products by description, case insensitive``(caseChange, RandomFromSeed random, Products(_, products)) =
+        verifySearch caseChange random products Column.Description (fun product -> [| product.Description |])
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``sort products by sku``(Products(provider, products)) = // ↩
-        (provider, products) |> verifySortBy Column.SKU _.SKU.Value
+    member _.``search products by title, case insensitive``(caseChange, RandomFromSeed random, Products(_, products)) =
+        verifySearch caseChange random products Column.Name (fun product -> [| product.Title |])
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``sort products by title``(Products(provider, products)) = // ↩
-        (provider, products) |> verifySortBy Column.Name _.Title
+    member _.``search books by subtitle, case insensitive``(caseChange, RandomFromSeed random, BooksProducts(Products(_, products))) =
+        verifySearch caseChange random products Column.BookSubtitle
+        <| fun product -> [|
+            match product.Category with
+            | Category.Books book -> book.Subtitle
+            | Category.Bazaar _ -> failwith "Expected only book products"
+        |]
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``sort bazaar products by category (and title)``(BazaarProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy Column.BazaarCategory bazaarCategoryAndTitle
+    member _.``search books by author, case insensitive``(caseChange, RandomFromSeed random, BooksProducts(Products(_, products))) =
+        verifySearch caseChange random products Column.BookAuthors
+        <| fun product -> [|
+            match product.Category with
+            | Category.Books book ->
+                for author in book.Authors do
+                    author.Name
+            | Category.Bazaar _ -> failwith "Expected only book products"
+        |]
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``sort books by authors (and title)``(BooksProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy Column.BookAuthors bookAuthorsAndTitle
+    member _.``sort products by sku``(Products(_, products)) = // ↩
+        products |> verifySortBy Column.SKU _.SKU.Value
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``sort books by tags (and title)``(BooksProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy Column.BookTags bookTagsAndTitle
+    member _.``sort products by title``(Products(_, products)) = // ↩
+        products |> verifySortBy Column.Name _.Title
+
+    [<Test; ShopfooFsCheckProperty>]
+    member _.``sort bazaar products by category (and title)``(BazaarProducts(Products(_, products))) =
+        products |> verifySortBy Column.BazaarCategory bazaarCategoryAndTitle
+
+    [<Test; ShopfooFsCheckProperty>]
+    member _.``sort books by authors (and title)``(BooksProducts(Products(_, products))) =
+        products |> verifySortBy Column.BookAuthors bookAuthorsAndTitle
+
+    [<Test; ShopfooFsCheckProperty>]
+    member _.``sort books by tags (and title)``(BooksProducts(Products(_, products))) = // ↩
+        products |> verifySortBy Column.BookTags bookTagsAndTitle

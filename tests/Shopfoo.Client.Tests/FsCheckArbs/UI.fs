@@ -33,11 +33,12 @@ module UIGen =
     } with
         member this.Value: Filters =
             match this.CategoryFilters with
-            | None -> Filters.none
+            | None -> Filters.defaults
             | Some categoryFilters -> {
-                CategoryFilters = Some categoryFilters.Value
-                SearchTerm = this.SearchTerm |> Option.map _.Value
-                SortBy = this.SortBy
+                Filters.defaults with
+                    CategoryFilters = Some categoryFilters.Value
+                    SearchTerm = this.SearchTerm |> Option.map _.Value
+                    SortBy = this.SortBy
               }
 
     type SanitizedPage = private {

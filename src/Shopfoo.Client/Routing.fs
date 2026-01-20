@@ -232,12 +232,12 @@ module Page =
         | [ "books"; Route.SKU sku ] -> Page.ProductDetail sku
 
         // ProductIndex
-        | [ "products" ] -> Page.ProductIndex Filters.none
-        | [ "bazaar" ] -> Page.ProductIndex(Filters.none.ToBazaar())
-        | [ "books" ] -> Page.ProductIndex(Filters.none.ToBooks())
+        | [ "products" ] -> Page.ProductIndex Filters.defaults
+        | [ "bazaar" ] -> Page.ProductIndex(Filters.defaults.ToBazaar())
+        | [ "books" ] -> Page.ProductIndex(Filters.defaults.ToBooks())
         | [ "bazaar"; Route.Query(Route.Category category & Route.Search searchTerm & Route.Sort sortBy) ] ->
             Page.ProductIndex {
-                Filters.none with
+                Filters.defaults with
                     CategoryFilters = Some(CategoryFilters.Bazaar category)
                     SearchTerm = searchTerm
                     SortBy = sortBy
@@ -245,7 +245,7 @@ module Page =
 
         | [ "books"; Route.Query(Route.Author authorId & Route.Tag tag & Route.Search searchTerm & Route.Sort sortBy) ] ->
             Page.ProductIndex {
-                Filters.none with
+                Filters.defaults with
                     CategoryFilters = Some(CategoryFilters.Books(authorId, tag))
                     SearchTerm = searchTerm
                     SortBy = sortBy

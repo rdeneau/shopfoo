@@ -23,10 +23,10 @@ module Css =
 /// The syntax is closed to the Feliz one - see example below.
 /// </remarks>
 /// <example>
-/// Given `xxxMatchTexts` the result of search on "code" performed on a book title, the following code:
+/// Given the `result` of searching "code" in a book title, the following code:
 /// <code lang="fsharp">
-/// xxxMatchTexts |> Highlight.matches Html.span [
-///     prop.key "title"
+/// result |> Highlight.matches Html.span [
+///     ...props
 ///     prop.text "Clean Code by Robert C. Martin"
 /// ]
 /// </code>
@@ -34,7 +34,7 @@ module Css =
 /// ...is equivalent to:
 /// <code lang="fsharp">
 /// Html.span [
-///     prop.key "title"
+///     ...props
 ///     prop.children [
 ///         Html.text "Clean "
 ///         Html.mark [
@@ -47,7 +47,7 @@ module Css =
 /// ]
 /// </code>
 /// </example>
-let matches (element: IReactProperty list -> ReactElement) (props: IReactProperty list) (matchTexts: MatchTexts<_>) : ReactElement =
+let matches (element: IReactProperty list -> ReactElement) (props: IReactProperty list) (result: SearchTargetResult) : ReactElement =
     let reactKey =
         props
         |> List.tryPick (|ReactKey|_|)
@@ -64,23 +64,23 @@ let matches (element: IReactProperty list -> ReactElement) (props: IReactPropert
         )
 
     let props =
-        match matchTexts with
-        | _ when String.IsNullOrWhiteSpace(matchTexts.Text) -> props
-        | { Matches = [] } -> [ yield! props; prop.text matchTexts.Text ]
+        match result with
+        | _ when String.IsNullOrWhiteSpace(result.Text) -> props
+        | { Matches = [] } -> [ yield! props; prop.text result.Text ]
 
         | _ -> [
             prop.key reactKey
             yield! otherProps
 
             prop.children [
-                for i, m in matchTexts.Matches |> List.indexed do
-                    match m with
-                    | NoMatch, s -> Html.text s
-                    | TextMatch, s ->
+                for i, m in result.Matches |> List.indexed do
+                    match m.MatchType with
+                    | NoMatch -> Html.text m.Text
+                    | TextMatch ->
                         Html.mark [
                             prop.key $"%s{reactKey}-match-%i{i}"
                             prop.className $"%s{Css.TextColors} %s{Css.Border}"
-                            prop.text s
+                            prop.text m.Text
                         ]
             ]
           ]
