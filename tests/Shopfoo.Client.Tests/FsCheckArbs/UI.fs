@@ -29,7 +29,7 @@ module UIGen =
     type SanitizedFilters = private {
         CategoryFilters: SanitizedCategoryFilters option
         SearchTerm: AlphaNumString option
-        SortBy: (ProductSort * SortDirection) option
+        SortBy: (Column * SortDirection) option
     } with
         member this.Value: Filters =
             match this.CategoryFilters with

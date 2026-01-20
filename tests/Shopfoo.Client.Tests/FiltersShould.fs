@@ -194,20 +194,20 @@ type FiltersShould() =
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort products by sku``(Products(provider, products)) = // ↩
-        (provider, products) |> verifySortBy ProductSort.SKU _.SKU.Value
+        (provider, products) |> verifySortBy Column.SKU _.SKU.Value
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort products by title``(Products(provider, products)) = // ↩
-        (provider, products) |> verifySortBy ProductSort.Title _.Title
+        (provider, products) |> verifySortBy Column.Name _.Title
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort bazaar products by category (and title)``(BazaarProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy ProductSort.StoreCategory bazaarCategoryAndTitle
+        (provider, products) |> verifySortBy Column.BazaarCategory bazaarCategoryAndTitle
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort books by authors (and title)``(BooksProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy ProductSort.BookAuthors bookAuthorsAndTitle
+        (provider, products) |> verifySortBy Column.BookAuthors bookAuthorsAndTitle
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort books by tags (and title)``(BooksProducts(Products(provider, products))) =
-        (provider, products) |> verifySortBy ProductSort.BookTags bookTagsAndTitle
+        (provider, products) |> verifySortBy Column.BookTags bookTagsAndTitle

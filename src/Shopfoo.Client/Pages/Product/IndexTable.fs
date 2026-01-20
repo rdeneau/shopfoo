@@ -12,24 +12,14 @@ open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
-[<RequireQualifiedAccess>]
-type Col =
-    | Num
-    | Name
-    | Description
-    | BazaarCategory
-    | BookAuthors
-    | BookTags
-    | SKU
-
 type ColDef = { // ↩
-    Col: Col
-    SortableBy: ProductSort option
+    Column: Column
+    SortableBy: Column option
 }
 
-type Col with
-    member col.NotSortable: ColDef = { Col = col; SortableBy = None }
-    member col.SortableBy(key) : ColDef = { Col = col; SortableBy = Some key }
+type Column with
+    member col.NotSortable: ColDef = { Column = col; SortableBy = None }
+    member col.SortableBy(key) : ColDef = { Column = col; SortableBy = Some key }
 
 let private (|ColSorted|_|) (colDef, filters: Filters) =
     match colDef.SortableBy, filters.SortBy with
@@ -171,31 +161,32 @@ type private Td(filters: Filters, row: Row) =
 [<ReactComponent>]
 let IndexTable key (filters: Filters) products provider (translations: AppTranslations) =
     let columnDefinitions = [
-        Col.Num.SortableBy ProductSort.Num
-        Col.SKU.SortableBy ProductSort.SKU
+        Column.Num.SortableBy Column.Num
+        Column.SKU.SortableBy Column.SKU
 
         if provider = FakeStore then
-            Col.BazaarCategory.SortableBy ProductSort.StoreCategory
+            Column.BazaarCategory.SortableBy Column.BazaarCategory
 
-        Col.Name.SortableBy ProductSort.Title
+        Column.Name.SortableBy Column.Name
 
         if provider = OpenLibrary then
-            Col.BookAuthors.SortableBy ProductSort.BookAuthors
-            Col.BookTags.SortableBy ProductSort.BookTags
+            Column.BookAuthors.SortableBy Column.BookAuthors
+            Column.BookTags.SortableBy Column.BookTags
 
-        Col.Description.NotSortable
+        Column.Description.NotSortable
     ]
 
     let th (colDef: ColDef) =
         let key, text =
-            match colDef.Col with
-            | Col.Num -> "num", "#"
-            | Col.SKU -> "sku", "SKU"
-            | Col.Name -> "name", translations.Product.Name
-            | Col.Description -> "description", translations.Product.Description
-            | Col.BazaarCategory -> "category", translations.Product.Category
-            | Col.BookAuthors -> "authors", translations.Product.Authors
-            | Col.BookTags -> "tags", translations.Product.Tags
+            match colDef.Column with
+            | Column.Num -> "num", "#"
+            | Column.SKU -> "sku", "SKU"
+            | Column.Name -> "name", translations.Product.Name
+            | Column.Description -> "description", translations.Product.Description
+            | Column.BazaarCategory -> "category", translations.Product.Category
+            | Column.BookSubtitle -> "name", translations.Product.Name // Subtitle is part of Name column
+            | Column.BookAuthors -> "authors", translations.Product.Authors
+            | Column.BookTags -> "tags", translations.Product.Tags
 
         Html.th [
             prop.key $"product-th-%s{key}"
@@ -270,14 +261,15 @@ let IndexTable key (filters: Filters) products provider (translations: AppTransl
                                 let td = Td(filters, row)
 
                                 for colDef in columnDefinitions do
-                                    match colDef.Col with
-                                    | Col.Num -> td.num
-                                    | Col.Name -> td.name
-                                    | Col.Description -> td.description
-                                    | Col.BazaarCategory -> td.bazaarCategory
-                                    | Col.BookAuthors -> td.bookAuthors
-                                    | Col.BookTags -> td.bookTags
-                                    | Col.SKU -> td.sku
+                                    match colDef.Column with
+                                    | Column.Num -> td.num
+                                    | Column.Name -> td.name
+                                    | Column.Description -> td.description
+                                    | Column.BazaarCategory -> td.bazaarCategory
+                                    | Column.BookSubtitle -> td.name // Subtitle is part of Name column
+                                    | Column.BookAuthors -> td.bookAuthors
+                                    | Column.BookTags -> td.bookTags
+                                    | Column.SKU -> td.sku
                             ]
                         ]
                 ]

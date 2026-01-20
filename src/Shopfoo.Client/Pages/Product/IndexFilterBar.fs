@@ -96,7 +96,7 @@ type private Tab(filters: Filters, translations: AppTranslations) =
 
     // TODO RDE: add checkbox Highlight search terms
     member _.search =
-        let setSearchTerm searchTerm =
+        let setSearchTerm searchTerm = // ↩
             pageWithFilters (fun x -> { x with SearchTerm = searchTerm }) |> Router.navigatePage
 
         Daisy.label.input [

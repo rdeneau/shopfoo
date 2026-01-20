@@ -34,32 +34,36 @@ module private Keys =
             | _ -> None
 
     [<RequireQualifiedAccess>]
-    module ProductSort =
+    module Column =
         let key =
             function
-            | ProductSort.Num -> "num"
-            | ProductSort.Title -> "name"
-            | ProductSort.BookTags -> "tags"
-            | ProductSort.BookAuthors -> "authors"
-            | ProductSort.StoreCategory -> "category"
-            | ProductSort.SKU -> "sku"
+            | Column.Num -> "num"
+            | Column.SKU -> "sku"
+            | Column.Name -> "name"
+            | Column.Description -> "description"
+            | Column.BazaarCategory -> "category"
+            | Column.BookSubtitle -> "subtitle"
+            | Column.BookAuthors -> "authors"
+            | Column.BookTags -> "tags"
 
-    let (|Column|_|) key : ProductSort option =
+    let (|Col|_|) key : Column option =
         match String.toLower key with
-        | "num" -> Some ProductSort.Num
-        | "name" -> Some ProductSort.Title
-        | "tags" -> Some ProductSort.BookTags
-        | "authors" -> Some ProductSort.BookAuthors
-        | "category" -> Some ProductSort.StoreCategory
-        | "sku" -> Some ProductSort.SKU
+        | "num" -> Some Column.Num
+        | "sku" -> Some Column.SKU
+        | "name" -> Some Column.Name
+        | "description" -> Some Column.Description
+        | "category" -> Some Column.BazaarCategory
+        | "subtitle" -> Some Column.BookSubtitle
+        | "authors" -> Some Column.BookAuthors
+        | "tags" -> Some Column.BookTags
         | _ -> None
 
     [<RequireQualifiedAccess>]
     module SortBy =
         let key =
             function
-            | col, Ascending -> col |> ProductSort.key
-            | col, Descending -> $"{col |> ProductSort.key}-desc"
+            | col, Ascending -> col |> Column.key
+            | col, Descending -> $"{col |> Column.key}-desc"
 
     let (|Desc|_|) s =
         match String.toLower s with
@@ -193,10 +197,10 @@ module private Route =
         | Param "search" searchTerm -> Some searchTerm
         | _ -> None
 
-    let (|Sort|) queryParams : (ProductSort * SortDirection) option =
+    let (|Sort|) queryParams : (Column * SortDirection) option =
         match queryParams with
-        | Param "sort" (Dashed [ Column col; Desc ]) -> Some(col, Descending)
-        | Param "sort" (Column col) -> Some(col, Ascending)
+        | Param "sort" (Dashed [ Col col; Desc ]) -> Some(col, Descending)
+        | Param "sort" (Col col) -> Some(col, Ascending)
         | _ -> None
 
     let (|SKU|_|) routeSegment : SKU option =

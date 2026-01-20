@@ -5,15 +5,17 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
-/// Properties by which products can be sorted
+/// Properties displayed in the table and by which products can be filtered, searched, and/or sorted
 [<RequireQualifiedAccess>]
-type ProductSort =
+type Column =
     | Num
-    | Title
-    | BookTags
-    | BookAuthors
-    | StoreCategory
     | SKU
+    | Name
+    | Description
+    | BazaarCategory
+    | BookSubtitle
+    | BookAuthors
+    | BookTags
 
 type SortDirection =
     | Ascending
@@ -136,7 +138,7 @@ module CategoryFilters =
 type Filters = {
     CategoryFilters: CategoryFilters option
     SearchTerm: string option
-    SortBy: (ProductSort * SortDirection) option
+    SortBy: (Column * SortDirection) option
 } with
     member this.Provider =
         match this.CategoryFilters with
@@ -177,45 +179,53 @@ module Filters =
         SortBy = None
     }
 
+    let private getSortKey (row: Row) (translations: AppTranslations) (filters: Filters) = [
+        match filters.SortBy with
+        | None -> ()
+        | Some(Column.Num, _) -> SortKeyPart.Num row.Index
+        | Some(Column.SKU, _) -> SortKeyPart.Text row.Product.SKU.Value
+        | Some(Column.Name, _) -> SortKeyPart.Text row.Product.Title
+        | Some(Column.Description, _) -> SortKeyPart.Text row.Product.Description
+
+        | Some(Column.BazaarCategory, _) ->
+            match row.Product.Category with
+            | Category.Bazaar storeProduct -> SortKeyPart.Text(translations.Product.StoreCategoryOf storeProduct.Category)
+            | _ -> ()
+
+            SortKeyPart.Text row.Product.Title
+
+        | Some(Column.BookSubtitle, _) ->
+            match row.Product.Category with
+            | Category.Books book -> SortKeyPart.Text book.Subtitle
+            | _ -> ()
+
+        | Some(Column.BookAuthors, _) ->
+            match row.Product.Category with
+            | Category.Books book ->
+                match book.Authors with
+                | [] -> SortKeyPart.Text ""
+                | authors ->
+                    for author in authors do
+                        SortKeyPart.Text author.Name
+            | _ -> ()
+
+            SortKeyPart.Text row.Product.Title
+
+        | Some(Column.BookTags, _) ->
+            match row.Product.Category with
+            | Category.Books book ->
+                match book.Tags with
+                | [] -> SortKeyPart.Text ""
+                | tags ->
+                    for tag in tags do
+                        SortKeyPart.Text tag
+            | _ -> ()
+
+            SortKeyPart.Text row.Product.Title
+    ]
+
     let apply (products: Product list) (provider: Provider) (translations: AppTranslations) (filters: Filters) : Row list =
-        let getSortKey (row: Row) = [
-            match filters.SortBy with
-            | None -> ()
-            | Some(ProductSort.Num, _) -> SortKeyPart.Num row.Index
-            | Some(ProductSort.SKU, _) -> SortKeyPart.Text row.Product.SKU.Value
-            | Some(ProductSort.Title, _) -> SortKeyPart.Text row.Product.Title
-
-            | Some(ProductSort.BookAuthors, _) ->
-                match row.Product.Category with
-                | Category.Books book ->
-                    match book.Authors with
-                    | [] -> SortKeyPart.Text ""
-                    | authors ->
-                        for author in authors do
-                            SortKeyPart.Text author.Name
-                | _ -> ()
-
-                SortKeyPart.Text row.Product.Title
-
-            | Some(ProductSort.BookTags, _) ->
-                match row.Product.Category with
-                | Category.Books book ->
-                    match book.Tags with
-                    | [] -> SortKeyPart.Text ""
-                    | tags ->
-                        for tag in tags do
-                            SortKeyPart.Text tag
-                | _ -> ()
-
-                SortKeyPart.Text row.Product.Title
-
-            | Some(ProductSort.StoreCategory, _) ->
-                match row.Product.Category with
-                | Category.Bazaar storeProduct -> SortKeyPart.Text(translations.Product.StoreCategoryOf storeProduct.Category)
-                | _ -> ()
-
-                SortKeyPart.Text row.Product.Title
-        ]
+        let getSortKey row = getSortKey row translations filters
 
         let sortProducts =
             match filters.SortBy with
