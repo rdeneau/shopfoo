@@ -17,14 +17,45 @@ type private Tab(filters: Filters, translations: AppTranslations) =
     let reactKeyOf x = String.toKebab $"%A{x}"
     let pageWithFilters changeFilters = Page.ProductIndex(changeFilters filters)
 
-    member _.bazaarCategory bazaarCategory iconifyIcon text =
+    member _.bazaarCategory (count: int) bazaarCategory iconifyIcon text =
         Daisy.tab [
-            if filters.BazaarCategory = Some bazaarCategory then
+            let key = $"tab-bazaar-category-%s{reactKeyOf bazaarCategory}"
+            prop.key key
+
+            let isActive = (filters.BazaarCategory = Some bazaarCategory)
+
+            if isActive then
                 tab.active
-            prop.key $"tab-bazaar-category-%s{reactKeyOf bazaarCategory}"
-            prop.className "gap-2"
-            yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(bazaarCategory))
-            prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
+                yield! prop.hrefRouted (pageWithFilters _.ToBazaar())
+            else
+                yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(bazaarCategory))
+
+            prop.children [
+                Daisy.indicator [
+                    prop.key $"%s{key}-indicator"
+                    prop.children [
+                        Daisy.indicatorItem [
+                            prop.key $"%s{key}-badge"
+                            prop.className "badge badge-sm badge-primary badge-soft px-1"
+                            prop.text count
+                        ]
+                        Html.div [
+                            prop.key $"%s{key}-content"
+                            prop.className "flex items-center gap-2 pr-3"
+                            prop.children [
+                                icon iconifyIcon
+                                Html.text $"%s{text}"
+                                if isActive then
+                                    Html.span [
+                                        prop.key $"%s{key}-tab-close-button"
+                                        prop.className "btn btn-ghost btn-sm btn-circle"
+                                        prop.text "✕"
+                                    ]
+                            ]
+                        ]
+                    ]
+                ]
+            ]
         ]
 
     member _.booksAuthors products =
@@ -76,13 +107,34 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             onReset = FilterAction.NavigateToPage(fun () -> pageWithFilters _.ToBooksWithTag(None))
         )
 
-    member _.provider (provider: Provider) (selectedProvider: Provider option) (selectProvider: Provider -> unit) text iconifyIcon page =
+    member _.provider (count: int) (selectedProvider: Provider option) (selectProvider: Provider -> unit) (provider: Provider) text iconifyIcon page =
         let (PageUrl pageUrl) = page
+        let key = $"tab-provider-%s{reactKeyOf provider}"
 
         Daisy.tab [
-            prop.key $"tab-provider-%s{reactKeyOf provider}"
-            prop.className "gap-2"
-            prop.children [ icon iconifyIcon; Html.text $"%s{text}" ]
+            prop.key key
+            prop.children [
+                Daisy.indicator [
+                    prop.key $"%s{key}-count-indicator"
+                    prop.children [
+                        if selectedProvider = Some provider then
+                            Daisy.indicatorItem [
+                                prop.key $"%s{key}-count-badge"
+                                prop.className "badge badge-sm badge-primary badge-soft px-1"
+                                prop.text count
+                            ]
+
+                        Html.div [
+                            prop.key $"%s{key}-count-badge-content"
+                            prop.className "flex items-center gap-2 pr-3"
+                            prop.children [
+                                icon iconifyIcon // ↩
+                                Html.text $"%s{text}"
+                            ]
+                        ]
+                    ]
+                ]
+            ]
             if selectedProvider = Some provider then
                 tab.active
             else
@@ -94,7 +146,7 @@ type private Tab(filters: Filters, translations: AppTranslations) =
                 )
         ]
 
-    // TODO RDE: add checkbox Highlight search terms
+    // TODO RDE: add search config: toggle Highlighting, search in titles only, etc.
     member _.search =
         let setSearchTerm searchTerm = // ↩
             pageWithFilters (fun x -> { x with SearchTerm = searchTerm }) |> Router.navigatePage
@@ -143,8 +195,25 @@ let IndexFilterBar
         prop.key $"%s{key}-content"
         prop.className "pb-2 border-b border-gray-200"
         prop.children [
-            tab.provider OpenLibrary selectedProvider selectProvider translations.Home.Books fa6Solid.book (Page.ProductIndex(filters.ToBooks()))
-            tab.provider FakeStore selectedProvider selectProvider translations.Home.Bazaar fa6Solid.store (Page.ProductIndex(filters.ToBazaar()))
+            let count = products.Length
+
+            tab.provider
+                count
+                selectedProvider
+                selectProvider
+                OpenLibrary
+                translations.Home.Books
+                fa6Solid.book
+                (Page.ProductIndex(filters.ToBooks()))
+
+            tab.provider
+                count
+                selectedProvider
+                selectProvider
+                FakeStore
+                translations.Home.Bazaar
+                fa6Solid.store
+                (Page.ProductIndex(filters.ToBazaar()))
 
             Daisy.divider [
                 divider.horizontal
@@ -165,7 +234,15 @@ let IndexFilterBar
                     |> List.sortBy (fun (_, _, text) -> text)
 
                 for cat, icon, text in categories do
-                    tab.bazaarCategory cat icon text
+                    let count =
+                        products
+                        |> List.sumBy (fun p ->
+                            match p.Category with
+                            | Category.Bazaar bazaarProduct when bazaarProduct.Category = cat -> 1
+                            | _ -> 0
+                        )
+
+                    tab.bazaarCategory count cat icon text
 
                 tab.search
 

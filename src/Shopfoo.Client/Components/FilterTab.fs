@@ -25,8 +25,9 @@ type Filter =
             onSelect: FilterAction<'item>,
             onReset: FilterAction<unit>
         ) =
-        match selectedItem with
-        | None ->
+        match items, selectedItem with
+        | [], _ -> Html.none
+        | _, None ->
             // STATE: OFF - Show Dropdown
             Daisy.dropdown [
                 dropdown.hover
@@ -35,12 +36,29 @@ type Filter =
                     Daisy.button.a [
                         button.link
                         prop.key $"%s{key}-dropdown-button"
-                        prop.className "tab h-full gap-2 !font-normal !no-underline" // Force tab styling
+                        prop.className "tab h-full !font-normal !no-underline" // Force tab styling
                         prop.children [
-                            match iconifyIcon with
-                            | None -> ()
-                            | Some iconifyIcon -> icon iconifyIcon
-                            Html.text label
+                            Daisy.indicator [
+                                prop.key $"%s{key}-dropdown-indicator"
+                                prop.children [
+                                    Daisy.indicatorItem [
+                                        prop.key $"%s{key}-dropdown-badge"
+                                        prop.className "badge badge-sm badge-primary badge-soft px-1"
+                                        prop.text items.Length
+                                    ]
+
+                                    Html.div [
+                                        prop.key $"%s{key}-dropdown-button-content"
+                                        prop.className "flex items-center gap-2 pr-3"
+                                        prop.children [
+                                            match iconifyIcon with
+                                            | None -> ()
+                                            | Some iconifyIcon -> icon iconifyIcon
+                                            Html.text label
+                                        ]
+                                    ]
+                                ]
+                            ]
                         ]
                     ]
                     Daisy.dropdownContent [
@@ -67,7 +85,7 @@ type Filter =
                 ]
             ]
 
-        | Some selectedItem ->
+        | _, Some selectedItem ->
             // STATE: ON - Show Active Filter with Reset
             Html.div [
                 prop.key $"%s{key}-tab"
