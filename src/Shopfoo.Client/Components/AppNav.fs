@@ -3,6 +3,7 @@
 open System
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Client
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
@@ -21,26 +22,30 @@ type private Nav(currentPage, translations: AppTranslations) =
         else
             Html.li [
                 prop.key $"nav-%s{page.Key}"
-                prop.text text
                 prop.className [
-                    if page <> currentPage then
-                        "cursor-pointer"
-
                     match cssClass with
                     | Some css -> css
                     | None -> ()
                 ]
-                if page <> currentPage then
-                    prop.onClick (fun _ -> Router.navigatePage page)
+                prop.children [
+                    if page = currentPage then
+                        Html.text text
+                    else
+                        Html.a [
+                            prop.key $"nav-link-%s{page.Key}"
+                            prop.text text
+                            yield! prop.hrefRouted page
+                        ]
+                ]
             ]
 
     member nav.Home = nav.page (Page.Home, "🛍️ Shopfoo")
     member nav.About = nav.page (Page.About, translate _.Home.About)
     member nav.Admin = nav.page (Page.Admin, translate _.Home.Admin)
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
-    member nav.Products = nav.page (Page.ProductIndex Filters.none, translate _.Home.Products)
-    member nav.Bazaar = nav.page (Page.ProductIndex(Filters.none.ToBazaar()), translate _.Home.Bazaar)
-    member nav.Books = nav.page (Page.ProductIndex(Filters.none.ToBooks()), translate _.Home.Books)
+    member nav.Products = nav.page (Page.ProductIndexDefaults, translate _.Home.Products)
+    member nav.Bazaar = nav.page (Page.ProductIndexDefaultsWith _.ToBazaar(), translate _.Home.Bazaar)
+    member nav.Books = nav.page (Page.ProductIndexDefaultsWith _.ToBooks(), translate _.Home.Books)
     member nav.Product sku = nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")
 
 [<ReactComponent>]

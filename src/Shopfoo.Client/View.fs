@@ -13,7 +13,6 @@ open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Components.Lang
 open Shopfoo.Client.Components.Theme
 open Shopfoo.Client.Components.User
-open Shopfoo.Client.Filters
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
@@ -100,7 +99,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.Login user ->
         { model with Model.FullContext.User = user },
         match model.Page with
-        | Page.Login -> Cmd.navigatePage (Page.ProductIndex Filters.none)
+        | Page.Login -> Cmd.navigatePage Page.ProductIndexDefaults
         | _ -> Cmd.none
 
     | Msg.Logout ->
@@ -136,7 +135,7 @@ let AppView () =
 
         // Default page when logged in
         | Page.Home, User.LoggedIn _
-        | Page.Login, User.LoggedIn _ -> Page.ProductIndex Filters.none, Some Feat.Catalog
+        | Page.Login, User.LoggedIn _ -> Page.ProductIndexDefaults, Some Feat.Catalog
 
         // Authentication needed prior to the access check
         // -> Display the login page inline, without redirection.

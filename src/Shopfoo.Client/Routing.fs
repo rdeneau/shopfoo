@@ -135,8 +135,9 @@ type Page =
         | Page.ProductIndex { CategoryFilters = Some(CategoryFilters.Books _) } -> "books"
         | Page.ProductDetail sku -> $"product-%s{sku.Key}"
 
-    static member CurrentNotFound() = // ↩
-        Page.NotFound(url = (Router.currentUrl () |> Router.format))
+    static member CurrentNotFound() = Page.NotFound(url = (Router.currentUrl () |> Router.format))
+    static member ProductIndexDefaults = Page.ProductIndex Filters.defaults
+    static member ProductIndexDefaultsWith(changeFilters) = Page.ProductIndex(changeFilters Filters.defaults)
 
 /// Feliz.Router function alternative implementations compatible with .NET unit tests
 [<AutoOpen>]
@@ -218,8 +219,8 @@ module private Route =
 module Page =
     let defaultPage = Page.Login
 
-    let parseFromUrlSegments =
-        function
+    let parseFromUrlSegments segments =
+        match segments with
         | [] -> Page.Home
         | [ "about" ] -> Page.About
         | [ "admin" ] -> Page.Admin
@@ -232,26 +233,26 @@ module Page =
         | [ "books"; Route.SKU sku ] -> Page.ProductDetail sku
 
         // ProductIndex
-        | [ "products" ] -> Page.ProductIndex Filters.defaults
-        | [ "bazaar" ] -> Page.ProductIndex(Filters.defaults.ToBazaar())
-        | [ "books" ] -> Page.ProductIndex(Filters.defaults.ToBooks())
+        | [ "products" ] -> Page.ProductIndexDefaults
+        | [ "bazaar" ] -> Page.ProductIndexDefaultsWith _.ToBazaar()
+        | [ "books" ] -> Page.ProductIndexDefaultsWith _.ToBooks()
         | [ "bazaar"; Route.Query(Route.Category category & Route.Search searchTerm & Route.Sort sortBy) ] ->
-            Page.ProductIndex {
-                Filters.defaults with
+            Page.ProductIndexDefaultsWith(fun filters -> {
+                filters with
                     CategoryFilters = Some(CategoryFilters.Bazaar category)
                     SearchTerm = searchTerm
                     SortBy = sortBy
-            }
+            })
 
         | [ "books"; Route.Query(Route.Author authorId & Route.Tag tag & Route.Search searchTerm & Route.Sort sortBy) ] ->
-            Page.ProductIndex {
-                Filters.defaults with
+            Page.ProductIndexDefaultsWith(fun filters -> {
+                filters with
                     CategoryFilters = Some(CategoryFilters.Books(authorId, tag))
                     SearchTerm = searchTerm
                     SortBy = sortBy
-            }
+            })
 
-        | segments -> Page.NotFound(Router.formatPath segments)
+        | _ -> Page.NotFound(Router.formatPath segments)
 
 let (|PageUrl|) =
     function
