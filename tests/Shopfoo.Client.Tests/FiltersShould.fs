@@ -94,19 +94,28 @@ type FiltersShould() =
         | SortDirection.Ascending -> products |> List.sort
         | SortDirection.Descending -> products |> List.sortDescending
 
-    let performSortBy (column, direction) f products =
-        let filters = { Filters.none with SortBy = Some(column, direction) }
-        let filteredProducts = filters |> Filters.apply products appTranslations |> List.map _.Product
-        let filteredValues = filteredProducts |> List.map f
-        let expectedValues = products |> List.map f |> sort direction
-        filteredValues, expectedValues
+    let performSortBy (column, direction) (mapActual: Row -> 't) (mapExpected: int -> Product -> 't) products = {|
+        actual =
+            { Filters.none with SortBy = Some(column, direction) }
+            |> Filters.apply products appTranslations
+            |> List.map mapActual
+        expected =
+            products // ↩
+            |> List.mapi mapExpected
+            |> sort direction
+    |}
 
-    let verifySortBy column f products =
-        let actualAsc, expectedAsc = performSortBy (column, SortDirection.Ascending) f products
-        let actualDesc, expectedDesc = performSortBy (column, SortDirection.Descending) f products
-        let actual = {| Asc = actualAsc; Desc = actualDesc |}
-        let expected = {| Asc = expectedAsc; Desc = expectedDesc |}
+    let verifyRowSortBy column mapActual mapExpected products =
+        let asc = performSortBy (column, SortDirection.Ascending) mapActual mapExpected products
+        let desc = performSortBy (column, SortDirection.Descending) mapActual mapExpected products
+        let actual = {| Asc = asc.actual; Desc = desc.actual |}
+        let expected = {| Asc = asc.expected; Desc = desc.expected |}
         actual =! expected
+
+    let verifyProductSortBy column f products =
+        let mapActual row = f row.Product
+        let mapExpected _i product = f product
+        verifyRowSortBy column mapActual mapExpected products
 
     let bazaarCategoryAndTitle product =
         match product.Category with
@@ -239,21 +248,25 @@ type FiltersShould() =
         |]
 
     [<Test; ShopfooFsCheckProperty>]
+    member _.``sort products by num``(Products(_, products)) = // ↩
+        products |> verifyRowSortBy Column.Num _.Index (fun i _ -> i)
+
+    [<Test; ShopfooFsCheckProperty>]
     member _.``sort products by sku``(Products(_, products)) = // ↩
-        products |> verifySortBy Column.SKU _.SKU.Value
+        products |> verifyProductSortBy Column.SKU _.SKU.Value
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort products by title``(Products(_, products)) = // ↩
-        products |> verifySortBy Column.Name _.Title
+        products |> verifyProductSortBy Column.Name _.Title
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort bazaar products by category (and title)``(BazaarProducts(Products(_, products))) =
-        products |> verifySortBy Column.BazaarCategory bazaarCategoryAndTitle
+        products |> verifyProductSortBy Column.BazaarCategory bazaarCategoryAndTitle
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort books by authors (and title)``(BooksProducts(Products(_, products))) =
-        products |> verifySortBy Column.BookAuthors bookAuthorsAndTitle
+        products |> verifyProductSortBy Column.BookAuthors bookAuthorsAndTitle
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort books by tags (and title)``(BooksProducts(Products(_, products))) = // ↩
-        products |> verifySortBy Column.BookTags bookTagsAndTitle
+        products |> verifyProductSortBy Column.BookTags bookTagsAndTitle
