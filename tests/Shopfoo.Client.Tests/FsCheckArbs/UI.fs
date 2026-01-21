@@ -37,7 +37,7 @@ module UIGen =
             | Some categoryFilters -> {
                 Filters.defaults with
                     CategoryFilters = Some categoryFilters.Value
-                    SearchTerm = this.SearchTerm |> Option.map _.Value
+                    Search.Term = this.SearchTerm |> Option.map _.Value
                     SortBy = this.SortBy
               }
 

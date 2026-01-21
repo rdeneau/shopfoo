@@ -41,11 +41,21 @@ type AutoIndex() =
         index <- index + 1
         index
 
-type MatchType =
-    | TextMatch
-    | NoMatch
+type CaseMatching =
+    | CaseSensitive
+    | CaseInsensitive
 
-type MatchText = { MatchType: MatchType; Text: string }
+[<RequireQualifiedAccess>]
+type Highlighting =
+    | Active
+    | None
+
+type SearchConfig = {
+    Columns: Set<Column>
+    CaseMatching: CaseMatching
+    Highlighting: Highlighting
+    Term: string option
+}
 
 [<RequireQualifiedAccess>]
 type SearchTarget =
@@ -57,22 +67,33 @@ type SearchTarget =
     | BookAuthor of BookAuthor
     | BookTag of string
 
+type MatchType =
+    | TextMatch
+    | NoMatch
+
+type MatchText = { MatchType: MatchType; Text: string }
+
 type SearchTargetResult = {
     Target: SearchTarget
     Text: string
     Matches: MatchText list
+    Highlighting: Highlighting
 }
-
-type SearchResult = Map<Column, SearchTargetResult list>
 
 [<RequireQualifiedAccess>]
 type SearchStatus =
     | NoMatch
     | Matches of Set<Column>
 
+type SearchResult = Map<Column, SearchTargetResult list>
+
 [<RequireQualifiedAccess>]
 module SearchResult =
-    let build columns f : SearchResult = Map [ for column in columns -> column, f column ]
+    let build (searchConfig: SearchConfig) f : SearchResult =
+        Map [
+            for column in searchConfig.Columns do
+                column, f column
+        ]
 
     let status (searchResult: SearchResult) : SearchStatus =
         searchResult
@@ -105,8 +126,7 @@ module CategoryFilters =
 
 type Filters = {
     CategoryFilters: CategoryFilters option
-    SearchColumns: Set<Column>
-    SearchTerm: string option
+    Search: SearchConfig
     SortBy: (Column * SortDirection) option
 } with
     member this.Provider =
@@ -144,14 +164,19 @@ type Filters = {
 module Filters =
     let none: Filters = {
         CategoryFilters = None
-        SearchColumns = Set.empty
-        SearchTerm = None
+        Search = {
+            Columns = Set.empty
+            CaseMatching = CaseInsensitive
+            Highlighting = Highlighting.None
+            Term = None
+        }
         SortBy = None
     }
 
     let defaults: Filters = {
         none with
-            SearchColumns =
+            Search.Highlighting = Highlighting.Active
+            Search.Columns =
                 Set [
                     Column.SKU
                     Column.Name
@@ -163,6 +188,7 @@ module Filters =
                 ]
     }
 
+    /// Object to operate filtering and sorting on products according to given filters
     type private FiltersOperator(filters: Filters, translations: AppTranslations) =
         let getSortKey (row: Row) = [
             match filters.SortBy with
@@ -215,14 +241,22 @@ module Filters =
             | Some(_, Ascending) -> List.sortBy getSortKey
             | Some(_, Descending) -> List.sortByDescending getSortKey
 
-        let searchProductBy (product: Product) (searchTerm: string option) column : SearchTargetResult list = [
+        let searchRegexOptions caseMatching =
+            List.reduce (|||) [
+                RegexOptions.Multiline
+                if caseMatching = CaseInsensitive then
+                    RegexOptions.IgnoreCase
+            ]
+
+        let searchProduct (product: Product) column : SearchTargetResult list = [
             let search (target: SearchTarget) (text: string) : SearchTargetResult = {
                 Target = target
                 Text = text
+                Highlighting = filters.Search.Highlighting
                 Matches = [
-                    match searchTerm with
+                    match filters.Search.Term with
                     | Some(String.NotEmpty as term) ->
-                        let regex = Regex(pattern = Regex.Escape(term), options = (RegexOptions.IgnoreCase ||| RegexOptions.Multiline))
+                        let regex = Regex(pattern = Regex.Escape(term), options = searchRegexOptions filters.Search.CaseMatching)
                         let parts = regex.Split(text)
                         let matches = regex.Matches(text) |> Seq.toArray
 
@@ -279,7 +313,7 @@ module Filters =
 
             let rows = [
                 for product in products do
-                    let searchResult = SearchResult.build filters.SearchColumns (searchProductBy product filters.SearchTerm)
+                    let searchResult = SearchResult.build filters.Search (searchProduct product)
 
                     let isSearchMatched =
                         match searchResult |> SearchResult.status with
@@ -302,7 +336,7 @@ module Filters =
                         | _ -> true
 
                     if
-                        (filters.SearchTerm.IsNone || isSearchMatched)
+                        (filters.Search.Term.IsNone || isSearchMatched)
                         && isAuthorMatched
                         && isTagMatched
                         && isBazaarCategoryMatched

@@ -54,6 +54,11 @@ let matches (element: IReactProperty list -> ReactElement) (props: IReactPropert
         |> Option.map string
         |> Option.defaultValue (Guid.NewGuid().ToString().[..7])
 
+    let mark: IReactProperty list -> ReactElement =
+        match result.Highlighting with
+        | Highlighting.None -> Html.span
+        | Highlighting.Active -> fun props -> Html.mark [ prop.className $"%s{Css.TextColors} %s{Css.Border}"; yield! props ]
+
     let otherProps =
         props
         |> List.filter (
@@ -76,12 +81,7 @@ let matches (element: IReactProperty list -> ReactElement) (props: IReactPropert
                 for i, m in result.Matches |> List.indexed do
                     match m.MatchType with
                     | NoMatch -> Html.text m.Text
-                    | TextMatch ->
-                        Html.mark [
-                            prop.key $"%s{reactKey}-match-%i{i}"
-                            prop.className $"%s{Css.TextColors} %s{Css.Border}"
-                            prop.text m.Text
-                        ]
+                    | TextMatch -> mark [ prop.key $"%s{reactKey}-match-%i{i}"; prop.text m.Text ]
             ]
           ]
 

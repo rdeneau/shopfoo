@@ -10,6 +10,18 @@ open Shopfoo.Domain.Types.Catalog
 
 [<AutoOpen>]
 module private Keys =
+    type CaseMatching with
+        member this.Key =
+            match this with
+            | CaseSensitive -> Some "yes"
+            | CaseInsensitive -> None // Default is case-insensitive
+
+    type Highlighting with
+        member this.Key =
+            match this with
+            | Highlighting.None -> Some "no"
+            | Highlighting.Active -> None // Default is highlighting active
+
     type SKU with
         member this.Key =
             match this.Type, this.Value with
@@ -70,6 +82,12 @@ module private Keys =
         | "desc" -> Some()
         | _ -> None
 
+    let (|YesNo|_|) s =
+        match String.toLower s with
+        | "yes" -> Some true
+        | "no" -> Some false
+        | _ -> None
+
 type PageUrl = {
     Segments: string list
     Query: (string * string) list
@@ -82,7 +100,7 @@ type PageUrl = {
     static member Root = PageUrl.WithSegments()
 
     member this.WithQueryParam(name: string, value: string) = // ↩
-        { this with Query = (name, value) :: this.Query }
+        { this with Query = (name, value) :: this.Query |> List.sort }
 
     member this.WithQueryParamNotEmpty(name: string, value: string) =
         match value with
@@ -93,6 +111,13 @@ type PageUrl = {
         match value with
         | None -> this
         | Some value -> this.WithQueryParamNotEmpty(name, value)
+
+    member this.WithFiltersQueryParams(filters: Filters) =
+        this
+            .WithQueryParamOptional("search", filters.Search.Term)
+            .WithQueryParamOptional("highlight", filters.Search.Highlighting.Key)
+            .WithQueryParamOptional("matchCase", filters.Search.CaseMatching.Key)
+            .WithQueryParamOptional("sort", filters.SortBy |> Option.map SortBy.key)
 
     member this.WithSegmentOptional(segment: string option) =
         match segment with
@@ -193,16 +218,38 @@ module private Route =
         | Param "category" storeCategoryKey -> BazaarCategory.tryFromKey storeCategoryKey
         | _ -> None
 
-    let (|Search|) queryParams : string option =
+    let private (|Highlight|) queryParams : Highlighting =
+        match queryParams with
+        | Param "highlight" (YesNo false) -> Highlighting.None
+        | _ -> Highlighting.Active
+
+    let private (|MatchCase|) queryParams : CaseMatching =
+        match queryParams with
+        | Param "matchCase" (YesNo true) -> CaseSensitive
+        | _ -> CaseInsensitive
+
+    let private (|SearchTerm|) queryParams : string option =
         match queryParams with
         | Param "search" searchTerm -> Some searchTerm
         | _ -> None
 
-    let (|Sort|) queryParams : (Column * SortDirection) option =
+    let private (|Sort|) queryParams : (Column * SortDirection) option =
         match queryParams with
         | Param "sort" (Dashed [ Col col; Desc ]) -> Some(col, Descending)
         | Param "sort" (Col col) -> Some(col, Ascending)
         | _ -> None
+
+    /// This active pattern returns a function to change Filters according to the query parameters.
+    let (|Filters|) queryParams : Filters -> Filters =
+        match queryParams with
+        | Highlight highlighting & MatchCase caseMatching & SearchTerm searchTerm & Sort sortBy ->
+            fun filters -> {
+                filters with
+                    Search.Highlighting = highlighting
+                    Search.CaseMatching = caseMatching
+                    Search.Term = searchTerm
+                    SortBy = sortBy
+            }
 
     let (|SKU|_|) routeSegment : SKU option =
         match routeSegment with
@@ -236,21 +283,11 @@ module Page =
         | [ "products" ] -> Page.ProductIndexDefaults
         | [ "bazaar" ] -> Page.ProductIndexDefaultsWith _.ToBazaar()
         | [ "books" ] -> Page.ProductIndexDefaultsWith _.ToBooks()
-        | [ "bazaar"; Route.Query(Route.Category category & Route.Search searchTerm & Route.Sort sortBy) ] ->
-            Page.ProductIndexDefaultsWith(fun filters -> {
-                filters with
-                    CategoryFilters = Some(CategoryFilters.Bazaar category)
-                    SearchTerm = searchTerm
-                    SortBy = sortBy
-            })
+        | [ "bazaar"; Route.Query(Route.Filters changeFilters & Route.Category category) ] ->
+            Page.ProductIndexDefaultsWith(fun filters -> { changeFilters filters with CategoryFilters = Some(CategoryFilters.Bazaar category) })
 
-        | [ "books"; Route.Query(Route.Author authorId & Route.Tag tag & Route.Search searchTerm & Route.Sort sortBy) ] ->
-            Page.ProductIndexDefaultsWith(fun filters -> {
-                filters with
-                    CategoryFilters = Some(CategoryFilters.Books(authorId, tag))
-                    SearchTerm = searchTerm
-                    SortBy = sortBy
-            })
+        | [ "books"; Route.Query(Route.Filters changeFilters & Route.Author authorId & Route.Tag tag) ] ->
+            Page.ProductIndexDefaultsWith(fun filters -> { changeFilters filters with CategoryFilters = Some(CategoryFilters.Books(authorId, tag)) })
 
         | _ -> Page.NotFound(Router.formatPath segments)
 
@@ -268,18 +305,16 @@ let (|PageUrl|) =
 
     | Page.ProductIndex { CategoryFilters = None } -> PageUrl.WithSegments("products")
     | Page.ProductIndex(filters = { CategoryFilters = Some(CategoryFilters.Bazaar category) } as filters) ->
-        PageUrl
+        PageUrl // ↩
             .WithSegments("bazaar")
             .WithQueryParamOptional("category", category |> Option.map BazaarCategory.key)
-            .WithQueryParamOptional("search", filters.SearchTerm)
-            .WithQueryParamOptional("sort", filters.SortBy |> Option.map SortBy.key)
+            .WithFiltersQueryParams(filters)
     | Page.ProductIndex({ CategoryFilters = Some(CategoryFilters.Books(authorId, tag)) } as filters) ->
         PageUrl
             .WithSegments("books")
             .WithQueryParamOptional("author", authorId |> Option.map (fun (OLID authorId) -> authorId))
             .WithQueryParamOptional("tag", tag)
-            .WithQueryParamOptional("search", filters.SearchTerm)
-            .WithQueryParamOptional("sort", filters.SortBy |> Option.map SortBy.key)
+            .WithFiltersQueryParams(filters)
 
 [<RequireQualifiedAccess>]
 module Router =

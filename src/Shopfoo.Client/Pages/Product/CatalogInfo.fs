@@ -110,6 +110,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
         | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
         | Remote.Loaded product ->
+            // TODO RDE: customize for Bazaar (category) vs Books (subtitle, authors, tags)
             Daisy.fieldset [
                 prop.key $"%s{key}-fieldset"
                 prop.className "bg-base-200 border border-base-300 rounded-box p-4"

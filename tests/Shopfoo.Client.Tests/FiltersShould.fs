@@ -19,45 +19,122 @@ type CaseChange =
 
     member this.Apply(s: string) =
         match this with
-        | Upper -> s.ToUpperInvariant()
-        | Lower -> s.ToLowerInvariant()
-        | None -> s
+        | CaseChange.None -> s
+        | CaseChange.Upper -> s.ToUpperInvariant()
+        | CaseChange.Lower -> s.ToLowerInvariant()
+
+[<RequireQualifiedAccess>]
+type MatchCase =
+    | Active
+    | No of CaseChange
 
 type SearchResultCheckFailure =
     | ResultsTextDoesNotContainTerm
-    | UnexpectedMatchingResults of {| expected: SearchTargetResult array; actual: SearchTargetResult array |}
-    | UnexpectedNumberOfResults of expectedTexts: string array
+    | UnexpectedMatchingResults of {| expected: SearchTargetResult list; actual: SearchTargetResult list |}
+    | UnexpectedNumberOfResults of expectedTexts: string list
     | UnexpectedTexts of {| expected: string; actual: string |} list
+
+[<RequireQualifiedAccess>]
+module GetColumnTexts =
+    type Fun = Product -> string list
+
+    let description: Fun = fun product -> [ product.Description ]
+    let title: Fun = fun product -> [ product.Title ]
+
+    let bookAuthorsNames: Fun =
+        fun product -> [
+            match product.Category with
+            | Category.Books book ->
+                for author in book.Authors do
+                    author.Name
+            | Category.Bazaar _ -> failwith "Expected only book products"
+        ]
+
+    let bookSubtitle: Fun =
+        fun product -> [
+            match product.Category with
+            | Category.Books book -> book.Subtitle
+            | Category.Bazaar _ -> failwith "Expected only book products"
+        ]
+
+type SimpleSearchConfig = {
+    CaseMatching: CaseMatching
+    Column: Column
+    GetColumnTexts: GetColumnTexts.Fun
+    Term: string
+} with
+    member search.ToFilters() : Filters = {
+        Filters.none with
+            Search.CaseMatching = search.CaseMatching
+            Search.Columns = Set [ search.Column ]
+            Search.Term = Some search.Term
+    }
 
 type FiltersShould() =
     static let translations: Translations = { Pages = Map Translations.repository[Lang.English] }
     static let appTranslations: AppTranslations = AppTranslations().Fill(translations)
 
-    let verifySearch (caseChange: CaseChange) (random: Random) products column (getExpectedTexts: Product -> string array) =
-        // Choose a random word
-        let term =
-            products
-            |> Seq.collect getExpectedTexts
-            |> Seq.collect _.Split(" ")
-            |> Seq.filter (fun s -> s.Length >= 2)
-            |> Seq.randomChoiceWith random
-            |> caseChange.Apply
+    let forceCaseChange (s: string) =
+        match s.ToUpperInvariant() with
+        | su when su <> s -> su
+        | _ -> s.ToLowerInvariant()
 
-        let filters = { Filters.none with SearchColumns = Set [ column ]; SearchTerm = Some term }
+    let chooseSearchTermAmongstWordsRandomly matchCase random products (getColumnTexts: GetColumnTexts.Fun) =
+        let columnTexts = products |> List.collect getColumnTexts
+        let corpus = columnTexts |> Seq.collect _.Split(" ") |> Seq.filter (fun s -> s.Length >= 2)
+
+        let candidates =
+            match matchCase with
+            | MatchCase.No caseChange ->
+                // Change the case of the search term to check that the search is case-insensitive.
+                corpus |> Seq.map caseChange.Apply
+            | MatchCase.Active ->
+                // We need to choose a word that is not present in the texts with a different case (e.g., "Book" and "book").
+                // With such a search term, we can verify that the search will fail when changing its case.
+                corpus
+                |> Seq.filter (fun word ->
+                    let wordChanged = forceCaseChange word
+                    columnTexts |> List.forall (fun text -> not (text.Contains wordChanged))
+                )
+
+        candidates |> Seq.randomChoiceWith random
+
+    let buildSearchConfig column getColumnTexts matchCase random products : SimpleSearchConfig = {
+        CaseMatching =
+            match matchCase with
+            | MatchCase.Active -> CaseSensitive
+            | MatchCase.No _ -> CaseInsensitive
+        Column = column
+        GetColumnTexts = getColumnTexts
+        Term = chooseSearchTermAmongstWordsRandomly matchCase random products getColumnTexts
+    }
+
+    let verifySearchFailure products (search: SimpleSearchConfig) =
+        let filters = search.ToFilters()
+        let rows = filters |> Filters.apply products appTranslations
+
+        // TODO RDE: remove this code used only for debugging test failures
+        if rows <> [] then
+            do ()
+
+        rows =! []
+
+    let verifySearchSuccess products (search: SimpleSearchConfig) =
+        let filters = search.ToFilters()
         let rows = filters |> Filters.apply products appTranslations
 
         let unexpectedRows =
             rows
             |> List.choose (fun row ->
-                let expectedTexts = getExpectedTexts row.Product
-                let searchTargetResults = row.SearchResult[column] |> List.toArray
+                let expectedTexts = search.GetColumnTexts row.Product
+                let searchTargetResults = row.SearchResult[search.Column]
 
                 let checkFailure =
                     if expectedTexts.Length <> searchTargetResults.Length then
                         Some(UnexpectedNumberOfResults expectedTexts)
                     else
                         let unexpectedTexts = [
-                            for expectedText, result in Array.zip expectedTexts searchTargetResults do
+                            for expectedText, result in List.zip expectedTexts searchTargetResults do
                                 if not (expectedText.Equals(result.Text, StringComparison.OrdinalIgnoreCase)) then
                                     {| expected = expectedText; actual = result.Text |}
                         ]
@@ -65,14 +142,15 @@ type FiltersShould() =
                         if not unexpectedTexts.IsEmpty then
                             Some(UnexpectedTexts unexpectedTexts)
                         else
-                            let expectedTextMatches = searchTargetResults |> Array.filter _.Text.Contains(term, StringComparison.OrdinalIgnoreCase)
+                            let expectedTextMatches =
+                                searchTargetResults |> List.filter _.Text.Contains(search.Term, StringComparison.OrdinalIgnoreCase)
 
                             if expectedTextMatches.Length = 0 then
                                 Some ResultsTextDoesNotContainTerm
                             else
                                 let actualTextMatches =
                                     searchTargetResults
-                                    |> Array.filter (fun result -> result.Matches |> List.exists (fun m -> m.MatchType = TextMatch))
+                                    |> List.filter (fun result -> result.Matches |> List.exists (fun m -> m.MatchType = TextMatch))
 
                                 if actualTextMatches <> expectedTextMatches then
                                     Some(UnexpectedMatchingResults {| expected = expectedTextMatches; actual = actualTextMatches |})
@@ -82,7 +160,7 @@ type FiltersShould() =
                 checkFailure
                 |> Option.map (fun checkFailure -> {|
                     Row = row
-                    SearchTerm = term
+                    SearchTerm = search.Term
                     CheckFailure = checkFailure
                 |})
             )
@@ -220,32 +298,30 @@ type FiltersShould() =
         unexpectedRows =! []
 
     [<Test; ShopfooFsCheckProperty>]
+    member _.``search products by description, case sensitive``(RandomFromSeed random, Products(_, products)) =
+        let search = buildSearchConfig Column.Description GetColumnTexts.description MatchCase.Active random products
+        verifySearchSuccess products search
+        verifySearchFailure products { search with Term = search.Term |> forceCaseChange }
+
+    [<Test; ShopfooFsCheckProperty>]
     member _.``search products by description, case insensitive``(caseChange, RandomFromSeed random, Products(_, products)) =
-        verifySearch caseChange random products Column.Description (fun product -> [| product.Description |])
+        let search = buildSearchConfig Column.Description GetColumnTexts.description (MatchCase.No caseChange) random products
+        verifySearchSuccess products search
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``search products by title, case insensitive``(caseChange, RandomFromSeed random, Products(_, products)) =
-        verifySearch caseChange random products Column.Name (fun product -> [| product.Title |])
+        let search = buildSearchConfig Column.Name GetColumnTexts.title (MatchCase.No caseChange) random products
+        verifySearchSuccess products search
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``search books by subtitle, case insensitive``(caseChange, RandomFromSeed random, BooksProducts(Products(_, products))) =
-        verifySearch caseChange random products Column.BookSubtitle
-        <| fun product -> [|
-            match product.Category with
-            | Category.Books book -> book.Subtitle
-            | Category.Bazaar _ -> failwith "Expected only book products"
-        |]
+        let search = buildSearchConfig Column.BookSubtitle GetColumnTexts.bookSubtitle (MatchCase.No caseChange) random products
+        verifySearchSuccess products search
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``search books by author, case insensitive``(caseChange, RandomFromSeed random, BooksProducts(Products(_, products))) =
-        verifySearch caseChange random products Column.BookAuthors
-        <| fun product -> [|
-            match product.Category with
-            | Category.Books book ->
-                for author in book.Authors do
-                    author.Name
-            | Category.Bazaar _ -> failwith "Expected only book products"
-        |]
+        let search = buildSearchConfig Column.BookAuthors GetColumnTexts.bookAuthorsNames (MatchCase.No caseChange) random products
+        verifySearchSuccess products search
 
     [<Test; ShopfooFsCheckProperty>]
     member _.``sort products by num``(Products(_, products)) = // ↩

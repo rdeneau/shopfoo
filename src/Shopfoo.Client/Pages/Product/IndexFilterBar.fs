@@ -146,48 +146,85 @@ type private Tab(filters: Filters, translations: AppTranslations) =
                 )
         ]
 
-    // TODO RDE: add search config: toggle Highlighting, search in titles only, etc.
-    member _.search =
-        let setSearchTerm searchTerm = // ↩
-            pageWithFilters (fun x -> { x with SearchTerm = searchTerm }) |> Router.navigatePage
-
-        Daisy.label.input [
-            prop.key "search-box"
-            prop.className "ml-2"
+    member private _.toggle(key, text, isChecked, onCheckedChange) =
+        Daisy.fieldset [
+            prop.key $"%s{key}-fieldset"
             prop.children [
-                icon fa6Solid.magnifyingGlass
-                Html.input [
-                    prop.key "search-input"
-                    prop.type' "text"
-                    prop.placeholder translations.Home.Search
-                    match filters.SearchTerm with
-                    | Some value -> prop.value value
-                    | None -> prop.value ""
-                    prop.onChange (fun (searchTerm: string) ->
-                        match String.trimWhiteSpace searchTerm with
-                        | "" -> setSearchTerm None
-                        | s -> setSearchTerm (Some s)
-                    )
-                ]
-                if filters.SearchTerm.IsSome then
-                    Daisy.button.a [
-                        prop.key "search-tab-close-button"
-                        prop.className "btn btn-ghost btn-sm btn-circle mr-[-8px]"
-                        prop.onClick (fun _ -> setSearchTerm None)
-                        prop.text "✕"
+                Daisy.fieldsetLabel [
+                    prop.key $"%s{key}-label"
+                    prop.className "text-sm whitespace-nowrap"
+                    prop.children [
+                        Daisy.toggle [
+                            prop.key $"%s{key}-toggle"
+                            prop.isChecked isChecked
+                            prop.onCheckedChange onCheckedChange
+                        ]
+                        Html.text $"%s{text}"
                     ]
+                ]
+            ]
+        ]
+
+    member this.search =
+        let setCaseSensitive b = // ↩
+            pageWithFilters (fun x -> { x with Search.CaseMatching = if b then CaseSensitive else CaseInsensitive })
+            |> Router.navigatePage
+
+        let setHighlighting b = // ↩
+            pageWithFilters (fun x -> { x with Search.Highlighting = if b then Highlighting.Active else Highlighting.None })
+            |> Router.navigatePage
+
+        let setSearchTerm searchTerm = // ↩
+            pageWithFilters (fun x -> { x with Search.Term = searchTerm }) |> Router.navigatePage
+
+        Html.div [
+            prop.key "search-bar"
+            prop.className "flex items-center gap-3 ml-auto"
+            prop.children [
+                Daisy.label.input [
+                    prop.key "search-box"
+                    prop.className "ml-2"
+                    prop.children [
+                        icon fa6Solid.magnifyingGlass
+                        Html.input [
+                            prop.key "search-input"
+                            prop.type' "text"
+                            prop.placeholder translations.Home.Search
+                            match filters.Search.Term with
+                            | Some value -> prop.value value
+                            | None -> prop.value ""
+                            prop.onChange (fun searchTerm ->
+                                match searchTerm |> String.trimWhiteSpace with
+                                | "" -> setSearchTerm None
+                                | s -> setSearchTerm (Some s)
+                            )
+                        ]
+                        if filters.Search.Term.IsSome then
+                            Daisy.button.a [
+                                prop.key "search-tab-close-button"
+                                prop.className "btn btn-ghost btn-sm btn-circle mr-[-8px]"
+                                prop.onClick (fun _ -> setSearchTerm None)
+                                prop.text "✕"
+                            ]
+                    ]
+                ]
+                this.toggle (
+                    key = "matchCase",
+                    text = translations.Product.MatchCase,
+                    isChecked = (filters.Search.CaseMatching = CaseSensitive),
+                    onCheckedChange = setCaseSensitive
+                )
+                this.toggle (
+                    key = "highlightMatches",
+                    text = translations.Product.HighlightMatches,
+                    isChecked = (filters.Search.Highlighting = Highlighting.Active),
+                    onCheckedChange = setHighlighting
+                )
             ]
         ]
 
 [<ReactComponent>]
-let IndexFilterBar
-    key
-    (filters: Filters)
-    (products: Product list)
-    (selectedProvider: Provider option)
-    selectProvider
-    (translations: AppTranslations)
-    =
+let IndexFilterBar key (filters: Filters) (products: Product list) selectedProvider selectProvider (translations: AppTranslations) =
     let tab = Tab(filters, translations)
 
     Daisy.tabs [
