@@ -41,6 +41,5 @@ jobs:
       - name: Install Node dependencies
         run: yarn install --frozen-lockfile
 
-      # TODO: add unit tests when test projects are created
-      # - name: Run tests
-      #   run: dotnet test Shopfoo.sln --configuration Release --no-build
+      - name: Run tests
+        run: dotnet test Shopfoo.sln --configuration Release --no-build
