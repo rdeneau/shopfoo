@@ -3,6 +3,7 @@
 open Feliz
 open Feliz.DaisyUI
 open Feliz.Router
+open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
@@ -13,22 +14,46 @@ open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
+type private BazaarTabProps = {
+    Category: BazaarCategory
+    Icon: IconifyIcon
+    Text: string
+    ProductCount: int
+}
+
+type private ProviderTabProps = {
+    Provider: Provider
+    SelectedProvider: Provider option
+    SelectProvider: Provider -> unit
+    Text: string
+    Icon: IconifyIcon
+    ProductCount: int
+    TargetPage: Page
+}
+
 type private Tab(filters: Filters, translations: AppTranslations) =
     let reactKeyOf x = String.toKebab $"%A{x}"
     let pageWithFilters changeFilters = Page.ProductIndex(changeFilters filters)
 
-    member _.bazaarCategory (count: int) bazaarCategory iconifyIcon text =
+    member _.divider key =
+        Daisy.divider [
+            divider.horizontal
+            prop.key $"%s{key}"
+            prop.className "mx-1"
+        ]
+
+    member _.bazaarCategory(props: BazaarTabProps) =
         Daisy.tab [
-            let key = $"tab-bazaar-category-%s{reactKeyOf bazaarCategory}"
+            let key = $"tab-bazaar-category-%s{reactKeyOf props.Category}"
             prop.key key
 
-            let isActive = (filters.BazaarCategory = Some bazaarCategory)
+            let isActive = (filters.BazaarCategory = Some props.Category)
 
             if isActive then
                 tab.active
                 yield! prop.hrefRouted (pageWithFilters _.ToBazaar())
             else
-                yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(bazaarCategory))
+                yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(props.Category))
 
             prop.children [
                 Daisy.indicator [
@@ -37,14 +62,14 @@ type private Tab(filters: Filters, translations: AppTranslations) =
                         Daisy.indicatorItem [
                             prop.key $"%s{key}-badge"
                             prop.className "badge badge-sm badge-primary badge-soft px-1"
-                            prop.text count
+                            prop.text props.ProductCount
                         ]
                         Html.div [
                             prop.key $"%s{key}-content"
                             prop.className "flex items-center gap-2 pr-3"
                             prop.children [
-                                icon iconifyIcon
-                                Html.text $"%s{text}"
+                                icon props.Icon
+                                Html.text $"%s{props.Text}"
                                 if isActive then
                                     Html.span [
                                         prop.key $"%s{key}-tab-close-button"
@@ -58,7 +83,7 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             ]
         ]
 
-    member _.booksAuthors products =
+    member _.booksAuthors(products: Product list) =
         let authors =
             products
             |> List.collect (fun p ->
@@ -85,7 +110,7 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             onReset = FilterAction.NavigateToPage(fun () -> pageWithFilters _.ToBooksWithAuthor(None))
         )
 
-    member _.booksTags products =
+    member _.booksTags(products: Product list) =
         let tags =
             products
             |> List.collect (fun p ->
@@ -107,9 +132,9 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             onReset = FilterAction.NavigateToPage(fun () -> pageWithFilters _.ToBooksWithTag(None))
         )
 
-    member _.provider (count: int) (selectedProvider: Provider option) (selectProvider: Provider -> unit) (provider: Provider) text iconifyIcon page =
-        let (PageUrl pageUrl) = page
-        let key = $"tab-provider-%s{reactKeyOf provider}"
+    member _.provider(props: ProviderTabProps) =
+        let (PageUrl pageUrl) = props.TargetPage
+        let key = $"tab-provider-%s{reactKeyOf props.Provider}"
 
         Daisy.tab [
             prop.key key
@@ -117,31 +142,31 @@ type private Tab(filters: Filters, translations: AppTranslations) =
                 Daisy.indicator [
                     prop.key $"%s{key}-count-indicator"
                     prop.children [
-                        if selectedProvider = Some provider then
+                        if props.SelectedProvider = Some props.Provider then
                             Daisy.indicatorItem [
                                 prop.key $"%s{key}-count-badge"
                                 prop.className "badge badge-sm badge-primary badge-soft px-1"
-                                prop.text count
+                                prop.text props.ProductCount
                             ]
 
                         Html.div [
                             prop.key $"%s{key}-count-badge-content"
                             prop.className "flex items-center gap-2 pr-3"
                             prop.children [
-                                icon iconifyIcon // ↩
-                                Html.text $"%s{text}"
+                                icon props.Icon // ↩
+                                Html.text $"%s{props.Text}"
                             ]
                         ]
                     ]
                 ]
             ]
-            if selectedProvider = Some provider then
+            if props.SelectedProvider = Some props.Provider then
                 tab.active
             else
                 prop.href (Router.formatPath (pageUrl.Segments, queryString = pageUrl.Query))
 
                 prop.onClick (fun ev ->
-                    selectProvider provider
+                    props.SelectProvider props.Provider
                     Router.goToUrl ev
                 )
         ]
@@ -227,59 +252,58 @@ type private Tab(filters: Filters, translations: AppTranslations) =
 let IndexFilterBar key (filters: Filters) (products: Product list) selectedProvider selectProvider (translations: AppTranslations) =
     let tab = Tab(filters, translations)
 
+    let productCountByCategory =
+        products
+        |> List.countBy (fun p ->
+            match p.Category with
+            | Category.Bazaar bazaarProduct -> Some bazaarProduct.Category
+            | _ -> None
+        )
+        |> Map.ofList
+
+    let bazaarTab category icon : BazaarTabProps = {
+        Category = category
+        Icon = icon
+        Text = translations.Product.StoreCategoryOf category
+        ProductCount = productCountByCategory[Some category]
+    }
+
+    let bazaarTabs () = [
+        bazaarTab BazaarCategory.Jewelry fa6Solid.gem
+        bazaarTab BazaarCategory.Clothing fa6Solid.shirt
+        bazaarTab BazaarCategory.Electronics fa6Solid.tv
+    ]
+
+    let providerTab provider text icon changeFilters : ProviderTabProps = {
+        Provider = provider
+        SelectedProvider = selectedProvider
+        SelectProvider = selectProvider
+        Text = text
+        Icon = icon
+        ProductCount = products.Length
+        TargetPage = Page.ProductIndex(changeFilters filters)
+    }
+
+    let providerTabs () = [
+        providerTab OpenLibrary translations.Home.Books fa6Solid.book _.ToBooks()
+        providerTab FakeStore translations.Home.Bazaar fa6Solid.store _.ToBazaar()
+    ]
+
     Daisy.tabs [
         tabs.border
         prop.key $"%s{key}-content"
         prop.className "pb-2 border-b border-gray-200"
         prop.children [
-            let count = products.Length
+            for props in providerTabs () |> List.sortBy _.Text do
+                tab.provider props
 
-            tab.provider
-                count
-                selectedProvider
-                selectProvider
-                OpenLibrary
-                translations.Home.Books
-                fa6Solid.book
-                (Page.ProductIndex(filters.ToBooks()))
-
-            tab.provider
-                count
-                selectedProvider
-                selectProvider
-                FakeStore
-                translations.Home.Bazaar
-                fa6Solid.store
-                (Page.ProductIndex(filters.ToBazaar()))
-
-            Daisy.divider [
-                divider.horizontal
-                prop.key "tabs-divider"
-                prop.className "mx-1"
-            ]
+            tab.divider "provider-divider"
 
             match selectedProvider with
             | None -> ()
             | Some FakeStore ->
-                let categories =
-                    [
-                        BazaarCategory.Clothing, fa6Solid.shirt
-                        BazaarCategory.Electronics, fa6Solid.tv
-                        BazaarCategory.Jewelry, fa6Solid.gem
-                    ]
-                    |> List.map (fun (cat, icon) -> cat, icon, translations.Product.StoreCategoryOf cat)
-                    |> List.sortBy (fun (_, _, text) -> text)
-
-                for cat, icon, text in categories do
-                    let count =
-                        products
-                        |> List.sumBy (fun p ->
-                            match p.Category with
-                            | Category.Bazaar bazaarProduct when bazaarProduct.Category = cat -> 1
-                            | _ -> 0
-                        )
-
-                    tab.bazaarCategory count cat icon text
+                for props in bazaarTabs () |> List.sortBy _.Text do
+                    tab.bazaarCategory props
 
                 tab.search
 
