@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Client.Components
 
+open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Glutinum.Iconify
@@ -11,7 +12,7 @@ type FilterAction<'item> =
     | Click of onClick: ('item -> unit)
     | NavigateToPage of getPage: ('item -> Page)
 
-[<RequireQualifiedAccess>]
+[<Erase; RequireQualifiedAccess>]
 type Filter =
     [<ReactComponent>]
     static member FilterTab
