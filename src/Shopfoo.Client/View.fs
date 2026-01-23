@@ -88,10 +88,16 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
     | Msg.ChangeLang(lang, Done(Ok data)) ->
         let fullContext = { model.FullContext with Lang = lang; Translations = AppTranslations().Fill(data.Translations) }
-        { model with FullContext = fullContext; LangMenus = updateLangStatus lang (Remote.Loaded()) }, Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
+        { model with FullContext = fullContext; LangMenus = updateLangStatus lang (Remote.Loaded()) },
+        Cmd.batch [ // ↩
+            Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
+            Cmd.navigatePage Page.Login // Hack to force URL update and re-rendering
+            Cmd.navigatePage model.Page
+        ]
 
     | Msg.ChangeLang(lang, Done(Error apiError)) ->
-        { model with LangMenus = updateLangStatus lang (Remote.LoadError apiError) }, Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
+        { model with LangMenus = updateLangStatus lang (Remote.LoadError apiError) }, // ↩
+        Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))
 
     | Msg.FillTranslations translations -> // ↩
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
