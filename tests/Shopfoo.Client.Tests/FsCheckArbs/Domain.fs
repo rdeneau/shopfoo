@@ -38,7 +38,9 @@ module DomainGen =
         ]
 
     /// Real OLID: OL prefix + positive integer + M suffix
-    let genOLID: Gen<OLID> = Gen.choose (10000, 500000) |> Gen.map (fun i -> OLID $"OL%i{i}M")
+    let genOLID: Gen<OLID> =
+        Gen.choose (10000, 500000) // ↩
+        |> Gen.map (fun i -> OLID $"OL%i{i}M")
 
     let genMultiWords maxCount : Gen<string> =
         gen {
@@ -80,8 +82,8 @@ module DomainGen =
             return {
                 ISBN = isbn
                 Subtitle = subtitle
-                Authors = authors
-                Tags = tags
+                Authors = Set authors
+                Tags = Set tags
             }
         }
 

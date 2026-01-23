@@ -2,6 +2,7 @@
 
 open System
 open Shopfoo.Client.Filters
+open Shopfoo.Client.Search
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Translations
@@ -112,11 +113,6 @@ type FiltersShould() =
     let verifySearchFailure products (search: SimpleSearchConfig) =
         let filters = search.ToFilters()
         let rows = filters |> Filters.apply products appTranslations
-
-        // TODO RDE: remove this code used only for debugging test failures
-        if rows <> [] then
-            do ()
-
         rows =! []
 
     let verifySearchSuccess products (search: SimpleSearchConfig) =
@@ -202,12 +198,12 @@ type FiltersShould() =
 
     let bookAuthorsAndTitle product =
         match product.Category with
-        | Category.Books book -> book.Authors |> List.map _.Name, product.Title
+        | Category.Books book -> [ for x in book.Authors -> x.Name ], product.Title
         | _ -> failwith "Expected only book products"
 
     let bookTagsAndTitle product =
         match product.Category with
-        | Category.Books book -> book.Tags, product.Title
+        | Category.Books book -> Set.toList book.Tags, product.Title
         | _ -> failwith "Expected only book products"
 
     let bookSubtitle product =
@@ -243,7 +239,7 @@ type FiltersShould() =
             products
             |> List.collect (fun p ->
                 match p.Category with
-                | Category.Books book -> book.Authors
+                | Category.Books book -> book.Authors |> Set.toList
                 | _ -> []
             )
             |> List.randomChoiceWith random
@@ -255,11 +251,11 @@ type FiltersShould() =
             rows
             |> List.choose (fun row ->
                 match row.Product.Category with
-                | Category.Books book when not (List.contains author book.Authors) ->
+                | Category.Books book when not (book.Authors.Contains author) ->
                     Some {|
                         Index = row.Index
                         SKU = row.Product.SKU
-                        Authors = book.Authors |> List.map _.OLID
+                        Authors = book.Authors |> Set.map _.OLID
                         ExpectedAuthor = author.OLID
                     |}
                 | _ -> None
@@ -273,7 +269,7 @@ type FiltersShould() =
             products
             |> List.collect (fun p ->
                 match p.Category with
-                | Category.Books book -> book.Tags
+                | Category.Books book -> book.Tags |> Set.toList
                 | _ -> []
             )
             |> List.randomChoiceWith random
@@ -285,7 +281,7 @@ type FiltersShould() =
             rows
             |> List.choose (fun row ->
                 match row.Product.Category with
-                | Category.Books book when not (List.contains tag book.Tags) ->
+                | Category.Books book when not (book.Tags.Contains tag) ->
                     Some {|
                         Index = row.Index
                         SKU = row.Product.SKU

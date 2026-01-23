@@ -86,13 +86,14 @@ type private Tab(filters: Filters, translations: AppTranslations) =
     member _.booksAuthors(products: Product list) =
         let authors =
             products
-            |> List.collect (fun p ->
+            |> Seq.collect (fun p ->
                 match p.Category with
                 | Category.Books book -> book.Authors
-                | _ -> []
+                | _ -> Set.empty
             )
-            |> List.distinct
-            |> List.sortBy _.Name
+            |> Seq.distinct
+            |> Seq.sortBy _.Name
+            |> Seq.toList
 
         let selectedAuthor =
             match filters.BooksAuthorId with
@@ -113,13 +114,14 @@ type private Tab(filters: Filters, translations: AppTranslations) =
     member _.booksTags(products: Product list) =
         let tags =
             products
-            |> List.collect (fun p ->
+            |> Seq.collect (fun p ->
                 match p.Category with
                 | Category.Books book -> book.Tags
-                | _ -> []
+                | _ -> Set.empty
             )
-            |> List.distinct
-            |> List.sort
+            |> Seq.distinct
+            |> Seq.sort
+            |> Seq.toList
 
         Filter.FilterTab(
             key = "filter-tab-tags",

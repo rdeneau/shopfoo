@@ -121,8 +121,8 @@ module private Mappers =
             Category.Books {
                 ISBN = isbn
                 Subtitle = book.Subtitle
-                Authors = authors |> List.map mapAuthor
-                Tags = []
+                Authors = authors |> Seq.map mapAuthor |> Set.ofSeq
+                Tags = Set.empty
             }
 
         let mapBook sku category imageUrl (book: BookDto) : Product = {

@@ -22,11 +22,13 @@ type OLID =
 
 type BookAuthor = { OLID: OLID; Name: string }
 
+type BookTag = string
+
 type Book = {
     ISBN: ISBN
     Subtitle: string
-    Authors: BookAuthor list
-    Tags: string list
+    Authors: Set<BookAuthor>
+    Tags: Set<BookTag>
 }
 
 [<RequireQualifiedAccess>]

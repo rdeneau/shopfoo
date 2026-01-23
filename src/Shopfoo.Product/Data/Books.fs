@@ -194,9 +194,9 @@ module private Mappers =
     module DtoToModel =
         let mapBookDetails (dto: BookDto) : Book = {
             ISBN = dto.ISBN
-            Authors = dto.Authors |> List.map (fun authorDto -> { OLID = authorDto.Id; Name = authorDto.Name })
+            Authors = Set [ for authorDto in dto.Authors -> { OLID = authorDto.Id; Name = authorDto.Name } ]
             Subtitle = dto.Subtitle
-            Tags = dto.Tags
+            Tags = dto.Tags |> Set.ofList
         }
 
         let mapBook (dto: BookDto) : Product = {
@@ -208,19 +208,16 @@ module private Mappers =
         }
 
     module ModelToDto =
-        let mapAuthors (book: Book) : AuthorDto list = // ↩
-            book.Authors |> List.map (fun author -> { Id = author.OLID; Name = author.Name })
-
         let mapBook (product: Product) : BookDto =
             match product.Category with
-            | Category.Books details -> {
-                ISBN = details.ISBN
+            | Category.Books book -> {
+                ISBN = book.ISBN
                 Title = product.Title
                 Description = product.Description
-                Authors = mapAuthors details
-                Subtitle = details.Subtitle
+                Authors = [ for author in book.Authors -> { Id = author.OLID; Name = author.Name } ]
+                Subtitle = book.Subtitle
                 Image = product.ImageUrl.Url
-                Tags = details.Tags
+                Tags = book.Tags |> Set.toList
               }
             | _ -> failwith $"Invalid category %A{product.Category} for book product."
 

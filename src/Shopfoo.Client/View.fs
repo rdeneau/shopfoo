@@ -88,6 +88,7 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
 
     | Msg.ChangeLang(lang, Done(Ok data)) ->
         let fullContext = { model.FullContext with Lang = lang; Translations = AppTranslations().Fill(data.Translations) }
+
         { model with FullContext = fullContext; LangMenus = updateLangStatus lang (Remote.Loaded()) },
         Cmd.batch [ // ↩
             Cmd.ofMsg (Msg.ToastOn(Toast.Lang lang))

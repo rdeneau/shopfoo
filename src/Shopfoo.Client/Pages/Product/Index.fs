@@ -32,8 +32,8 @@ module private Product =
     let private fakeBook: Book = {
         ISBN = ISBN "0"
         Subtitle = ""
-        Authors = [ { OLID = OLID ""; Name = "Fake" } ]
-        Tags = []
+        Authors = Set [ { OLID = OLID ""; Name = "Fake" } ]
+        Tags = Set.empty
     }
 
     let notFound: Product = {
