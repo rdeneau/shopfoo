@@ -4,6 +4,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
@@ -79,6 +80,13 @@ let private update fillTranslations (fullContext: FullContext) msg (model: Model
         { model with Products = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
 
+type private ProviderProps = {
+    Provider: Provider
+    Text: string
+    Icon: IconifyIcon
+    Page: Page
+}
+
 [<ReactComponent>]
 let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
     match fullContext.User with
@@ -98,38 +106,50 @@ let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
         let selectProvider provider = dispatch (SelectProvider provider)
         let reactKeyOf x = String.toKebab $"%A{x}"
 
-        let providerCard (provider: Provider) (text: string) iconifyIcon page =
-            let key = $"card-provider-%s{reactKeyOf provider}"
+        let providerCard (props: ProviderProps) =
+            let key = $"card-provider-%s{reactKeyOf props.Provider}"
 
             Daisy.card [
                 card.border
                 prop.key key
                 prop.className "cursor-pointer hover:shadow-lg transition-shadow inline-block min-h-[200px] min-w-[300px] mr-2"
                 prop.onClick (fun _ ->
-                    selectProvider provider
-                    Router.navigatePage page
+                    selectProvider props.Provider
+                    Router.navigatePage props.Page
                 )
                 prop.children [
                     Html.figure [
                         prop.key $"%s{key}-figure"
                         prop.className "text-8xl text-center p-8"
-                        prop.children [ icon iconifyIcon ]
+                        prop.children [ icon props.Icon ]
                     ]
                     Daisy.cardBody [
                         prop.key $"%s{key}-body"
                         prop.className "items-center text-center"
-                        prop.children [ Daisy.cardTitle [ prop.key $"%s{key}-title"; prop.text text ] ]
+                        prop.children [ Daisy.cardTitle [ prop.key $"%s{key}-title"; prop.text props.Text ] ]
                     ]
                 ]
             ]
+
+        let providerCardProps provider text icon changeFilters = {
+            Provider = provider
+            Text = text
+            Icon = icon
+            Page = Page.ProductIndex(changeFilters filters)
+        }
+
+        let providerCardsProps = [
+            providerCardProps OpenLibrary translations.Home.Books fa6Solid.book _.ToBooks()
+            providerCardProps FakeStore translations.Home.Bazaar fa6Solid.store _.ToBazaar()
+        ]
 
         Html.section [
             prop.key "products-page"
             prop.children [
                 match model.Products with
                 | Remote.Empty ->
-                    providerCard OpenLibrary translations.Home.Books fa6Solid.book (Page.ProductIndex(filters.ToBooks()))
-                    providerCard FakeStore translations.Home.Bazaar fa6Solid.store (Page.ProductIndex(filters.ToBazaar()))
+                    for props in providerCardsProps |> List.sortBy _.Text do
+                        providerCard props
 
                 | Remote.Loading -> // ↩
                     Daisy.skeleton [ prop.className "h-32 w-full"; prop.key "products-skeleton" ]
