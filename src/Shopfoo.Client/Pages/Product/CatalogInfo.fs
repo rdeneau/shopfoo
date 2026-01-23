@@ -127,12 +127,86 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                     Html.div [
                         prop.key "image-grid"
-                        prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
+                        prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center mb-4"
                         prop.children [
                             Html.div [
                                 prop.key "image-input-column"
+                                prop.className "flex flex-col justify-between h-full"
                                 prop.children [
-                                    // -- Image ----
+                                    // -- Bazaar Category ----
+                                    match product.Category with
+                                    | Category.Books _ -> ()
+                                    | Category.Bazaar bazaarProduct ->
+                                        let categoryRadio (category: BazaarCategory) (iconifyIcon: IconifyIcon) (text: string) =
+                                            let key = String.toKebab $"%s{category.ToString()}"
+
+                                            Daisy.fieldset [
+                                                prop.key $"fieldset-%s{key}"
+                                                prop.className "w-auto"
+                                                prop.children [
+                                                    Daisy.fieldsetLabel [
+                                                        prop.key $"label-%s{key}"
+                                                        prop.className "flex flex-row items-center gap-2 cursor-pointer text-sm"
+                                                        prop.children [
+                                                            Daisy.radio [
+                                                                prop.key $"radio-%s{key}"
+                                                                prop.name "category"
+                                                                prop.value key
+                                                                prop.isChecked (bazaarProduct.Category = category)
+                                                                yield!
+                                                                    propOnCheckedChangeOrReadonly (fun isChecked ->
+                                                                        if isChecked then
+                                                                            let productCategory =
+                                                                                Category.Bazaar { bazaarProduct with Category = category }
+
+                                                                            dispatch (ProductChanged { product with Category = productCategory })
+                                                                    )
+                                                            ]
+                                                            icon iconifyIcon
+                                                            Html.text text
+                                                        ]
+                                                    ]
+                                                ]
+                                            ]
+
+                                        let categoryInfo (category: BazaarCategory) (iconifyIcon: IconifyIcon) = {|
+                                            category = category
+                                            icon = iconifyIcon
+                                            text = translations.Product.StoreCategoryOf category
+                                        |}
+
+                                        let categoryInfos = [
+                                            categoryInfo BazaarCategory.Jewelry fa6Solid.gem
+                                            categoryInfo BazaarCategory.Clothing fa6Solid.shirt
+                                            categoryInfo BazaarCategory.Electronics fa6Solid.tv
+                                        ]
+
+                                        Daisy.fieldset [
+                                            prop.key "category-fieldset"
+                                            prop.children [
+                                                Daisy.fieldsetLabel [
+                                                    prop.key "category-label"
+                                                    prop.children [ Html.text translations.Product.Category ]
+                                                ]
+                                                Html.div [
+                                                    prop.key "category-container"
+                                                    prop.className "input focus-within:outline-none focus-within:border-transparent w-full gap-4 mb-4"
+                                                    prop.className [
+                                                        "input w-full gap-4 mb-4"
+                                                        // Remove input focus styles to avoid clashing with radio buttons
+                                                        "focus-within:border-[color-mix(in_oklab,var(--color-base-content)_20%,#0000)]"
+                                                        "focus-within:outline-none"
+                                                        "focus-within:shadow-none"
+                                                    ]
+                                                    prop.children [
+                                                        for x in categoryInfos |> List.sortBy _.text do
+                                                            categoryRadio x.category x.icon x.text
+                                                    ]
+                                                ]
+                                            ]
+                                        ]
+
+                                    // -- Image Url ----
                                     Daisy.fieldset [
                                         prop.key "image-fieldset"
                                         prop.children [
@@ -185,7 +259,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                                             Daisy.validator.input [
                                                 prop.key "name-input"
-                                                prop.className "mb-4 w-full"
+                                                prop.className "w-full"
                                                 prop.placeholder translations.Product.Name
                                                 props.value
                                                 yield! props.validation
@@ -268,63 +342,6 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                         yield! props.validation
                         yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
                     ]
-
-                    // -- Product Category ----
-
-                    match product.Category with
-                    | Category.Bazaar bazaarProduct ->
-                        // -- Bazaar Category ----
-
-                        let categoryRadio (category: BazaarCategory) (iconifyIcon: IconifyIcon) =
-                            let key = String.toKebab $"%s{category.ToString()}"
-
-                            Daisy.fieldset [
-                                prop.key $"fieldset-%s{key}"
-                                prop.className "w-auto"
-                                prop.children [
-                                    Daisy.fieldsetLabel [
-                                        prop.key $"label-%s{key}"
-                                        prop.className "flex flex-row items-center gap-2 cursor-pointer text-sm"
-                                        prop.children [
-                                            Daisy.radio [
-                                                prop.key $"radio-%s{key}"
-                                                prop.name "category"
-                                                prop.value key
-                                                prop.isChecked (bazaarProduct.Category = category)
-                                                yield! propOnCheckedChangeOrReadonly (fun isChecked ->
-                                                    if isChecked then
-                                                        let productCategory =
-                                                            Category.Bazaar { bazaarProduct with Category = category }
-
-                                                        dispatch (ProductChanged { product with Category = productCategory })
-                                                )
-                                            ]
-                                            icon iconifyIcon
-                                            Html.text (translations.Product.StoreCategoryOf category)
-                                        ]
-                                    ]
-                                ]
-                            ]
-
-                        Daisy.fieldsetLabel [
-                            prop.key "category-label"
-                            prop.children [
-                                Html.text translations.Product.Category
-                            ]
-                        ]
-                        Html.div [
-                            prop.key "category-container"
-                            prop.className "flex flex-row gap-4 bg-base-100 border-1 border-base-300 rounded-box px-4 py-2 mb-4"
-                            prop.children [
-                                categoryRadio BazaarCategory.Jewelry fa6Solid.gem
-                                categoryRadio BazaarCategory.Clothing fa6Solid.shirt
-                                categoryRadio BazaarCategory.Electronics fa6Solid.tv
-                            ]
-                        ]
-
-                    | Category.Books book ->
-                        // TODO RDE: implement book fields
-                        ()
 
                     // -- Save ----
 
