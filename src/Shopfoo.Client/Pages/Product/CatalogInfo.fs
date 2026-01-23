@@ -5,6 +5,7 @@ open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
+open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
@@ -75,14 +76,17 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
     let translations = fullContext.Translations
     let catalogAccess = fullContext.User.AccessTo Feat.Catalog
 
-    let propOnChangeOrReadonly (onChange: string -> unit) = [
+    let propsOrReadonly (props: IReactProperty seq) = [
         match catalogAccess with
         | Some Edit -> // ↩
-            prop.onChange onChange
+            yield! props
         | _ ->
             prop.readOnly true
             prop.className "bg-base-300"
     ]
+
+    let propOnChangeOrReadonly (handler: string -> unit) = propsOrReadonly [ prop.onChange handler ]
+    let propOnCheckedChangeOrReadonly handler = propsOrReadonly [ prop.onCheckedChange handler ]
 
     React.fragment [
         match model.Product with
@@ -265,7 +269,65 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                         yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
                     ]
 
+                    // -- Product Category ----
+
+                    match product.Category with
+                    | Category.Bazaar bazaarProduct ->
+                        // -- Bazaar Category ----
+
+                        let categoryRadio (category: BazaarCategory) (iconifyIcon: IconifyIcon) =
+                            let key = String.toKebab $"%s{category.ToString()}"
+
+                            Daisy.fieldset [
+                                prop.key $"fieldset-%s{key}"
+                                prop.className "w-auto"
+                                prop.children [
+                                    Daisy.fieldsetLabel [
+                                        prop.key $"label-%s{key}"
+                                        prop.className "flex flex-row items-center gap-2 cursor-pointer text-sm"
+                                        prop.children [
+                                            Daisy.radio [
+                                                prop.key $"radio-%s{key}"
+                                                prop.name "category"
+                                                prop.value key
+                                                prop.isChecked (bazaarProduct.Category = category)
+                                                yield! propOnCheckedChangeOrReadonly (fun isChecked ->
+                                                    if isChecked then
+                                                        let productCategory =
+                                                            Category.Bazaar { bazaarProduct with Category = category }
+
+                                                        dispatch (ProductChanged { product with Category = productCategory })
+                                                )
+                                            ]
+                                            icon iconifyIcon
+                                            Html.text (translations.Product.StoreCategoryOf category)
+                                        ]
+                                    ]
+                                ]
+                            ]
+
+                        Daisy.fieldsetLabel [
+                            prop.key "category-label"
+                            prop.children [
+                                Html.text translations.Product.Category
+                            ]
+                        ]
+                        Html.div [
+                            prop.key "category-container"
+                            prop.className "flex flex-row gap-4 bg-base-100 border-1 border-base-300 rounded-box px-4 py-2 mb-4"
+                            prop.children [
+                                categoryRadio BazaarCategory.Jewelry fa6Solid.gem
+                                categoryRadio BazaarCategory.Clothing fa6Solid.shirt
+                                categoryRadio BazaarCategory.Electronics fa6Solid.tv
+                            ]
+                        ]
+
+                    | Category.Books book ->
+                        // TODO RDE: implement book fields
+                        ()
+
                     // -- Save ----
+
                     match catalogAccess with
                     | None
                     | Some View -> ()
