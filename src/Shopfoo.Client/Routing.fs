@@ -4,6 +4,7 @@ open Browser.Types
 open Feliz.Router
 open Fable.Core.JsInterop
 open Shopfoo.Client.Filters
+open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
@@ -245,10 +246,13 @@ module private Route =
         | Highlight highlighting & MatchCase caseMatching & SearchTerm searchTerm & Sort sortBy ->
             fun filters -> {
                 filters with
-                    Search.Highlighting = highlighting
-                    Search.CaseMatching = caseMatching
-                    Search.Term = searchTerm
                     SortBy = sortBy
+                    Search = {
+                        filters.Search with
+                            CaseMatching = caseMatching
+                            Highlighting = highlighting
+                            Term = searchTerm
+                    }
             }
 
     let (|SKU|_|) routeSegment : SKU option =

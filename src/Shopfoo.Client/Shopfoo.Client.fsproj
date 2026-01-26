@@ -11,6 +11,7 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="paket.references" />
+    <Compile Include="Search.fs" />
     <Compile Include="Filters.fs" />
     <Compile Include="Package.fs" />
     <Compile Include="Server.fs" />

@@ -3,7 +3,7 @@
 open System
 open Feliz
 open Shopfoo.Client
-open Shopfoo.Client.Filters
+open Shopfoo.Client.Search
 
 [<RequireQualifiedAccess>]
 module Css =

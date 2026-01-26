@@ -10,6 +10,7 @@ open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
+open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
@@ -193,16 +194,17 @@ type private Tab(filters: Filters, translations: AppTranslations) =
         ]
 
     member this.search =
-        let setCaseSensitive b = // ↩
-            pageWithFilters (fun x -> { x with Search.CaseMatching = if b then CaseSensitive else CaseInsensitive })
+        let setCaseSensitive b =
+            pageWithFilters (fun filters -> { filters with Filters.Search.CaseMatching = CaseSensitiveIf b })
             |> Router.navigatePage
 
-        let setHighlighting b = // ↩
-            pageWithFilters (fun x -> { x with Search.Highlighting = if b then Highlighting.Active else Highlighting.None })
+        let setHighlighting b =
+            pageWithFilters (fun filters -> { filters with Filters.Search.Highlighting = Highlighting.ActiveIf b })
             |> Router.navigatePage
 
-        let setSearchTerm searchTerm = // ↩
-            pageWithFilters (fun x -> { x with Search.Term = searchTerm }) |> Router.navigatePage
+        let setSearchTerm searchTerm =
+            pageWithFilters (fun filters -> { filters with Filters.Search.Term = searchTerm })
+            |> Router.navigatePage
 
         Html.div [
             prop.key "search-bar"

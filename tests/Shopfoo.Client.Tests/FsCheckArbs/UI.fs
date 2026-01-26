@@ -3,6 +3,7 @@
 open FsCheck.FSharp
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Routing
+open Shopfoo.Client.Search
 open Shopfoo.Domain.Types
 
 [<AutoOpen>]

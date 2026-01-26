@@ -11,6 +11,7 @@ open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Remoting
+open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security

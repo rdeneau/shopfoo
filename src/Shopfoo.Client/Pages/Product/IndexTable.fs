@@ -8,6 +8,7 @@ open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
+open Shopfoo.Client.Search
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
