@@ -17,7 +17,7 @@ module Css =
     let TextColors = "bg-yellow-200 text-black"
 
 /// <summary>
-/// Highlights occurrences of <c>searchTerm</c> in the text content of the given React element.
+/// Highlights matches of the given <c>SearchTargetResult</c> in the text content of the given React element.
 /// </summary>
 /// <remarks>
 /// The syntax is closed to the Feliz one - see example below.
