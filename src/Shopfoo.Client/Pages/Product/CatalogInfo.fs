@@ -152,12 +152,40 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                     Html.div [
                         prop.key "image-grid"
-                        prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center mb-4"
+                        prop.className "grid grid-cols-[1fr_max-content] gap-4 items-center"
                         prop.children [
                             Html.div [
                                 prop.key "image-input-column"
                                 prop.className "flex flex-col justify-between h-full"
                                 prop.children [
+                                    // -- Name ----
+                                    Daisy.fieldset [
+                                        prop.key "name-fieldset"
+                                        prop.className "mb-2"
+                                        prop.children [
+                                            let props = Product.Guard.Name.props (product.Title, translations)
+
+                                            Daisy.fieldsetLabel [
+                                                prop.key "name-label"
+                                                prop.children [
+                                                    Html.text translations.Product.Name
+                                                    Html.small [ prop.key "name-required"; yield! props.textRequired ]
+                                                    Html.small [ prop.key "name-spacer"; prop.className "flex-1" ]
+                                                    Html.span [ prop.key "name-char-count"; yield! props.textCharCount ]
+                                                ]
+                                            ]
+
+                                            Daisy.validator.input [
+                                                prop.key "name-input"
+                                                prop.className "w-full"
+                                                prop.placeholder translations.Product.Name
+                                                props.value
+                                                yield! props.validation
+                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
+                                            ]
+                                        ]
+                                    ]
+
                                     // -- Bazaar Category ----
                                     match product.Category with
                                     | Category.Books _ -> ()
@@ -208,6 +236,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                                         Daisy.fieldset [
                                             prop.key "category-fieldset"
+                                            prop.className "mb-2"
                                             prop.children [
                                                 Daisy.fieldsetLabel [
                                                     prop.key "category-label"
@@ -246,6 +275,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                                             Daisy.fieldset [
                                                 prop.key "authors-fieldset"
+                                                prop.className "mb-2"
                                                 prop.children [
                                                     Daisy.fieldsetLabel [
                                                         prop.key "authors-label"
@@ -267,6 +297,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                     // -- Image Url ----
                                     Daisy.fieldset [
                                         prop.key "image-fieldset"
+                                        prop.className "mb-2"
                                         prop.children [
                                             let props =
                                                 Product.Guard.ImageUrl.props (
@@ -287,7 +318,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                                             Daisy.validator.input [
                                                 prop.key "image-input"
-                                                prop.className "mb-4 w-full"
+                                                prop.className "w-full"
                                                 prop.placeholder translations.Product.ImageUrl
                                                 props.value
                                                 yield! props.validation
@@ -295,33 +326,6 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                     propOnChangeOrReadonly (fun url ->
                                                         dispatch (ProductChanged { product with ImageUrl = ImageUrl.Valid url })
                                                     )
-                                            ]
-                                        ]
-                                    ]
-
-                                    // -- Name ----
-                                    Daisy.fieldset [
-                                        prop.key "name-fieldset"
-                                        prop.children [
-                                            let props = Product.Guard.Name.props (product.Title, translations)
-
-                                            Daisy.fieldsetLabel [
-                                                prop.key "name-label"
-                                                prop.children [
-                                                    Html.text translations.Product.Name
-                                                    Html.small [ prop.key "name-required"; yield! props.textRequired ]
-                                                    Html.small [ prop.key "name-spacer"; prop.className "flex-1" ]
-                                                    Html.span [ prop.key "name-char-count"; yield! props.textCharCount ]
-                                                ]
-                                            ]
-
-                                            Daisy.validator.input [
-                                                prop.key "name-input"
-                                                prop.className "w-full"
-                                                prop.placeholder translations.Product.Name
-                                                props.value
-                                                yield! props.validation
-                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
                                             ]
                                         ]
                                     ]
@@ -394,7 +398,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
 
                     Daisy.textarea [
                         prop.key "description-textarea"
-                        prop.className "validator h-21 mb-4 w-full"
+                        prop.className "validator h-21 w-full mb-2"
                         prop.placeholder translations.Product.Description
                         props.value
                         yield! props.validation
@@ -402,7 +406,35 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                     ]
 
                     // -- Book Tags ----
-                    // TODO: Book Tags
+                    match product.Category with
+                    | Category.Bazaar _ -> ()
+                    | Category.Books book ->
+                        match model.BooksData with
+                        | Remote.Empty -> ()
+                        | Remote.LoadError apiError -> Alert.apiError "tags-load-error" apiError fullContext.User
+                        | Remote.Loading -> Daisy.skeleton [ prop.className "h-12 w-full"; prop.key "tags-skeleton" ]
+                        | Remote.Loaded booksData ->
+                            let toggleTag (isChecked, tag) =
+                                let productCategory = Category.Books { book with Tags = book.Tags.Toggle(tag, isChecked) }
+                                dispatch (ProductChanged { product with Category = productCategory })
+
+                            Daisy.fieldset [
+                                prop.key "tags-fieldset"
+                                prop.className "mb-2"
+                                prop.children [
+                                    Daisy.fieldsetLabel [ prop.key "tags-label"; prop.children [ Html.text translations.Product.Tags ] ]
+                                    MultiSelect(
+                                        key = "tags-select",
+                                        items = booksData.Tags,
+                                        selectedItems = book.Tags,
+                                        formatItem = id,
+                                        onSelect = toggleTag,
+                                        readonly = (catalogAccess <> Some Edit),
+                                        searchTarget = SearchTarget.BookTag,
+                                        translations = translations
+                                    )
+                                ]
+                            ]
 
                     // -- Save ----
 
