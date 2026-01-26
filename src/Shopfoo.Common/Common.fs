@@ -3,6 +3,7 @@ module Shopfoo.Common.Common
 
 open System
 open System.Globalization
+open System.Runtime.CompilerServices
 
 /// <summary>
 /// Abstraction of <c>CultureInfo.InvariantCulture</c> compatible with Fable.
@@ -94,6 +95,18 @@ module Result =
         match xR with
         | Ok _ -> None
         | Error e -> Some e
+
+type SetExtensions =
+    [<Extension>]
+    static member Toggle(set: Set<'t>, item: 't, isSelected: bool) : Set<'t> = if isSelected then set.Add item else set.Remove item
+
+    [<Extension>]
+    static member Toggle(set: Set<'t>, item: 't) : Set<'t> = // ↩
+        set.Toggle(item, set.Contains item)
+
+[<RequireQualifiedAccess>]
+module Set =
+    let (|Empty|NotEmpty|) set = if Set.isEmpty set then Empty else NotEmpty
 
 [<AutoOpen>]
 module ActivePatterns =

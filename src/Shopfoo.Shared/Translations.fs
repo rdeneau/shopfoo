@@ -58,6 +58,7 @@ module TranslationPages =
         member this.Page = this.Get "Page"
         member this.Product = this.Get "Product"
         member this.Products = this.Get "Products"
+        member this.SelectedPlural = this.Get "SelectedPlural"
 
         member this.Cancel = this.Get "Cancel"
         member this.Close = this.Get "Close"

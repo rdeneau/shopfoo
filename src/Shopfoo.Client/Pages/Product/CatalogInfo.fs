@@ -10,6 +10,7 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
+open type Shopfoo.Client.Components.MultiSelect
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Search
 open Shopfoo.Common
@@ -18,16 +19,28 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Model = { Product: Remote<Product>; SaveDate: Remote<DateTime> }
+type private Model = {
+    Product: Remote<Product>
+    BooksData: Remote<GetBooksDataResponse>
+    SaveDate: Remote<DateTime>
+}
 
 type private Msg =
     | ProductFetched of ApiResult<GetProductResponse * Translations>
+    | BooksFetched of ApiResult<GetBooksDataResponse>
     | ProductChanged of Product
     | SaveProduct of Product * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
 module private Cmd =
-    let loadProducts (cmder: Cmder, request) =
+    let loadBooksData (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Catalog.GetBooksData request
+            Error = Error >> BooksFetched
+            Success = Ok >> BooksFetched
+        }
+
+    let loadProduct (cmder: Cmder, request) =
         cmder.ofApiRequest {
             Call = fun api -> api.Catalog.GetProduct request
             Error = Error >> ProductFetched
@@ -42,18 +55,30 @@ module private Cmd =
         }
 
 let private init (fullContext: FullContext) sku =
-    { Product = Remote.Loading; SaveDate = Remote.Empty }, // ↩
-    Cmd.loadProducts (fullContext.PrepareQueryWithTranslations sku)
+    {
+        Product = Remote.Loading
+        BooksData = Remote.Empty
+        SaveDate = Remote.Empty
+    },
+    Cmd.loadProduct (fullContext.PrepareQueryWithTranslations sku)
 
 let private update fillTranslations onSaveProduct (fullContext: FullContext) (msg: Msg) (model: Model) =
     match msg with
-    | ProductFetched(Ok(response, translations)) ->
-        { model with Product = response.Product |> Remote.ofOption }, // ↩
-        Cmd.ofEffect (fun _ -> fillTranslations translations)
+    | BooksFetched(Ok booksData) -> { model with BooksData = Remote.Loaded booksData }, Cmd.none
+    | BooksFetched(Error apiError) -> { model with BooksData = Remote.LoadError apiError }, Cmd.none
 
     | ProductFetched(Error apiError) ->
         { model with Product = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
+
+    | ProductFetched(Ok(response, translations)) ->
+        let booksData, cmd =
+            match response.Product, fullContext.User.AccessTo Feat.Catalog with
+            | Some { Category = Category.Books _ }, Some Access.Edit -> Remote.Loading, Cmd.loadBooksData (fullContext.PrepareRequest())
+            | _ -> Remote.Loaded { Authors = Set.empty; Tags = Set.empty }, Cmd.none
+
+        { model with Product = response.Product |> Remote.ofOption; BooksData = booksData }, // ↩
+        Cmd.batch [ Cmd.ofEffect (fun _ -> fillTranslations translations); cmd ]
 
     | ProductChanged product -> // ↩
         { model with Product = Remote.Loaded product }, Cmd.none
@@ -115,7 +140,6 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
         | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
         | Remote.Loaded product ->
-            // TODO RDE: customize for Bazaar (category) vs Books (subtitle, authors, tags)
             Daisy.fieldset [
                 prop.key $"%s{key}-fieldset"
                 prop.className "bg-base-200 border border-base-300 rounded-box p-4"
@@ -206,6 +230,39 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                 ]
                                             ]
                                         ]
+
+                                    // -- Book Authors ----
+                                    match product.Category with
+                                    | Category.Bazaar _ -> ()
+                                    | Category.Books book ->
+                                        match model.BooksData with
+                                        | Remote.Empty -> ()
+                                        | Remote.LoadError apiError -> Alert.apiError "authors-load-error" apiError fullContext.User
+                                        | Remote.Loading -> Daisy.skeleton [ prop.className "h-12 w-full"; prop.key "authors-skeleton" ]
+                                        | Remote.Loaded booksData ->
+                                            let toggleAuthor (isChecked, author) =
+                                                let productCategory = Category.Books { book with Authors = book.Authors.Toggle(author, isChecked) }
+                                                dispatch (ProductChanged { product with Category = productCategory })
+
+                                            Daisy.fieldset [
+                                                prop.key "authors-fieldset"
+                                                prop.children [
+                                                    Daisy.fieldsetLabel [
+                                                        prop.key "authors-label"
+                                                        prop.children [ Html.text translations.Product.Authors ]
+                                                    ]
+                                                    MultiSelect(
+                                                        key = "authors-select",
+                                                        items = booksData.Authors,
+                                                        selectedItems = book.Authors,
+                                                        formatItem = _.Name,
+                                                        onSelect = toggleAuthor,
+                                                        readonly = (catalogAccess <> Some Edit),
+                                                        searchTarget = SearchTarget.BookAuthor,
+                                                        translations = translations
+                                                    )
+                                                ]
+                                            ]
 
                                     // -- Image Url ----
                                     Daisy.fieldset [
@@ -343,6 +400,9 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                         yield! props.validation
                         yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
                     ]
+
+                    // -- Book Tags ----
+                    // TODO: Book Tags
 
                     // -- Save ----
 

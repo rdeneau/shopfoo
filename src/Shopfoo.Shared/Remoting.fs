@@ -94,10 +94,12 @@ type IApi = interface end
 module CatalogApi =
     open Shopfoo.Domain.Types.Catalog
 
+    type GetBooksDataResponse = { Authors: Set<BookAuthor>; Tags: Set<BookTag> }
     type GetProductsResponse = { Products: Product list }
     type GetProductResponse = { Product: Product option }
 
     type CatalogApi = {
+        GetBooksData: Query<unit, GetBooksDataResponse>
         GetProducts: QueryWithTranslations<Provider, GetProductsResponse>
         GetProduct: QueryWithTranslations<SKU, GetProductResponse>
         SaveProduct: Command<Product>

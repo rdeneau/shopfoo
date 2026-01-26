@@ -24,6 +24,7 @@ let private translationPages = [
         TagCode "Page", "Page", "Page"
         TagCode "Product", "Product", "Produit"
         TagCode "Products", "Products", "Produits"
+        TagCode "SelectedPlural", "Selected", "Sélectionnés"
 
         TagCode "Cancel", "Cancel", "Annuler"
         TagCode "Close", "Close", "Fermer"

@@ -17,6 +17,7 @@ type CatalogApiBuilder(api: FeatApi) =
     static let claim = Claims.single Feat.Catalog
 
     member _.Build() : CatalogApi = {
+        GetBooksData = GetBooksDataHandler(api) |> Security.authorizeHandler (claim Access.Edit)
         GetProducts = GetProductsHandler(api, pages) |> Security.authorizeHandler (claim Access.View)
         GetProduct = GetProductHandler(api, pages) |> Security.authorizeHandler (claim Access.View)
         SaveProduct = SaveProductHandler(api) |> Security.authorizeHandler (claim Access.Edit)
