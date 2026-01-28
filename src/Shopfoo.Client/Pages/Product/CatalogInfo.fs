@@ -159,6 +159,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                 prop.className "flex flex-col justify-between h-full"
                                 prop.children [
                                     // -- Name ----
+
                                     Daisy.fieldset [
                                         prop.key "name-fieldset"
                                         prop.className "mb-2"
@@ -187,6 +188,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                     ]
 
                                     // -- Bazaar Category ----
+
                                     match product.Category with
                                     | Category.Books _ -> ()
                                     | Category.Bazaar bazaarProduct ->
@@ -261,6 +263,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                         ]
 
                                     // -- Book Authors ----
+
                                     match product.Category with
                                     | Category.Bazaar _ -> ()
                                     | Category.Books book ->
@@ -295,6 +298,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                             ]
 
                                     // -- Image Url ----
+
                                     Daisy.fieldset [
                                         prop.key "image-fieldset"
                                         prop.className "mb-2"
@@ -333,6 +337,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                             ]
 
                             // -- Image Preview ----
+
                             Html.div [
                                 prop.key "image-preview-column"
                                 prop.className "h-[230px] w-[180px] relative overflow-hidden flex items-center justify-center rounded-box"
@@ -384,6 +389,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                     ]
 
                     // -- Description ----
+
                     let props = Product.Guard.Description.props (product.Description, translations)
 
                     Daisy.fieldsetLabel [
@@ -406,6 +412,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                     ]
 
                     // -- Book Tags ----
+
                     match product.Category with
                     | Category.Bazaar _ -> ()
                     | Category.Books book ->
@@ -430,8 +437,16 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                         formatItem = id,
                                         onSelect = toggleTag,
                                         readonly = (catalogAccess <> Some Edit),
+                                        translations = translations,
                                         searchTarget = SearchTarget.BookTag,
-                                        translations = translations
+                                        searchMoreButton = {
+                                            Icon = fa6Solid.plus
+                                            Tooltip = "Add tag" // TODO : translate
+                                            OnValidateSearchTerm =
+                                                fun tag ->
+                                                    let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
+                                                    dispatch (ProductChanged { product with Category = productCategory })
+                                        }
                                     )
                                 ]
                             ]

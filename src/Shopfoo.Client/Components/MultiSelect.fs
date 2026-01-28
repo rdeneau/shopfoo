@@ -5,6 +5,7 @@ open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Feliz.DaisyUI.Operators
+open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components.Icon
@@ -12,6 +13,12 @@ open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Shared.Translations
 open type Shopfoo.Client.Components.Checkbox
+
+type SearchInputButton = {
+    Icon: IconifyIcon
+    Tooltip: string
+    OnValidateSearchTerm: string -> unit
+}
 
 type private MenuItem<'a> = {
     Key: string
@@ -24,6 +31,24 @@ type private MenuItem<'a> = {
 
 [<Erase>]
 type MultiSelect =
+    static member private searchInputButton(key, searchTerm, props: SearchInputButton) =
+        Daisy.button.button [
+            button.ghost ++ button.circle ++ button.sm
+            prop.key $"search-input-button-%s{key}"
+            prop.type' "button"
+            prop.title props.Tooltip
+            prop.onMouseDown (fun ev ->
+                ev.preventDefault ()
+                ev.stopPropagation ()
+            )
+            prop.onClick (fun ev ->
+                ev.preventDefault ()
+                ev.stopPropagation ()
+                props.OnValidateSearchTerm searchTerm
+            )
+            prop.children [ icon props.Icon ]
+        ]
+
     [<ReactComponent>]
     static member MultiSelect
         (
@@ -36,12 +61,16 @@ type MultiSelect =
             translations: AppTranslations,
             searchTarget: 'a -> SearchTarget,
             ?searchCaseMatching: CaseMatching,
-            ?searchHighlighting: Highlighting
+            ?searchHighlighting: Highlighting,
+            ?searchMoreButton: SearchInputButton
         ) =
         let reactKeyOf x = String.toKebab $"%A{x}"
-        let selectedItems, setSelected = React.useState selectedItems
+        let initialSelectedItems = selectedItems
+        let selectedItems, setSelected = React.useState initialSelectedItems
         let filterText, setFilterText = React.useState ""
         let searchInputRef = React.useInputRef ()
+
+        React.useEffect ((fun () -> setSelected initialSelectedItems), dependencies = [| initialSelectedItems :> obj |])
 
         let focusSearchInput _ =
             fun () -> searchInputRef.current |> Option.iter _.focus()
@@ -56,8 +85,10 @@ type MultiSelect =
 
         let search = Searcher(searchConfig, translations)
 
+        let searchPool = Set.union items selectedItems
+
         let searchedItems =
-            items
+            searchPool
             |> Seq.map (fun item -> item, formatItem item)
             |> Seq.map (fun (item, text) -> {
                 Key = reactKeyOf item
@@ -66,15 +97,29 @@ type MultiSelect =
                 Selected = selectedItems.Contains(item)
                 SearchResult = search.Target(searchTarget item, text)
             })
-            |> Seq.sortBy _.Text
+            |> Seq.sortBy _.Text.ToLower()
             |> Seq.toList
 
-        let noItemMatches = searchedItems |> List.forall (fun item -> not item.HasMatches)
-
-        let visibleItems =
+        let noExactMatches, visibleItems =
             match filterText with
-            | String.NullOrWhiteSpace -> searchedItems
-            | _ -> searchedItems |> List.filter (fun item -> item.Selected || item.HasMatches)
+            | String.NullOrWhiteSpace -> false, searchedItems
+            | _ ->
+                searchedItems |> List.forall (fun item -> item.Text.ToLower() <> filterText.ToLower()),
+                searchedItems |> List.filter (fun item -> item.Selected || item.HasMatches)
+
+        let clearSearch () = setFilterText ""
+
+        let searchMoreButton =
+            match searchMoreButton with
+            | Some btn when noExactMatches ->
+                Some {
+                    btn with
+                        OnValidateSearchTerm =
+                            fun term ->
+                                btn.OnValidateSearchTerm term
+                                clearSearch ()
+                }
+            | _ -> None
 
         let toggle item isChecked =
             match isChecked, selectedItems.Contains item with
@@ -101,7 +146,7 @@ type MultiSelect =
                     prop.tabIndex 0 // Required to open the dropdown
                     prop.className [
                         "input input-bordered w-full"
-                        "flex items-center flex-wrap gap-2 h-auto px-1.5 py-2"
+                        "flex items-center flex-wrap gap-2 h-auto min-h-11 px-1.5 py-2"
                         if readonly then
                             "bg-base-300"
                     ]
@@ -144,7 +189,7 @@ type MultiSelect =
                         prop.children [
                             Html.li [
                                 prop.key $"%s{key}-search"
-                                prop.className "border-b border-base-200 p-2"
+                                prop.className "p-2"
                                 prop.children [
                                     Daisy.label.input [
                                         prop.key $"%s{key}-search-input"
@@ -160,23 +205,33 @@ type MultiSelect =
                                                 prop.placeholder translations.Home.Search
                                                 prop.value filterText
                                                 prop.onChange setFilterText
+
+                                                match searchMoreButton with
+                                                | Some btn ->
+                                                    prop.onKeyDown (
+                                                        Feliz.key.enter,
+                                                        fun ev ->
+                                                            ev.preventDefault ()
+                                                            btn.OnValidateSearchTerm filterText
+                                                    )
+                                                | _ -> ()
                                             ]
+
+                                            match searchMoreButton with
+                                            | Some btn ->
+                                                MultiSelect.searchInputButton (key = $"%s{key}-search-more-btn", searchTerm = filterText, props = btn)
+                                            | _ -> ()
+
                                             if filterText <> "" then
-                                                Daisy.button.button [
-                                                    button.ghost ++ button.circle ++ button.sm
-                                                    prop.key $"%s{key}-clear-search"
-                                                    prop.type' "button"
-                                                    prop.onMouseDown (fun ev ->
-                                                        ev.preventDefault ()
-                                                        ev.stopPropagation ()
-                                                    )
-                                                    prop.onClick (fun ev ->
-                                                        ev.preventDefault ()
-                                                        ev.stopPropagation ()
-                                                        setFilterText ""
-                                                    )
-                                                    prop.text "✕"
-                                                ]
+                                                MultiSelect.searchInputButton (
+                                                    key = $"%s{key}-clear-search-btn",
+                                                    searchTerm = filterText,
+                                                    props = {
+                                                        Icon = fa6Solid.xmark
+                                                        Tooltip = "Clear search" // TODO: translation
+                                                        OnValidateSearchTerm = fun _ -> clearSearch ()
+                                                    }
+                                                )
                                         ]
                                     ]
                                 ]
