@@ -13,12 +13,14 @@ open Shopfoo.Common
 open Shopfoo.Shared.Translations
 open type Shopfoo.Client.Components.Checkbox
 
-type private ItemModel<'a> = {
+type private MenuItem<'a> = {
     Key: string
     Text: string
     Value: 'a
+    Selected: bool
     SearchResult: SearchTargetResult
-}
+} with
+    member this.HasMatches = this.SearchResult.Matches |> List.exists (fun m -> m.MatchType = TextMatch)
 
 [<Erase>]
 type MultiSelect =
@@ -61,20 +63,18 @@ type MultiSelect =
                 Key = reactKeyOf item
                 Text = text
                 Value = item
+                Selected = selectedItems.Contains(item)
                 SearchResult = search.Target(searchTarget item, text)
             })
             |> Seq.sortBy _.Text
             |> Seq.toList
 
+        let noItemMatches = searchedItems |> List.forall (fun item -> not item.HasMatches)
+
         let visibleItems =
             match filterText with
             | String.NullOrWhiteSpace -> searchedItems
-            | _ ->
-                searchedItems
-                |> List.filter (fun item ->
-                    selectedItems.Contains item.Value
-                    || (item.SearchResult.Matches |> List.exists (fun m -> m.MatchType = TextMatch))
-                )
+            | _ -> searchedItems |> List.filter (fun item -> item.Selected || item.HasMatches)
 
         let toggle item isChecked =
             match isChecked, selectedItems.Contains item with
@@ -201,9 +201,19 @@ type MultiSelect =
                                             onCheck =
                                                 fun isChecked ->
                                                     if isChecked then
-                                                        // Select all
-                                                        selectedItems |> Seq.iter (fun item -> onSelect (true, item))
-                                                        setSelected items
+                                                        // Select all visible
+                                                        visibleItems
+                                                        |> Seq.iter (fun item ->
+                                                            if not item.Selected then
+                                                                onSelect (true, item.Value)
+                                                        )
+
+                                                        setSelected (
+                                                            Set [
+                                                                for item in visibleItems do
+                                                                    item.Value
+                                                            ]
+                                                        )
                                                     else
                                                         // Deselect all
                                                         selectedItems |> Seq.iter (fun item -> onSelect (false, item))
