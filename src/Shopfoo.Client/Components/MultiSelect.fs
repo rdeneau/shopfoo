@@ -145,7 +145,16 @@ type MultiSelect =
                                                 Daisy.button.button [
                                                     button.ghost ++ button.circle ++ button.sm
                                                     prop.key $"%s{key}-clear-search"
-                                                    prop.onClick (fun _ -> setFilterText "")
+                                                    prop.type' "button"
+                                                    prop.onMouseDown (fun ev ->
+                                                        ev.preventDefault ()
+                                                        ev.stopPropagation ()
+                                                    )
+                                                    prop.onClick (fun ev ->
+                                                        ev.preventDefault ()
+                                                        ev.stopPropagation ()
+                                                        setFilterText ""
+                                                    )
                                                     prop.text "✕"
                                                 ]
                                         ]
