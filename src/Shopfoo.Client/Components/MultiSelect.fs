@@ -1,10 +1,12 @@
 ﻿namespace Shopfoo.Client.Components
 
+open System
 open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Feliz.DaisyUI.Operators
 open Glutinum.IconifyIcons.Fa6Solid
+open Shopfoo.Client
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Search
 open Shopfoo.Common
@@ -37,6 +39,11 @@ type MultiSelect =
         let reactKeyOf x = String.toKebab $"%A{x}"
         let selectedItems, setSelected = React.useState selectedItems
         let filterText, setFilterText = React.useState ""
+        let searchInputRef = React.useInputRef ()
+
+        let focusSearchInput _ =
+            fun () -> searchInputRef.current |> Option.iter _.focus()
+            |> JS.runAfter (TimeSpan.FromMilliseconds 150)
 
         let searchConfig = {
             Columns = Set.empty
@@ -88,6 +95,7 @@ type MultiSelect =
                         if readonly then
                             "bg-base-300"
                     ]
+                    prop.onFocus focusSearchInput
                     prop.children [
                         for item in searchedItems do
                             if selectedItems.Contains item.Value then
@@ -134,8 +142,10 @@ type MultiSelect =
                                         prop.children [
                                             icon fa6Solid.magnifyingGlass
                                             Html.input [
+                                                prop.ref searchInputRef
                                                 prop.key $"%s{key}-search-input-field"
                                                 prop.type' "text"
+                                                prop.autoFocus true // Not working but left for documentation purpose
                                                 prop.className "grow bg-transparent outline-none"
                                                 prop.placeholder translations.Home.Search
                                                 prop.value filterText
