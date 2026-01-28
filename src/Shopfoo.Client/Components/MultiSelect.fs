@@ -66,6 +66,16 @@ type MultiSelect =
             |> Seq.sortBy _.Text
             |> Seq.toList
 
+        let visibleItems =
+            match filterText with
+            | String.NullOrWhiteSpace -> searchedItems
+            | _ ->
+                searchedItems
+                |> List.filter (fun item ->
+                    selectedItems.Contains item.Value
+                    || (item.SearchResult.Matches |> List.exists (fun m -> m.MatchType = TextMatch))
+                )
+
         let toggle item isChecked =
             match isChecked, selectedItems.Contains item with
             | true, true -> () // Already selected
@@ -202,7 +212,7 @@ type MultiSelect =
                                     ]
                                 ]
 
-                            for item in searchedItems do
+                            for item in visibleItems do
                                 Html.li [
                                     prop.key $"%s{key}-select-%s{item.Key}"
                                     prop.className "hover:bg-base-200"
