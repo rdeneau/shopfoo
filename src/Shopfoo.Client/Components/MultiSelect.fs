@@ -4,6 +4,8 @@ open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Feliz.DaisyUI.Operators
+open Glutinum.IconifyIcons.Fa6Solid
+open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Shared.Translations
@@ -113,14 +115,6 @@ type MultiSelect =
                                     ]
                                 ]
 
-                        Html.input [
-                            prop.key $"%s{key}-search-input"
-                            prop.type' "text"
-                            prop.className "flex-1 min-w-[60px] bg-transparent outline-none"
-                            prop.value filterText
-                            prop.onChange setFilterText
-                            prop.readOnly readonly
-                        ]
                     ]
                 ]
 
@@ -128,8 +122,37 @@ type MultiSelect =
                     Daisy.dropdownContent [
                         prop.key $"%s{key}-dropdown-content"
                         prop.tabIndex -1
-                        prop.className "menu bg-base-100 rounded-box z-1 w-52 p-0 shadow-sm"
+                        prop.className "menu bg-base-100 rounded-box z-1 w-64 p-0 shadow-sm"
                         prop.children [
+                            Html.li [
+                                prop.key $"%s{key}-search"
+                                prop.className "border-b border-base-200 p-2"
+                                prop.children [
+                                    Daisy.label.input [
+                                        prop.key $"%s{key}-search-input"
+                                        prop.className "input input-bordered w-full flex items-center gap-2"
+                                        prop.children [
+                                            icon fa6Solid.magnifyingGlass
+                                            Html.input [
+                                                prop.key $"%s{key}-search-input-field"
+                                                prop.type' "text"
+                                                prop.className "grow bg-transparent outline-none"
+                                                prop.placeholder translations.Home.Search
+                                                prop.value filterText
+                                                prop.onChange setFilterText
+                                            ]
+                                            if filterText <> "" then
+                                                Daisy.button.button [
+                                                    button.ghost ++ button.circle ++ button.sm
+                                                    prop.key $"%s{key}-clear-search"
+                                                    prop.onClick (fun _ -> setFilterText "")
+                                                    prop.text "✕"
+                                                ]
+                                        ]
+                                    ]
+                                ]
+                            ]
+
                             // Select All/None checkbox
                             if items.Count > 1 then
                                 Html.li [

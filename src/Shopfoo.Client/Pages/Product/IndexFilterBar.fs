@@ -2,6 +2,7 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Feliz.DaisyUI.Operators
 open Feliz.Router
 open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
@@ -229,9 +230,10 @@ type private Tab(filters: Filters, translations: AppTranslations) =
                             )
                         ]
                         if filters.Search.Term.IsSome then
-                            Daisy.button.a [
+                            Daisy.button.button [
+                                button.ghost ++ button.circle ++ button.sm
                                 prop.key "search-tab-close-button"
-                                prop.className "btn btn-ghost btn-sm btn-circle mr-[-8px]"
+                                prop.className "mr-[-8px]"
                                 prop.onClick (fun _ -> setSearchTerm None)
                                 prop.text "✕"
                             ]
