@@ -24,6 +24,7 @@
     <Compile Include="Components\Buttons.fs" />
     <Compile Include="Components\Icon.fs" />
     <Compile Include="Components\Checkbox.fs" />
+    <Compile Include="Components\Cover.fs" />
     <Compile Include="Components\Dialog.fs" />
     <Compile Include="Components\FilterTab.fs" />
     <Compile Include="Components\Highlight.fs" />

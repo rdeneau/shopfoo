@@ -29,7 +29,7 @@ module private Db =
     let markSeemann = { Id = OLID "OL7079278A"; Name = "Mark Seemann" }
     let martinFowler = { Id = OLID "OL27090A"; Name = "Martin Fowler" }
     let scottWlaschin = { Id = OLID "OL7495494A"; Name = "Scott Wlaschin" }
-    let uncleBobMartin = { Id = OLID "OL216228A"; Name = "Robert C. Martin" }
+    let uncleBobMartin = { Id = OLID "OL2653686A"; Name = "Robert C. Martin" }
     let vladimirKhorikov = { Id = OLID "OL8466340A"; Name = "Vladimir Khorikov" }
 
     let private cleanArchitecture = {

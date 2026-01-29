@@ -58,8 +58,9 @@ type MultiSelect =
             formatItem: 'a -> string,
             onSelect: bool * 'a -> unit,
             readonly: bool,
-            translations: AppTranslations,
             searchTarget: 'a -> SearchTarget,
+            translations: AppTranslations,
+            ?itemImage: 'a -> ReactElement,
             ?searchCaseMatching: CaseMatching,
             ?searchHighlighting: Highlighting,
             ?searchMoreButton: SearchInputButton
@@ -185,7 +186,7 @@ type MultiSelect =
                     Daisy.dropdownContent [
                         prop.key $"%s{key}-dropdown-content"
                         prop.tabIndex -1
-                        prop.className "menu bg-base-100 rounded-box z-1 w-64 p-0 shadow-sm"
+                        prop.className "bg-base-100 rounded-box z-1 w-64 p-0 shadow-sm"
                         prop.children [
                             Html.li [
                                 prop.key $"%s{key}-search"
@@ -280,7 +281,7 @@ type MultiSelect =
                             for item in visibleItems do
                                 Html.li [
                                     prop.key $"%s{key}-select-%s{item.Key}"
-                                    prop.className "hover:bg-base-200"
+                                    prop.className "group flex items-center hover:bg-base-300 transition-colors"
                                     prop.children [
                                         Checkbox(
                                             key = $"%s{key}-select-%s{item.Key}-checkbox",
@@ -290,6 +291,9 @@ type MultiSelect =
                                             ],
                                             onCheck = toggle item.Value
                                         )
+                                        match itemImage with
+                                        | Some imgFn -> imgFn item.Value
+                                        | None -> ()
                                     ]
                                 ]
                         ]

@@ -289,6 +289,15 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                         items = booksData.Authors,
                                                         selectedItems = book.Authors,
                                                         formatItem = _.Name,
+                                                        itemImage =
+                                                            (fun author ->
+                                                                Cover.BookAuthor(
+                                                                    key = $"author-{author.OLID.Value}",
+                                                                    author = author,
+                                                                    container = CoverContainer.LinkToAuthorCard,
+                                                                    sizeCssClass = "w-[40px] min-w-[40px] h-[40px] min-h-[40px]"
+                                                                )
+                                                            ),
                                                         onSelect = toggleAuthor,
                                                         readonly = (catalogAccess <> Some Edit),
                                                         searchTarget = SearchTarget.BookAuthor,
