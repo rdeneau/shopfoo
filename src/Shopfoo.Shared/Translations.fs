@@ -138,6 +138,10 @@ module TranslationPages =
         member this.SoldOut = this.Get "SoldOut"
         member this.Tags = this.Get "Tags"
         member this.AddTag = this.Get "AddTag"
+        member this.SearchAuthors = this.Get "SearchAuthors"
+        member this.NoAuthorsFound = this.Get "NoAuthorsFound"
+        member this.AuthorSearchLimit(limit: int, totalFound: int) = this.Format("AuthorSearchLimit", limit, totalFound)
+        member this.OpenLibraryAuthorPage(authorName: string) = this.Format("OpenLibraryAuthorPage", authorName)
 
         member this.Discount = this.Get "Discount"
         member this.Increase = this.Get "Increase"

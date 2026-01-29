@@ -23,6 +23,7 @@ type private Model = {
     Product: Remote<Product>
     BooksData: Remote<GetBooksDataResponse>
     SaveDate: Remote<DateTime>
+    SearchedAuthors: Remote<SearchAuthorsResponse>
 }
 
 type private Msg =
@@ -30,6 +31,9 @@ type private Msg =
     | BooksFetched of ApiResult<GetBooksDataResponse>
     | ProductChanged of Product
     | SaveProduct of Product * ApiCall<unit>
+    | SearchAuthors of searchTerm: string
+    | AuthorsSearched of ApiResult<SearchAuthorsResponse>
+    | ClearSearchedAuthors
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -54,11 +58,19 @@ module private Cmd =
             Success = fun () -> SaveProduct(request.Body, Done(Ok()))
         }
 
+    let searchAuthors (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Catalog.SearchAuthors request
+            Error = Error >> AuthorsSearched
+            Success = Ok >> AuthorsSearched
+        }
+
 let private init (fullContext: FullContext) sku =
     {
         Product = Remote.Loading
         BooksData = Remote.Empty
         SaveDate = Remote.Empty
+        SearchedAuthors = Remote.Empty
     },
     Cmd.loadProduct (fullContext.PrepareQueryWithTranslations sku)
 
@@ -93,14 +105,24 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
         { model with SaveDate = saveDate }, // ↩
         Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
 
+    | SearchAuthors searchTerm ->
+        { model with SearchedAuthors = Remote.Loading }, // ↩
+        Cmd.searchAuthors (fullContext.PrepareRequest { SearchTerm = searchTerm })
+
+    | AuthorsSearched(Ok response) -> { model with SearchedAuthors = Remote.Loaded response }, Cmd.none
+    | AuthorsSearched(Error apiError) -> { model with SearchedAuthors = Remote.LoadError apiError }, Cmd.none
+
+    | ClearSearchedAuthors -> { model with SearchedAuthors = Remote.Empty }, Cmd.none
+
 [<ReactComponent>]
-let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslations onSaveProduct =
+let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) fillTranslations onSaveProduct =
     let sku = productModel.SKU
-
-    let model, dispatch = React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
-
     let translations = fullContext.Translations
     let catalogAccess = fullContext.User.AccessTo Feat.Catalog
+
+    let model, dispatch = React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
+    let authorSearchInfo, setAuthorSearchInfo = React.useState SearchInfo.empty
+    let tagSearchInfo, setTagSearchInfo = React.useState SearchInfo.empty
 
     let propsOrReadonly (props: IReactProperty seq) = [
         match catalogAccess with
@@ -276,6 +298,73 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                 let productCategory = Category.Books { book with Authors = book.Authors.Toggle(author, isChecked) }
                                                 dispatch (ProductChanged { product with Category = productCategory })
 
+                                            let searchedAuthors =
+                                                match model.SearchedAuthors with
+                                                | Remote.Loaded response -> response.Authors
+                                                | _ -> Set.empty
+
+                                            let searchMoreButtonProps =
+                                                if String.IsNullOrWhiteSpace authorSearchInfo.SearchTerm then
+                                                    SearchButtonProps.None
+                                                else
+                                                    match model.SearchedAuthors with
+                                                    | Remote.Empty ->
+                                                        SearchButtonProps.Active(
+                                                            icon = fa6Solid.magnifyingGlass,
+                                                            tooltip = translations.Product.SearchAuthors,
+                                                            onSearch =
+                                                                fun () ->
+                                                                    dispatch (SearchAuthors authorSearchInfo.SearchTerm)
+                                                                    AfterSearch(shouldClearTerm = false)
+                                                        )
+                                                    | Remote.Loading -> SearchButtonProps.Searching
+                                                    | Remote.LoadError apiError ->
+                                                        SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
+                                                    | Remote.Loaded { Authors = Set.Empty } ->
+                                                        SearchButtonProps.SearchComplete(
+                                                            SearchCompletionStatus.Info translations.Product.NoAuthorsFound
+                                                        )
+                                                    | Remote.Loaded data when data.TotalCount > data.Authors.Count ->
+                                                        SearchButtonProps.SearchComplete(
+                                                            SearchCompletionStatus.Info(
+                                                                translations.Product.AuthorSearchLimit(
+                                                                    limit = data.Authors.Count,
+                                                                    totalFound = data.TotalCount
+                                                                )
+                                                            )
+                                                        )
+                                                    | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
+
+                                            let allAuthors =
+                                                Set.unionMany [
+                                                    book.Authors
+                                                    booksData.Authors
+                                                    searchedAuthors
+                                                ]
+
+                                            let authorItems = [
+                                                for author in allAuthors do
+                                                    let cover =
+                                                        Cover.BookAuthor(
+                                                            key = $"author-{author.OLID.Value}",
+                                                            author = author,
+                                                            container = CoverContainer.LinkToAuthorCard,
+                                                            sizeCssClass = "w-[40px] min-w-[40px] h-[40px] min-h-[40px]",
+                                                            translations = translations
+                                                        )
+
+                                                    let symbol = if searchedAuthors.Contains author then "✨" else ""
+
+                                                    {
+                                                        Text = author.Name + symbol
+                                                        Value = author
+                                                        Image = Some cover
+                                                        Selected = book.Authors.Contains author
+                                                        Filterable = not (searchedAuthors.Contains author)
+                                                        SearchTarget = SearchTarget.BookAuthor author
+                                                    }
+                                            ]
+
                                             Daisy.fieldset [
                                                 prop.key "authors-fieldset"
                                                 prop.className "mb-2"
@@ -286,22 +375,16 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                                     ]
                                                     MultiSelect(
                                                         key = "authors-select",
-                                                        items = booksData.Authors,
-                                                        selectedItems = book.Authors,
-                                                        formatItem = _.Name,
-                                                        itemImage =
-                                                            (fun author ->
-                                                                Cover.BookAuthor(
-                                                                    key = $"author-{author.OLID.Value}",
-                                                                    author = author,
-                                                                    container = CoverContainer.LinkToAuthorCard,
-                                                                    sizeCssClass = "w-[40px] min-w-[40px] h-[40px] min-h-[40px]"
-                                                                )
+                                                        items = authorItems,
+                                                        onSearchTermChange =
+                                                            (fun searchInfo ->
+                                                                setAuthorSearchInfo searchInfo
+                                                                dispatch ClearSearchedAuthors
                                                             ),
                                                         onSelect = toggleAuthor,
                                                         readonly = (catalogAccess <> Some Edit),
-                                                        searchTarget = SearchTarget.BookAuthor,
-                                                        translations = translations
+                                                        translations = translations,
+                                                        searchMoreButtonProps = searchMoreButtonProps
                                                     )
                                                 ]
                                             ]
@@ -434,28 +517,50 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                 let productCategory = Category.Books { book with Tags = book.Tags.Toggle(tag, isChecked) }
                                 dispatch (ProductChanged { product with Category = productCategory })
 
+                            let tagItems = [
+                                for tag in Set.union book.Tags booksData.Tags do
+                                    {
+                                        Text = tag
+                                        Value = tag
+                                        Image = None
+                                        Selected = book.Tags.Contains tag
+                                        Filterable = true
+                                        SearchTarget = SearchTarget.BookTag tag
+                                    }
+                            ]
+
+                            let searchMoreButtonProps =
+                                let tag = tagSearchInfo.SearchTerm.Trim()
+
+                                if tag.Length > 0 && not (booksData.Tags.Contains tag) then
+                                    SearchButtonProps.Active(
+                                        icon = fa6Solid.plus,
+                                        tooltip = translations.Product.AddTag,
+                                        onSearch =
+                                            fun () ->
+                                                let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
+                                                dispatch (ProductChanged { product with Category = productCategory })
+                                                AfterSearch(shouldClearTerm = true)
+                                    )
+                                else
+                                    SearchButtonProps.None
+
                             Daisy.fieldset [
                                 prop.key "tags-fieldset"
                                 prop.className "mb-2"
                                 prop.children [
-                                    Daisy.fieldsetLabel [ prop.key "tags-label"; prop.children [ Html.text translations.Product.Tags ] ]
+                                    Daisy.fieldsetLabel [ // ↩
+                                        prop.key "tags-label"
+                                        prop.text translations.Product.Tags
+                                    ]
                                     MultiSelect(
                                         key = "tags-select",
-                                        items = booksData.Tags,
-                                        selectedItems = book.Tags,
-                                        formatItem = id,
+                                        items = tagItems,
                                         onSelect = toggleTag,
+                                        onSearchTermChange = setTagSearchInfo,
                                         readonly = (catalogAccess <> Some Edit),
                                         translations = translations,
-                                        searchTarget = SearchTarget.BookTag,
-                                        searchMoreButton = {
-                                            Icon = fa6Solid.plus
-                                            Tooltip = translations.Product.AddTag
-                                            OnValidateSearchTerm =
-                                                fun tag ->
-                                                    let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
-                                                    dispatch (ProductChanged { product with Category = productCategory })
-                                        }
+                                        searchMoreButtonProps = searchMoreButtonProps
                                     )
                                 ]
                             ]

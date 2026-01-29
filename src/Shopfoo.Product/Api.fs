@@ -7,7 +7,6 @@ open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Product.Data
-open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Workflows
 open Shopfoo.Product.Workflows.Instructions
 
@@ -26,7 +25,14 @@ type IProductApi =
     abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
     abstract member GetSales: (SKU -> Async<Sale list option>)
 
-type internal Api(interpreterFactory: IInterpreterFactory, fakeStoreClient: FakeStoreClient) =
+    abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
+
+type internal Api
+    (
+        interpreterFactory: IInterpreterFactory, // ↩
+        fakeStoreClient: FakeStore.FakeStoreClient,
+        openLibraryClient: OpenLibrary.OpenLibraryClient
+    ) =
     let interpret = interpreterFactory.Create(ProductDomain)
 
     let runEffect (productEffect: IProductEffect<_>) =
@@ -53,3 +59,5 @@ type internal Api(interpreterFactory: IInterpreterFactory, fakeStoreClient: Fake
         member val AdjustStock = Warehouse.Pipeline.adjustStock
         member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
         member val GetSales = Sales.Pipeline.getSales
+
+        member val SearchAuthors = OpenLibrary.Pipeline.searchAuthors openLibraryClient

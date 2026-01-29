@@ -22,6 +22,7 @@
     <Compile Include="Remoting\Catalog\GetProductsHandler.fs" />
     <Compile Include="Remoting\Catalog\GetProductHandler.fs" />
     <Compile Include="Remoting\Catalog\SaveProductHandler.fs" />
+    <Compile Include="Remoting\Catalog\SearchAuthorsHandler.fs" />
     <Compile Include="Remoting\Catalog\CatalogApiBuilder.fs" />
     <Compile Include="Remoting\Home\IndexHandler.fs" />
     <Compile Include="Remoting\Home\GetTranslationsHandler.fs" />

@@ -14,64 +14,120 @@ open Shopfoo.Common
 open Shopfoo.Shared.Translations
 open type Shopfoo.Client.Components.Checkbox
 
-type SearchInputButton = {
-    Icon: IconifyIcon
-    Tooltip: string
-    OnValidateSearchTerm: string -> unit
+type AfterSearch = AfterSearch of shouldClearTerm: bool
+
+type private AfterSearchCallbacks = { ClearTerm: unit -> unit }
+
+type private SearchRunner(afterSearch: AfterSearchCallbacks) =
+    member _.Run onSearch =
+        match onSearch () with
+        | AfterSearch(shouldClearTerm = true) -> afterSearch.ClearTerm()
+        | _ -> ()
+
+type SearchInfo = { SearchTerm: string; NoExactMatches: bool }
+
+[<RequireQualifiedAccess>]
+module SearchInfo =
+    let empty = { SearchTerm = ""; NoExactMatches = false }
+
+[<RequireQualifiedAccess>]
+type SearchCompletionStatus =
+    | Success
+    | Info of message: string
+    | Error of message: string
+
+[<RequireQualifiedAccess>]
+type SearchButtonProps =
+    | None
+    | Active of icon: IconifyIcon * tooltip: string * onSearch: (unit -> AfterSearch)
+    | Searching
+    | SearchComplete of status: SearchCompletionStatus
+
+type SelectItem<'a> = {
+    Value: 'a
+    Image: ReactElement option
+    Text: string
+    Selected: bool
+    Filterable: bool
+    SearchTarget: SearchTarget
 }
 
-type private MenuItem<'a> = {
+type private SearchedItem<'a> = {
     Key: string
-    Text: string
-    Value: 'a
-    Selected: bool
+    Item: SelectItem<'a>
     SearchResult: SearchTargetResult
 } with
     member this.HasMatches = this.SearchResult.Matches |> List.exists (fun m -> m.MatchType = TextMatch)
 
 [<Erase>]
 type MultiSelect =
-    static member private searchInputButton(key, searchTerm, props: SearchInputButton) =
-        Daisy.button.button [
-            button.ghost ++ button.circle ++ button.sm
-            prop.key $"search-input-button-%s{key}"
-            prop.type' "button"
-            prop.title props.Tooltip
-            prop.onMouseDown (fun ev ->
-                ev.preventDefault ()
-                ev.stopPropagation ()
-            )
-            prop.onClick (fun ev ->
-                ev.preventDefault ()
-                ev.stopPropagation ()
-                props.OnValidateSearchTerm searchTerm
-            )
-            prop.children [ icon props.Icon ]
-        ]
+    static member private searchButton(key, props: SearchButtonProps, search: SearchRunner) =
+        match props with
+        | SearchButtonProps.None -> Html.none
+        | _ ->
+            Daisy.button.button [
+                button.ghost ++ button.circle ++ button.sm
+                prop.key $"search-input-button-%s{key}"
+                prop.type' "button"
+                prop.onMouseDown (fun ev ->
+                    ev.preventDefault ()
+                    ev.stopPropagation ()
+                )
+
+                match props with
+                | SearchButtonProps.Active(iconifyIcon, tooltip, onSearch) ->
+                    prop.title tooltip
+
+                    prop.onClick (fun ev ->
+                        ev.preventDefault ()
+                        ev.stopPropagation ()
+                        search.Run(onSearch)
+                    )
+
+                    prop.children [ icon iconifyIcon ]
+
+                | SearchButtonProps.Searching ->
+                    prop.children [
+                        Daisy.loading [
+                            loading.spinner
+                            loading.xs
+                            prop.key $"search-input-%s{key}-spinner"
+                        ]
+                    ]
+
+                | SearchButtonProps.SearchComplete(SearchCompletionStatus.Error message) ->
+                    prop.title message
+                    prop.className "text-error"
+                    prop.children [ icon fa6Solid.circleXmark ]
+
+                | SearchButtonProps.SearchComplete(SearchCompletionStatus.Info message) ->
+                    prop.title message
+                    prop.className "text-info"
+                    prop.children [ icon fa6Solid.info ]
+
+                | SearchButtonProps.SearchComplete SearchCompletionStatus.Success ->
+                    prop.className "text-success"
+                    prop.children [ icon fa6Solid.circleCheck ]
+
+                | SearchButtonProps.None -> ()
+            ]
 
     [<ReactComponent>]
     static member MultiSelect
         (
             key: string, // ↩
-            items: Set<'a>,
-            selectedItems: Set<'a>,
-            formatItem: 'a -> string,
+            items: SelectItem<'a> list,
+            onSearchTermChange: SearchInfo -> unit,
             onSelect: bool * 'a -> unit,
             readonly: bool,
-            searchTarget: 'a -> SearchTarget,
             translations: AppTranslations,
-            ?itemImage: 'a -> ReactElement,
             ?searchCaseMatching: CaseMatching,
             ?searchHighlighting: Highlighting,
-            ?searchMoreButton: SearchInputButton
+            ?searchMoreButtonProps: SearchButtonProps
         ) =
         let reactKeyOf x = String.toKebab $"%A{x}"
-        let initialSelectedItems = selectedItems
-        let selectedItems, setSelected = React.useState initialSelectedItems
         let filterText, setFilterText = React.useState ""
         let searchInputRef = React.useInputRef ()
-
-        React.useEffect ((fun () -> setSelected initialSelectedItems), dependencies = [| initialSelectedItems :> obj |])
 
         let focusSearchInput _ =
             fun () -> searchInputRef.current |> Option.iter _.focus()
@@ -86,53 +142,50 @@ type MultiSelect =
 
         let search = Searcher(searchConfig, translations)
 
-        let searchPool = Set.union items selectedItems
-
         let searchedItems =
-            searchPool
-            |> Seq.map (fun item -> item, formatItem item)
-            |> Seq.map (fun (item, text) -> {
-                Key = reactKeyOf item
-                Text = text
-                Value = item
-                Selected = selectedItems.Contains(item)
-                SearchResult = search.Target(searchTarget item, text)
+            items
+            |> Seq.map (fun item -> {
+                Key = reactKeyOf item.Value
+                Item = item
+                SearchResult = search.Target(item.SearchTarget, item.Text)
             })
-            |> Seq.sortBy _.Text.ToLower()
-            |> Seq.toList
+            |> Seq.sortBy _.Item.Text.ToLower()
+            |> Seq.toArray
 
         let noExactMatches, visibleItems =
             match filterText with
             | String.NullOrWhiteSpace -> false, searchedItems
             | _ ->
-                searchedItems |> List.forall (fun item -> item.Text.ToLower() <> filterText.ToLower()),
-                searchedItems |> List.filter (fun item -> item.Selected || item.HasMatches)
+                searchedItems |> Array.forall (fun x -> x.Item.Text.ToLower() <> filterText.ToLower()),
+                searchedItems |> Array.filter (fun x -> x.Item.Selected || x.HasMatches || not x.Item.Filterable)
 
-        let clearSearch () = setFilterText ""
+        let clearSearchTerm () =
+            setFilterText ""
+            onSearchTermChange SearchInfo.empty
+
+        let searchRunner = SearchRunner({ ClearTerm = clearSearchTerm })
+        let searchButton key props = MultiSelect.searchButton (key, props, searchRunner)
 
         let searchMoreButton =
-            match searchMoreButton with
-            | Some btn when noExactMatches ->
-                Some {
-                    btn with
-                        OnValidateSearchTerm =
-                            fun term ->
-                                btn.OnValidateSearchTerm term
-                                clearSearch ()
-                }
-            | _ -> None
+            searchMoreButtonProps
+            |> Option.map (fun props -> props, searchButton $"%s{key}-search-more-btn" props)
 
-        let toggle item isChecked =
-            match isChecked, selectedItems.Contains item with
+        let selectedValues =
+            Set [
+                for item in items do
+                    if item.Selected then
+                        item.Value
+            ]
+
+        let toggle value isChecked =
+            match isChecked, selectedValues.Contains value with
             | true, true -> () // Already selected
             | true, false -> // Select
-                setSelected (selectedItems.Add item)
-                onSelect (true, item)
+                onSelect (true, value)
 
             | false, false -> () // Already unselected
             | false, true -> // Deselect
-                setSelected (selectedItems.Remove item)
-                onSelect (false, item)
+                onSelect (false, value)
 
         Daisy.dropdown [
             prop.key key
@@ -153,12 +206,12 @@ type MultiSelect =
                     ]
                     prop.onFocus focusSearchInput
                     prop.children [
-                        for item in searchedItems do
-                            if selectedItems.Contains item.Value then
+                        for { Key = key; Item = item } in searchedItems do
+                            if item.Selected then
                                 Daisy.badge [
                                     badge.primary
                                     badge.soft
-                                    prop.key $"%s{item.Key}-badge"
+                                    prop.key $"%s{key}-badge"
                                     prop.className "gap-1"
                                     if not readonly then
                                         prop.style [ style.paddingInlineEnd 0 ]
@@ -168,7 +221,7 @@ type MultiSelect =
                                             Daisy.button.button [
                                                 button.ghost ++ button.circle
                                                 prop.type' "button"
-                                                prop.key $"%s{item.Key}-remove-button"
+                                                prop.key $"%s{key}-remove-button"
                                                 prop.tabIndex -1
                                                 prop.className "text-[10px]"
                                                 prop.style [ style.custom ("--size", "1.5rem") ]
@@ -182,12 +235,13 @@ type MultiSelect =
                     ]
                 ]
 
-                if items.Count > 0 && not readonly then
+                if searchedItems.Length > 0 && not readonly then
                     Daisy.dropdownContent [
                         prop.key $"%s{key}-dropdown-content"
                         prop.tabIndex -1
                         prop.className "bg-base-100 rounded-box z-1 w-64 p-0 shadow-sm"
                         prop.children [
+                            // Search input
                             Html.li [
                                 prop.key $"%s{key}-search"
                                 prop.className "p-2"
@@ -205,33 +259,32 @@ type MultiSelect =
                                                 prop.className "grow bg-transparent outline-none"
                                                 prop.placeholder translations.Home.Search
                                                 prop.value filterText
-                                                prop.onChange setFilterText
+                                                prop.onChange (fun searchTerm ->
+                                                    setFilterText searchTerm
+                                                    onSearchTermChange { SearchTerm = searchTerm; NoExactMatches = noExactMatches }
+                                                )
 
                                                 match searchMoreButton with
-                                                | Some btn ->
+                                                | Some(SearchButtonProps.Active(_, _, onSearch), _) ->
                                                     prop.onKeyDown (
                                                         Feliz.key.enter,
                                                         fun ev ->
                                                             ev.preventDefault ()
-                                                            btn.OnValidateSearchTerm filterText
+                                                            searchRunner.Run(onSearch)
                                                     )
                                                 | _ -> ()
                                             ]
 
                                             match searchMoreButton with
-                                            | Some btn ->
-                                                MultiSelect.searchInputButton (key = $"%s{key}-search-more-btn", searchTerm = filterText, props = btn)
-                                            | _ -> ()
+                                            | Some(_, button) -> button
+                                            | None -> ()
 
                                             if filterText <> "" then
-                                                MultiSelect.searchInputButton (
-                                                    key = $"%s{key}-clear-search-btn",
-                                                    searchTerm = filterText,
-                                                    props = {
-                                                        Icon = fa6Solid.xmark
-                                                        Tooltip = translations.Home.Clear
-                                                        OnValidateSearchTerm = fun _ -> clearSearch ()
-                                                    }
+                                                searchButton $"%s{key}-clear-search-btn"
+                                                <| SearchButtonProps.Active(
+                                                    icon = fa6Solid.xmark,
+                                                    tooltip = translations.Home.Clear,
+                                                    onSearch = fun _ -> AfterSearch(shouldClearTerm = true)
                                                 )
                                         ]
                                     ]
@@ -239,7 +292,7 @@ type MultiSelect =
                             ]
 
                             // Select All/None checkbox
-                            if items.Count > 1 then
+                            if searchedItems.Length > 1 then
                                 Html.li [
                                     prop.key $"%s{key}-select-all"
                                     prop.className "text-primary border-b border-base-200"
@@ -247,33 +300,25 @@ type MultiSelect =
                                         Checkbox(
                                             key = $"%s{key}-select-all-checkbox",
                                             state =
-                                                (match selectedItems.Count, items.Count with
+                                                (match selectedValues.Count, searchedItems.Length with
                                                  | 0, _ -> CheckboxState.NotChecked
                                                  | n, p when n = p -> CheckboxState.Checked
                                                  | _ -> CheckboxState.Indeterminate),
                                             children = [ // ↩
-                                                Html.text $"%s{translations.Home.SelectedPlural} (%d{selectedItems.Count})"
+                                                Html.text $"%s{translations.Home.SelectedPlural} (%d{selectedValues.Count})"
                                             ],
                                             onCheck =
                                                 fun isChecked ->
                                                     if isChecked then
                                                         // Select all visible
                                                         visibleItems
-                                                        |> Seq.iter (fun item ->
+                                                        |> Seq.iter (fun { Item = item } ->
                                                             if not item.Selected then
                                                                 onSelect (true, item.Value)
                                                         )
-
-                                                        setSelected (
-                                                            Set [
-                                                                for item in visibleItems do
-                                                                    item.Value
-                                                            ]
-                                                        )
                                                     else
                                                         // Deselect all
-                                                        selectedItems |> Seq.iter (fun item -> onSelect (false, item))
-                                                        setSelected Set.empty
+                                                        selectedValues |> Seq.iter (fun value -> onSelect (false, value))
                                         )
                                     ]
                                 ]
@@ -285,14 +330,14 @@ type MultiSelect =
                                     prop.children [
                                         Checkbox(
                                             key = $"%s{key}-select-%s{item.Key}-checkbox",
-                                            state = CheckboxState.CheckedIf(selectedItems.Contains item.Value),
+                                            state = CheckboxState.CheckedIf(item.Item.Selected),
                                             children = [
                                                 item.SearchResult |> Highlight.matches Html.span [ prop.key $"%s{key}-select-%s{item.Key}-label" ]
                                             ],
-                                            onCheck = toggle item.Value
+                                            onCheck = toggle item.Item.Value
                                         )
-                                        match itemImage with
-                                        | Some imgFn -> imgFn item.Value
+                                        match item.Item.Image with
+                                        | Some img -> img
                                         | None -> ()
                                     ]
                                 ]

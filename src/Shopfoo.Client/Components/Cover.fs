@@ -3,6 +3,7 @@
 open Fable.Core
 open Feliz
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
 type CoverContainer =
@@ -37,7 +38,7 @@ module private CoverSize =
 [<Erase>]
 type Cover =
     [<ReactComponent>]
-    static member BookAuthor(key, author: BookAuthor, ?coverSize, ?container, ?sizeCssClass: string) =
+    static member BookAuthor(key, author: BookAuthor, translations: AppTranslations, ?coverSize, ?container, ?sizeCssClass: string) =
         let coverSize = defaultArg coverSize CoverSize.Small
         let container = defaultArg container CoverContainer.None
 
@@ -68,6 +69,6 @@ type Cover =
                 prop.target "_blank"
                 prop.rel "noopener noreferrer"
                 prop.className "ml-2 my-0.5 shrink-0 hover:opacity-80 transition-opacity"
-                prop.title "Open Library"
+                prop.title (translations.Product.OpenLibraryAuthorPage author.Name)
                 prop.children [ img ]
             ]

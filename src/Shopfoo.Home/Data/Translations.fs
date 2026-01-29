@@ -88,6 +88,10 @@ let private translationPages = [
         TagCode "SoldOut", "Sold-out", "Épuisé"
         TagCode "Tags", "Tags", "Libellés"
         TagCode "AddTag", "Add tag", "Ajouter le libellé"
+        TagCode "SearchAuthors", "Search book authors on Open Library", "Rechercher les auteurs de livres sur Open Library"
+        TagCode "NoAuthorsFound", "No authors found", "Aucun auteur trouvé"
+        TagCode "AuthorSearchLimit", "{1} authors found but only {0} are displayed", "{1} auteurs trouvés mais seuls {0} sont affichés"
+        TagCode "OpenLibraryAuthorPage", "{0} page on Open Library", "Page de {0} sur Open Library"
 
         TagCode "Discount", "Discount", "Réduction"
         TagCode "Increase", "Increase", "Augmentation"

@@ -21,4 +21,5 @@ type CatalogApiBuilder(api: FeatApi) =
         GetProducts = GetProductsHandler(api, pages) |> Security.authorizeHandler (claim Access.View)
         GetProduct = GetProductHandler(api, pages) |> Security.authorizeHandler (claim Access.View)
         SaveProduct = SaveProductHandler(api) |> Security.authorizeHandler (claim Access.Edit)
+        SearchAuthors = SearchAuthorsHandler(api) |> Security.authorizeHandler (claim Access.Edit)
     }

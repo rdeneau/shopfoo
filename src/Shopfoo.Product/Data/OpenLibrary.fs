@@ -72,6 +72,18 @@ module internal Dto =
         Authors: {| Author: {| Key: string |} |} list
     }
 
+    [<CLIMutable>]
+    type AuthorSearchDto = {
+        /// Example: "OL2653686A"
+        Key: string
+
+        /// Example: "Robert C. Martin"
+        Name: string
+    }
+
+    [<CLIMutable>]
+    type SearchAuthorsResponseDto = { NumFound: int; Docs: AuthorSearchDto list }
+
 type internal OpenLibraryClientSettings = { CoverBaseUrl: string }
 
 type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFactory: HttpApiSerializerFactory) =
@@ -88,6 +100,15 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFact
     member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
     member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
     member this.GetWorkAsync(workKey) = this.GetByKeyAsync<WorkDto>($"/works/%s{workKey}")
+
+    member _.SearchAuthorsAsync(searchTerm: string) =
+        task {
+            let encodedTerm = System.Net.WebUtility.UrlEncode(searchTerm)
+            use request = HttpRequestMessage.Get(Uri.Relative $"/search/authors.json?q=%s{encodedTerm}&limit=10")
+            use! response = httpClient.SendAsync(request)
+            let! content = response.TryReadContentAsStringAsync(request)
+            return serializer.TryDeserializeResult<SearchAuthorsResponseDto>(content)
+        }
 
     member _.GetCoverUrl(coverKey, coverSize) =
         let key =
@@ -115,6 +136,16 @@ module private Mappers =
         let mapAuthor (author: AuthorDto) : BookAuthor = { // ↩
             OLID = mapAuthorOlid author
             Name = author.Name
+        }
+
+        let mapSearchedAuthor (author: AuthorSearchDto) : BookAuthor = { // ↩
+            OLID = OLID author.Key
+            Name = author.Name
+        }
+
+        let mapSearchedAuthors (response: SearchAuthorsResponseDto) : BookAuthorSearchResults = { // ↩
+            Authors = response.Docs |> List.map mapSearchedAuthor
+            TotalCount = response.NumFound
         }
 
         let mapBookCategory (authors: AuthorDto list) (book: BookDto) isbn : Category =
@@ -153,3 +184,9 @@ module internal Pipeline =
             return Mappers.DtoToModel.mapBook isbn.AsSKU category imageUrl bookDto
         }
         |> Async.AwaitTask
+
+    let searchAuthors (client: OpenLibraryClient) searchTerm =
+        async {
+            let! result = client.SearchAuthorsAsync(searchTerm) |> Async.AwaitTask
+            return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedAuthors
+        }

@@ -21,6 +21,7 @@ type OLID =
     member this.Value = let (OLID v) = this in v
 
 type BookAuthor = { OLID: OLID; Name: string }
+type BookAuthorSearchResults = { Authors: BookAuthor list; TotalCount: int }
 
 type BookTag = string
 
