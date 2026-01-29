@@ -248,8 +248,8 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
                     Buttons.SaveButton(
                         key = "save-price",
                         label = translations.Home.Save,
-                        tooltipOk = translations.Home.SaveOk priceLabel,
-                        tooltipError = (fun err -> translations.Home.SaveError(priceLabel, err.ErrorMessage)),
+                        tooltipOk = translations.Home.SavedOk priceLabel,
+                        tooltipError = (fun err -> translations.Home.SavedError(priceLabel, err.ErrorMessage)),
                         tooltipProps = [ tooltip.left ],
                         saveDate = model.SaveDate,
                         disabled = (afterSaveOk || not canSave),

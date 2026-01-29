@@ -27,14 +27,16 @@ let private translationPages = [
         TagCode "SelectedPlural", "Selected", "Sélectionnés"
 
         TagCode "Cancel", "Cancel", "Annuler"
+        TagCode "Clear", "Clear", "Effacer"
         TagCode "Close", "Close", "Fermer"
+        TagCode "Save", "Save", "Enregistrer"
+        TagCode "Search", "Search", "Rechercher"
+
         TagCode "Confirmation", "Confirmation", "Confirmation"
         TagCode "Completed", "Completed", "Réussi"
         TagCode "Error", "Error: {1}", "Erreur : {1}"
-        TagCode "Save", "Save", "Enregistrer"
-        TagCode "SaveOk", "{0} saved successfully", "{0} enregistré avec succès"
-        TagCode "SaveError", "{0} not saved: {1}", "{0} non enregistré : {1}"
-        TagCode "Search", "Search", "Rechercher"
+        TagCode "SavedOk", "{0} saved successfully", "{0} enregistré avec succès"
+        TagCode "SavedError", "{0} not saved: {1}", "{0} non enregistré : {1}"
         TagCode "Warning", "Warning", "Attention"
 
         TagCode "Colon", ":", " :"
@@ -85,6 +87,7 @@ let private translationPages = [
         TagCode "Name", "Name", "Nom"
         TagCode "SoldOut", "Sold-out", "Épuisé"
         TagCode "Tags", "Tags", "Libellés"
+        TagCode "AddTag", "Add tag", "Ajouter le libellé"
 
         TagCode "Discount", "Discount", "Réduction"
         TagCode "Increase", "Increase", "Augmentation"

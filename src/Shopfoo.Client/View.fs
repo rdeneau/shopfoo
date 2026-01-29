@@ -209,8 +209,8 @@ let AppView () =
     let toast name error =
         let alertType, text =
             match error with
-            | None -> alert.success, translations.Home.SaveOk name
-            | Some err -> alert.error, translations.Home.SaveError(name, err.ErrorMessage)
+            | None -> alert.success, translations.Home.SavedOk name
+            | Some err -> alert.error, translations.Home.SavedError(name, err.ErrorMessage)
 
         Toast.Toast $"toast-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
             Html.text text

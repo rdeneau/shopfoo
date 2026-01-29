@@ -228,7 +228,7 @@ type MultiSelect =
                                                     searchTerm = filterText,
                                                     props = {
                                                         Icon = fa6Solid.xmark
-                                                        Tooltip = "Clear search" // TODO: translation
+                                                        Tooltip = translations.Home.Clear
                                                         OnValidateSearchTerm = fun _ -> clearSearch ()
                                                     }
                                                 )

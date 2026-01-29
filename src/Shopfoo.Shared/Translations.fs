@@ -61,14 +61,16 @@ module TranslationPages =
         member this.SelectedPlural = this.Get "SelectedPlural"
 
         member this.Cancel = this.Get "Cancel"
+        member this.Clear = this.Get "Clear"
         member this.Close = this.Get "Close"
+        member this.Save = this.Get "Save"
+        member this.Search = this.Get "Search"
+
         member this.Confirmation = this.Get "Confirmation"
         member this.Completed = this.Get "Completed"
         member this.Error(error: string) = this.Format("Error", error)
-        member this.Save = this.Get "Save"
-        member this.SaveOk(name: string) = this.Format("SaveOk", name)
-        member this.SaveError(name: string, error: string) = this.Format("SaveError", name, error)
-        member this.Search = this.Get "Search"
+        member this.SavedOk(name: string) = this.Format("SavedOk", name)
+        member this.SavedError(name: string, error: string) = this.Format("SavedError", name, error)
         member this.Warning = this.Get "Warning"
 
         member this.Colon = this.Get "Colon"
@@ -135,6 +137,7 @@ module TranslationPages =
         member this.Name = this.Get "Name"
         member this.SoldOut = this.Get "SoldOut"
         member this.Tags = this.Get "Tags"
+        member this.AddTag = this.Get "AddTag"
 
         member this.Discount = this.Get "Discount"
         member this.Increase = this.Get "Increase"

@@ -441,7 +441,7 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                                         searchTarget = SearchTarget.BookTag,
                                         searchMoreButton = {
                                             Icon = fa6Solid.plus
-                                            Tooltip = "Add tag" // TODO : translate
+                                            Tooltip = translations.Product.AddTag
                                             OnValidateSearchTerm =
                                                 fun tag ->
                                                     let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
@@ -462,8 +462,8 @@ let CatalogInfoForm key fullContext (productModel: ProductModel) fillTranslation
                         Buttons.SaveButton(
                             key = "save-product",
                             label = translations.Home.Save,
-                            tooltipOk = translations.Home.SaveOk productSku,
-                            tooltipError = (fun err -> translations.Home.SaveError(productSku, err.ErrorMessage)),
+                            tooltipOk = translations.Home.SavedOk productSku,
+                            tooltipError = (fun err -> translations.Home.SavedError(productSku, err.ErrorMessage)),
                             tooltipProps = [ tooltip.right ],
                             saveDate = model.SaveDate,
                             disabled = false,

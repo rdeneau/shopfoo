@@ -161,8 +161,8 @@ let AdjustStockForm key (fullContext: FullContext) stock drawerControl onSave =
                     Buttons.SaveButton(
                         key = "save-price",
                         label = translations.Home.Save,
-                        tooltipOk = translations.Home.SaveOk translations.Product.Stock,
-                        tooltipError = (fun err -> translations.Home.SaveError(translations.Product.Stock, err.ErrorMessage)),
+                        tooltipOk = translations.Home.SavedOk translations.Product.Stock,
+                        tooltipError = (fun err -> translations.Home.SavedError(translations.Product.Stock, err.ErrorMessage)),
                         tooltipProps = [ tooltip.left ],
                         saveDate = model.SaveDate,
                         disabled = (afterSaveOk || not canSave),

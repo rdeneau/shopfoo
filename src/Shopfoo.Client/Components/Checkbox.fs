@@ -42,7 +42,7 @@ type Checkbox =
 
         Html.label [
             prop.key $"%s{key}-label"
-            prop.className "cursor-pointer flex items-center gap-0 p-2 text-sm w-full"
+            prop.className "cursor-pointer flex items-center gap-0 p-2 text-sm w-full focus-within:ring-2 focus-within:ring-accent"
             prop.tabIndex -1
             prop.onMouseDown _.preventDefault() // to make it work inside a dropdown menu
             prop.onClick (fun (ev: MouseEvent) ->
