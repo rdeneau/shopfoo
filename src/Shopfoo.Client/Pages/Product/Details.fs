@@ -28,10 +28,12 @@ let private update msg (model: Model) =
     | OpenDrawer drawer -> { model with Drawer = Some drawer }, Cmd.none
 
 [<ReactComponent>]
-let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast -> unit) =
+let DetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.IShowToast) sku =
     let model, dispatch = React.useElmish (init, update)
-
     let productModel, updateProductModel = React.useState { ProductModel.SKU = sku; SoldOut = false }
+
+    let fullContext = env.FullContext
+    let onSave = env.ShowToast
 
     let drawerControl =
         DrawerControl( // ↩
@@ -80,7 +82,7 @@ let DetailsView (fullContext: FullContext, sku, fillTranslations, onSave: Toast 
                 prop.children [
                     Html.div [
                         prop.key $"%s{key}-catalog"
-                        prop.children [ CatalogInfoForm "catalog-info" fullContext productModel fillTranslations onSaveProduct ]
+                        prop.children [ CatalogInfoForm "catalog-info" fullContext productModel env.FillTranslations onSaveProduct ]
                         match hasActions, isDrawerOpen with
                         | true, false -> prop.className "col-span-3"
                         | true, true -> prop.className "col-span-2"

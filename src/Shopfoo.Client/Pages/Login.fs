@@ -8,6 +8,7 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Components.User
+open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -28,22 +29,21 @@ module private Cmd =
             Success = Ok >> HomeDataFetched
         }
 
-let private init (fullContext: FullContext) =
+let private init (env: #Env.IFullContext) =
     { Personas = Remote.Loading }, // ↩
-    Cmd.loadHomeData (fullContext.PrepareQueryWithTranslations())
+    Cmd.loadHomeData (env.FullContext.PrepareQueryWithTranslations())
 
-let private update fillTranslations loginUser msg (model: Model) =
+let private update (env: #Env.IFillTranslations & #Env.ILoginUser) msg (model: Model) =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
         { model with Personas = Remote.Loaded data.Personas }, // ↩
-        Cmd.ofEffect (fun _ -> fillTranslations translations)
+        Cmd.ofEffect (fun _ -> env.FillTranslations translations)
 
     | Msg.HomeDataFetched(Error apiError) ->
         { model with Personas = Remote.LoadError apiError }, // ↩
-        Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
-
+        Cmd.ofEffect (fun _ -> env.FillTranslations apiError.Translations)
     | Msg.Login user -> // ↩
-        model, Cmd.ofEffect (fun _ -> loginUser user)
+        model, Cmd.ofEffect (fun _ -> env.LoginUser user)
 
 type private Users =
     static member th(key, text, ?icon: ReactElement, ?className) =
@@ -91,10 +91,9 @@ type private Users =
         ]
 
 [<ReactComponent>]
-let LoginView (fullContext, fillTranslations, loginUser) =
-    let model, dispatch = React.useElmish (init fullContext, update fillTranslations loginUser, dependencies = [||])
-
-    let translations = fullContext.Translations
+let LoginView env =
+    let model, dispatch = React.useElmish (init env, update env, dependencies = [||])
+    let translations = env.Translations
 
     Html.section [
         prop.key "login-page"

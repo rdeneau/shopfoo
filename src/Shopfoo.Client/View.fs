@@ -120,6 +120,21 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     // `Cmd.ofMsgDelayed (Msg.ToastOff, Toast.Timeout)` is not needed because the ToastOff is done with the Toast onDismiss
     | Msg.ToastOff -> { model with Toast = None }, Cmd.none
 
+// -- Env --------------------------------------------------------
+
+type private Env(fullContext, dispatch) =
+    interface Env.IFullContext with
+        member _.FullContext = fullContext
+
+    interface Env.IFillTranslations with
+        member _.FillTranslations translations = dispatch (Msg.FillTranslations translations)
+
+    interface Env.ILoginUser with
+        member _.LoginUser user = dispatch (Msg.Login user)
+
+    interface Env.IShowToast with
+        member _.ShowToast toast = dispatch (Msg.ToastOn toast)
+
 // -- View --------------------------------------------------------
 
 [<ReactComponent>]
@@ -127,6 +142,7 @@ let AppView () =
     let model, dispatch = React.useElmish (init, update)
     let fullContext = model.FullContext
     let translations = fullContext.Translations
+    let env = Env(fullContext, dispatch)
 
     let pageToDisplayInline, featAccessToCheck =
         match model.Page, fullContext.User with
@@ -157,22 +173,19 @@ let AppView () =
         | _ -> ()
     )
 
-    let fillTranslations = dispatch << Msg.FillTranslations
-    let loginUser = dispatch << Msg.Login
     let logout () = dispatch Logout
-    let showToast toast = dispatch (Msg.ToastOn toast)
     let onThemeChanged = dispatch << Msg.ThemeChanged
     let startChangeLang lang = dispatch (Msg.ChangeLang(lang, Start))
 
     let pageView =
         match pageToDisplayInline with
         | Page.Home -> Html.text "[Bug] Home page has no own view!?"
-        | Page.About -> Pages.About.AboutView(fullContext)
-        | Page.Admin -> Pages.Admin.AdminView(fullContext)
-        | Page.Login -> Pages.Login.LoginView(fullContext, fillTranslations, loginUser)
-        | Page.NotFound url -> Pages.NotFound.NotFoundView(fullContext, url)
-        | Page.ProductIndex filters -> Pages.Product.Index.IndexView(filters, fullContext, fillTranslations)
-        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView(fullContext, sku, fillTranslations, showToast)
+        | Page.About -> Pages.About.AboutView env
+        | Page.Admin -> Pages.Admin.AdminView env
+        | Page.Login -> Pages.Login.LoginView env
+        | Page.NotFound url -> Pages.NotFound.NotFoundView env url
+        | Page.ProductIndex filters -> Pages.Product.Index.IndexView env filters
+        | Page.ProductDetail sku -> Pages.Product.Details.DetailsView env sku
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [

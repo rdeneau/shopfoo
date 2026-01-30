@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Index
+module Shopfoo.Client.Pages.Product.Index
 
 open Elmish
 open Feliz
@@ -11,6 +11,7 @@ open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Pages.Product.Table
 open Shopfoo.Client.Pages.Product.Filters
+open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Common
@@ -63,22 +64,22 @@ let private init (filters: Filters) =
         | None -> ()
     ]
 
-let private update fillTranslations (fullContext: FullContext) msg (model: Model) =
+let private update env msg (model: Model) =
     match msg with
     | ResetProvider -> // ↩
         { model with Products = Remote.Empty }, Cmd.none
 
     | SelectProvider provider ->
         { model with Products = Remote.Loading }, // ↩
-        Cmd.loadProducts (fullContext.PrepareQueryWithTranslations(provider))
+        Cmd.loadProducts (Env.prepareQueryWithTranslations env provider)
 
     | ProductsFetched(provider, Ok(data, translations)) ->
         { model with Products = Remote.Loaded(provider, data.Products @ [ Product.notFound ]) }, // ↩
-        Cmd.ofEffect (fun _ -> fillTranslations translations)
+        Cmd.ofEffect (fun _ -> Env.fillTranslations env translations)
 
     | ProductsFetched(_, Error apiError) ->
         { model with Products = Remote.LoadError apiError }, // ↩
-        Cmd.ofEffect (fun _ -> fillTranslations apiError.Translations)
+        Cmd.ofEffect (fun _ -> Env.fillTranslations env apiError.Translations)
 
 type private ProviderProps = {
     Provider: Provider
@@ -88,13 +89,13 @@ type private ProviderProps = {
 }
 
 [<ReactComponent>]
-let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
-    match fullContext.User with
+let IndexView env (filters: Filters) =
+    match Env.user env with
     | UserCanNotAccess Feat.Catalog ->
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
-        let model, dispatch = React.useElmish (init filters, update fillTranslations fullContext, [||])
+        let model, dispatch = React.useElmish (init filters, update env, [||])
 
         React.useEffect (fun () ->
             match model.Products with
@@ -102,7 +103,8 @@ let IndexView (filters: Filters, fullContext: FullContext, fillTranslations) =
             | _ -> ()
         )
 
-        let translations = fullContext.Translations
+        let fullContext = env.FullContext
+        let translations = env.Translations
         let selectProvider provider = dispatch (SelectProvider provider)
         let reactKeyOf x = String.toKebab $"%A{x}"
 

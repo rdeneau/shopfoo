@@ -2,12 +2,12 @@
 
 open Feliz
 open Feliz.DaisyUI
+open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
-open Shopfoo.Shared.Remoting
 
 [<ReactComponent>]
-let NotFoundView (fullContext: FullContext, url) =
-    let translations = fullContext.Translations
+let NotFoundView (env: #Env.IFullContext) url =
+    let translations = env.Translations
 
     // ℹ️ For simplicity's sake, translations for this page are retrieved at startup, on the Login page.
     // ⚠️ If this page is refreshed, the translations will no longer be available!

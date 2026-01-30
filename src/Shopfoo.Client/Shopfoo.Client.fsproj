@@ -11,11 +11,11 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="Search.fs" />
-    <Compile Include="Filters.fs" />
     <Compile Include="Package.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Remoting.fs" />
+    <Compile Include="Search.fs" />
+    <Compile Include="Filters.fs" />
     <Compile Include="Routing.fs" />
     <Compile Include="UI.fs" />
     <Compile Include="Components\Actions.fs" />
