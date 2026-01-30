@@ -7,18 +7,19 @@ open Feliz.DaisyUI
 open Feliz.UseElmish
 open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
-open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open type Shopfoo.Client.Components.MultiSelect
 open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Search
+open Shopfoo.Client.UI
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
+open Shopfoo.Shared.Translations
 
 type private Model = {
     Product: Remote<Product>
@@ -112,8 +113,308 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
 
     | AuthorsSearched(Ok response) -> { model with SearchedAuthors = Remote.Loaded response }, Cmd.none
     | AuthorsSearched(Error apiError) -> { model with SearchedAuthors = Remote.LoadError apiError }, Cmd.none
-
     | ClearSearchedAuthors -> { model with SearchedAuthors = Remote.Empty }, Cmd.none
+
+type private Fieldset(catalogAccess, product: Product, translations: AppTranslations, dispatch) =
+    let propsOrReadonly (props: IReactProperty seq) = [
+        match catalogAccess with
+        | Some Access.Edit -> yield! props
+        | _ ->
+            prop.readOnly true
+            prop.className "bg-base-300"
+    ]
+
+    let propOnChangeOrReadonly (handler: string -> unit) = propsOrReadonly [ prop.onChange handler ]
+    let propOnCheckedChangeOrReadonly handler = propsOrReadonly [ prop.onCheckedChange handler ]
+
+    member _.bazaarCategory(bazaarProduct: BazaarProduct) =
+        let categoryRadio (category: BazaarCategory) (iconifyIcon: IconifyIcon) (text: string) =
+            let key = String.toKebab $"%s{category.ToString()}"
+
+            Daisy.fieldset [
+                prop.key $"fieldset-%s{key}"
+                prop.className "w-auto"
+                prop.children [
+                    Daisy.fieldsetLabel [
+                        prop.key $"label-%s{key}"
+                        prop.className "flex flex-row items-center gap-2 cursor-pointer text-sm"
+                        prop.children [
+                            Daisy.radio [
+                                prop.key $"radio-%s{key}"
+                                prop.name "category"
+                                prop.value key
+                                prop.isChecked (bazaarProduct.Category = category)
+                                yield!
+                                    propOnCheckedChangeOrReadonly (fun isChecked ->
+                                        if isChecked then
+                                            let productCategory = Category.Bazaar { bazaarProduct with Category = category }
+
+                                            dispatch (ProductChanged { product with Category = productCategory })
+                                    )
+                            ]
+                            icon iconifyIcon
+                            Html.text text
+                        ]
+                    ]
+                ]
+            ]
+
+        let categoryInfo (category: BazaarCategory) (iconifyIcon: IconifyIcon) = {|
+            category = category
+            icon = iconifyIcon
+            text = translations.Product.StoreCategoryOf category
+        |}
+
+        let categoryInfos = [
+            categoryInfo BazaarCategory.Jewelry fa6Solid.gem
+            categoryInfo BazaarCategory.Clothing fa6Solid.shirt
+            categoryInfo BazaarCategory.Electronics fa6Solid.tv
+        ]
+
+        Daisy.fieldset [
+            prop.key "category-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                Daisy.fieldsetLabel [ prop.key "category-label"; prop.children [ Html.text translations.Product.Category ] ]
+                Html.div [
+                    prop.key "category-container"
+                    prop.className "input focus-within:outline-none focus-within:border-transparent w-full gap-4 mb-4"
+                    prop.className [
+                        "input w-full gap-4 mb-4"
+                        // Remove input focus styles to avoid clashing with radio buttons
+                        "focus-within:border-[color-mix(in_oklab,var(--color-base-content)_20%,#0000)]"
+                        "focus-within:outline-none"
+                        "focus-within:shadow-none"
+                    ]
+                    prop.children [
+                        for x in categoryInfos |> List.sortBy _.text do
+                            categoryRadio x.category x.icon x.text
+                    ]
+                ]
+            ]
+        ]
+
+    member _.bookAuthors
+        (
+            book: Book,
+            booksData: GetBooksDataResponse,
+            remoteSearchedAuthors: Remote<SearchAuthorsResponse>,
+            authorSearchInfo: SearchInfo,
+            setAuthorSearchInfo: SearchInfo -> unit
+        ) =
+        let toggleAuthor (isChecked, author) =
+            let productCategory = Category.Books { book with Authors = book.Authors.Toggle(author, isChecked) }
+            dispatch (ProductChanged { product with Category = productCategory })
+
+        let searchedAuthors =
+            match remoteSearchedAuthors with
+            | Remote.Loaded response -> response.Authors
+            | _ -> Set.empty
+
+        let searchMoreButtonProps =
+            if String.IsNullOrWhiteSpace authorSearchInfo.SearchTerm then
+                SearchButtonProps.None
+            else
+                match remoteSearchedAuthors with
+                | Remote.Empty ->
+                    SearchButtonProps.Active(
+                        icon = fa6Solid.magnifyingGlass,
+                        tooltip = translations.Product.SearchAuthors,
+                        onSearch =
+                            fun () ->
+                                dispatch (SearchAuthors authorSearchInfo.SearchTerm)
+                                AfterSearch(shouldClearTerm = false)
+                    )
+                | Remote.Loading -> SearchButtonProps.Searching
+                | Remote.LoadError apiError -> SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
+                | Remote.Loaded { Authors = Set.Empty } ->
+                    SearchButtonProps.SearchComplete(SearchCompletionStatus.Info translations.Product.NoAuthorsFound)
+                | Remote.Loaded data when data.TotalCount > data.Authors.Count ->
+                    SearchButtonProps.SearchComplete(
+                        SearchCompletionStatus.Info(translations.Product.AuthorSearchLimit(limit = data.Authors.Count, totalFound = data.TotalCount))
+                    )
+                | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
+
+        let allAuthors =
+            Set.unionMany [
+                book.Authors
+                booksData.Authors
+                searchedAuthors
+            ]
+
+        let authorItems = [
+            for author in allAuthors do
+                let cover =
+                    Cover.BookAuthor(
+                        key = $"author-{author.OLID.Value}",
+                        author = author,
+                        container = CoverContainer.LinkToAuthorCard,
+                        sizeCssClass = "w-[40px] min-w-[40px] h-[40px] min-h-[40px]",
+                        translations = translations
+                    )
+
+                let symbol = if searchedAuthors.Contains author then "✨" else ""
+
+                {
+                    Text = author.Name + symbol
+                    Value = author
+                    Image = Some cover
+                    Selected = book.Authors.Contains author
+                    Filterable = not (searchedAuthors.Contains author)
+                    SearchTarget = SearchTarget.BookAuthor author
+                }
+        ]
+
+        Daisy.fieldset [
+            prop.key "authors-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                Daisy.fieldsetLabel [ prop.key "authors-label"; prop.children [ Html.text translations.Product.Authors ] ]
+                MultiSelect(
+                    key = "authors-select",
+                    items = authorItems,
+                    onSearchTermChange =
+                        (fun searchInfo ->
+                            setAuthorSearchInfo searchInfo
+                            dispatch ClearSearchedAuthors
+                        ),
+                    onSelect = toggleAuthor,
+                    readonly = (catalogAccess <> Some Edit),
+                    translations = translations,
+                    searchMoreButtonProps = searchMoreButtonProps
+                )
+            ]
+        ]
+
+    member _.bookTags(book: Book, booksData: GetBooksDataResponse, tagSearchInfo: SearchInfo, setTagSearchInfo: SearchInfo -> unit) =
+        let toggleTag (isChecked, tag) =
+            let productCategory = Category.Books { book with Tags = book.Tags.Toggle(tag, isChecked) }
+            dispatch (ProductChanged { product with Category = productCategory })
+
+        let tagItems = [
+            for tag in Set.union book.Tags booksData.Tags do
+                {
+                    Text = tag
+                    Value = tag
+                    Image = None
+                    Selected = book.Tags.Contains tag
+                    Filterable = true
+                    SearchTarget = SearchTarget.BookTag tag
+                }
+        ]
+
+        let searchMoreButtonProps =
+            let tag = tagSearchInfo.SearchTerm.Trim()
+
+            if tag.Length > 0 && not (booksData.Tags.Contains tag) then
+                SearchButtonProps.Active(
+                    icon = fa6Solid.plus,
+                    tooltip = translations.Product.AddTag,
+                    onSearch =
+                        fun () ->
+                            let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
+                            dispatch (ProductChanged { product with Category = productCategory })
+                            AfterSearch(shouldClearTerm = true)
+                )
+            else
+                SearchButtonProps.None
+
+        Daisy.fieldset [
+            prop.key "tags-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                Daisy.fieldsetLabel [ prop.key "tags-label"; prop.text translations.Product.Tags ]
+                MultiSelect(
+                    key = "tags-select",
+                    items = tagItems,
+                    onSelect = toggleTag,
+                    onSearchTermChange = setTagSearchInfo,
+                    readonly = (catalogAccess <> Some Edit),
+                    translations = translations,
+                    searchMoreButtonProps = searchMoreButtonProps
+                )
+            ]
+        ]
+
+    member _.description() =
+        let props = Product.Guard.Description.props (product.Description, translations)
+
+        React.fragment [
+            Daisy.fieldsetLabel [
+                prop.key "description-label"
+                prop.children [
+                    Html.text translations.Product.Description
+                    Html.small [ prop.key "description-required"; yield! props.textRequired ]
+                    Html.small [ prop.key "description-spacer"; prop.className "flex-1" ]
+                    Html.span [ prop.key "description-char-count"; yield! props.textCharCount ]
+                ]
+            ]
+
+            Daisy.textarea [
+                prop.key "description-textarea"
+                prop.className "validator h-21 w-full mb-2"
+                prop.placeholder translations.Product.Description
+                props.value
+                yield! props.validation
+                yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
+            ]
+        ]
+
+    member _.imageUrl() =
+        Daisy.fieldset [
+            prop.key "image-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                let props = Product.Guard.ImageUrl.props (product.ImageUrl.Url, translations, invalid = product.ImageUrl.Broken)
+
+                Daisy.fieldsetLabel [
+                    prop.key "image-label"
+                    prop.children [
+                        Html.text translations.Product.ImageUrl
+                        Html.small [ prop.key "image-required"; yield! props.textRequired ]
+                        Html.small [ prop.key "image-spacer"; prop.className "flex-1" ]
+                        Html.span [ prop.key "image-char-count"; yield! props.textCharCount ]
+                    ]
+                ]
+
+                Daisy.validator.input [
+                    prop.key "image-input"
+                    prop.className "w-full"
+                    prop.placeholder translations.Product.ImageUrl
+                    props.value
+                    yield! props.validation
+                    yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = ImageUrl.Valid url }))
+                ]
+            ]
+        ]
+
+    member _.name() =
+        Daisy.fieldset [
+            prop.key "name-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                let props = Product.Guard.Name.props (product.Title, translations)
+
+                Daisy.fieldsetLabel [
+                    prop.key "name-label"
+                    prop.children [
+                        Html.text translations.Product.Name
+                        Html.small [ prop.key "name-required"; yield! props.textRequired ]
+                        Html.small [ prop.key "name-spacer"; prop.className "flex-1" ]
+                        Html.span [ prop.key "name-char-count"; yield! props.textCharCount ]
+                    ]
+                ]
+
+                Daisy.validator.input [
+                    prop.key "name-input"
+                    prop.className "w-full"
+                    prop.placeholder translations.Product.Name
+                    props.value
+                    yield! props.validation
+                    yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
+                ]
+            ]
+        ]
 
 [<ReactComponent>]
 let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) fillTranslations onSaveProduct =
@@ -125,17 +426,52 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
     let authorSearchInfo, setAuthorSearchInfo = React.useState SearchInfo.empty
     let tagSearchInfo, setTagSearchInfo = React.useState SearchInfo.empty
 
-    let propsOrReadonly (props: IReactProperty seq) = [
-        match catalogAccess with
-        | Some Edit -> // ↩
-            yield! props
-        | _ ->
-            prop.readOnly true
-            prop.className "bg-base-300"
-    ]
+    let buildImagePreview (product: Product) =
+        Html.div [
+            prop.key "image-preview-column"
+            prop.className "h-[230px] w-[180px] relative overflow-hidden flex items-center justify-center rounded-box"
+            prop.children [
+                // 1. Conditional Rendering: Image vs Broken Link Fallback
+                if product.ImageUrl.Broken then
+                    Html.div [
+                        prop.key "image-fallback"
+                        prop.className [
+                            "flex flex-col items-center justify-center w-full h-full"
+                            "bg-gray-100 border border-base-300 text-error text-3xl"
+                        ]
+                        prop.children (icon fa6Solid.linkSlash)
+                    ]
+                else
+                    Html.img [
+                        prop.key "image-preview"
+                        prop.src product.ImageUrl.Url
+                        prop.className [
+                            "w-full h-full object-contain transition-all"
+                            if productModel.SoldOut then
+                                "grayscale opacity-40"
+                        ]
+                        prop.onError (fun (_: Browser.Types.Event) -> dispatch (ProductChanged { product with Product.ImageUrl.Broken = true }))
+                    ]
 
-    let propOnChangeOrReadonly (handler: string -> unit) = propsOrReadonly [ prop.onChange handler ]
-    let propOnCheckedChangeOrReadonly handler = propsOrReadonly [ prop.onCheckedChange handler ]
+                // 2. Sold Out Ribbon (Optimized geometry for visual centering)
+                if productModel.SoldOut then
+                    Html.div [
+                        prop.key "image-sold-out-overlay"
+                        prop.className "absolute inset-0 overflow-hidden pointer-events-none"
+                        prop.children [
+                            Html.div [
+                                prop.key "image-sold-out-text"
+                                prop.className [
+                                    "absolute top-8 -right-12 w-48 rotate-45"
+                                    "bg-red-600 text-white text-[10px] font-bold py-1 shadow-md uppercase tracking-wider"
+                                    "flex items-center justify-center text-center"
+                                ]
+                                prop.text translations.Product.SoldOut
+                            ]
+                        ]
+                    ]
+            ]
+        ]
 
     React.fragment [
         match model.Product with
@@ -163,6 +499,8 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
         | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
         | Remote.Loaded product ->
+            let fieldset = Fieldset(catalogAccess, product, translations, dispatch)
+
             Daisy.fieldset [
                 prop.key $"%s{key}-fieldset"
                 prop.className "bg-base-200 border border-base-300 rounded-box p-4"
@@ -181,111 +519,11 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                                 prop.key "image-input-column"
                                 prop.className "flex flex-col justify-between h-full"
                                 prop.children [
-                                    // -- Name ----
-
-                                    Daisy.fieldset [
-                                        prop.key "name-fieldset"
-                                        prop.className "mb-2"
-                                        prop.children [
-                                            let props = Product.Guard.Name.props (product.Title, translations)
-
-                                            Daisy.fieldsetLabel [
-                                                prop.key "name-label"
-                                                prop.children [
-                                                    Html.text translations.Product.Name
-                                                    Html.small [ prop.key "name-required"; yield! props.textRequired ]
-                                                    Html.small [ prop.key "name-spacer"; prop.className "flex-1" ]
-                                                    Html.span [ prop.key "name-char-count"; yield! props.textCharCount ]
-                                                ]
-                                            ]
-
-                                            Daisy.validator.input [
-                                                prop.key "name-input"
-                                                prop.className "w-full"
-                                                prop.placeholder translations.Product.Name
-                                                props.value
-                                                yield! props.validation
-                                                yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
-                                            ]
-                                        ]
-                                    ]
-
-                                    // -- Bazaar Category ----
+                                    fieldset.name ()
 
                                     match product.Category with
                                     | Category.Books _ -> ()
-                                    | Category.Bazaar bazaarProduct ->
-                                        let categoryRadio (category: BazaarCategory) (iconifyIcon: IconifyIcon) (text: string) =
-                                            let key = String.toKebab $"%s{category.ToString()}"
-
-                                            Daisy.fieldset [
-                                                prop.key $"fieldset-%s{key}"
-                                                prop.className "w-auto"
-                                                prop.children [
-                                                    Daisy.fieldsetLabel [
-                                                        prop.key $"label-%s{key}"
-                                                        prop.className "flex flex-row items-center gap-2 cursor-pointer text-sm"
-                                                        prop.children [
-                                                            Daisy.radio [
-                                                                prop.key $"radio-%s{key}"
-                                                                prop.name "category"
-                                                                prop.value key
-                                                                prop.isChecked (bazaarProduct.Category = category)
-                                                                yield!
-                                                                    propOnCheckedChangeOrReadonly (fun isChecked ->
-                                                                        if isChecked then
-                                                                            let productCategory =
-                                                                                Category.Bazaar { bazaarProduct with Category = category }
-
-                                                                            dispatch (ProductChanged { product with Category = productCategory })
-                                                                    )
-                                                            ]
-                                                            icon iconifyIcon
-                                                            Html.text text
-                                                        ]
-                                                    ]
-                                                ]
-                                            ]
-
-                                        let categoryInfo (category: BazaarCategory) (iconifyIcon: IconifyIcon) = {|
-                                            category = category
-                                            icon = iconifyIcon
-                                            text = translations.Product.StoreCategoryOf category
-                                        |}
-
-                                        let categoryInfos = [
-                                            categoryInfo BazaarCategory.Jewelry fa6Solid.gem
-                                            categoryInfo BazaarCategory.Clothing fa6Solid.shirt
-                                            categoryInfo BazaarCategory.Electronics fa6Solid.tv
-                                        ]
-
-                                        Daisy.fieldset [
-                                            prop.key "category-fieldset"
-                                            prop.className "mb-2"
-                                            prop.children [
-                                                Daisy.fieldsetLabel [
-                                                    prop.key "category-label"
-                                                    prop.children [ Html.text translations.Product.Category ]
-                                                ]
-                                                Html.div [
-                                                    prop.key "category-container"
-                                                    prop.className "input focus-within:outline-none focus-within:border-transparent w-full gap-4 mb-4"
-                                                    prop.className [
-                                                        "input w-full gap-4 mb-4"
-                                                        // Remove input focus styles to avoid clashing with radio buttons
-                                                        "focus-within:border-[color-mix(in_oklab,var(--color-base-content)_20%,#0000)]"
-                                                        "focus-within:outline-none"
-                                                        "focus-within:shadow-none"
-                                                    ]
-                                                    prop.children [
-                                                        for x in categoryInfos |> List.sortBy _.text do
-                                                            categoryRadio x.category x.icon x.text
-                                                    ]
-                                                ]
-                                            ]
-                                        ]
-
-                                    // -- Book Authors ----
+                                    | Category.Bazaar bazaarProduct -> fieldset.bazaarCategory bazaarProduct
 
                                     match product.Category with
                                     | Category.Bazaar _ -> ()
@@ -295,216 +533,17 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                                         | Remote.LoadError apiError -> Alert.apiError "authors-load-error" apiError fullContext.User
                                         | Remote.Loading -> Daisy.skeleton [ prop.className "h-12 w-full"; prop.key "authors-skeleton" ]
                                         | Remote.Loaded booksData ->
-                                            let toggleAuthor (isChecked, author) =
-                                                let productCategory = Category.Books { book with Authors = book.Authors.Toggle(author, isChecked) }
-                                                dispatch (ProductChanged { product with Category = productCategory })
+                                            fieldset.bookAuthors (book, booksData, model.SearchedAuthors, authorSearchInfo, setAuthorSearchInfo)
 
-                                            let searchedAuthors =
-                                                match model.SearchedAuthors with
-                                                | Remote.Loaded response -> response.Authors
-                                                | _ -> Set.empty
-
-                                            let searchMoreButtonProps =
-                                                if String.IsNullOrWhiteSpace authorSearchInfo.SearchTerm then
-                                                    SearchButtonProps.None
-                                                else
-                                                    match model.SearchedAuthors with
-                                                    | Remote.Empty ->
-                                                        SearchButtonProps.Active(
-                                                            icon = fa6Solid.magnifyingGlass,
-                                                            tooltip = translations.Product.SearchAuthors,
-                                                            onSearch =
-                                                                fun () ->
-                                                                    dispatch (SearchAuthors authorSearchInfo.SearchTerm)
-                                                                    AfterSearch(shouldClearTerm = false)
-                                                        )
-                                                    | Remote.Loading -> SearchButtonProps.Searching
-                                                    | Remote.LoadError apiError ->
-                                                        SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
-                                                    | Remote.Loaded { Authors = Set.Empty } ->
-                                                        SearchButtonProps.SearchComplete(
-                                                            SearchCompletionStatus.Info translations.Product.NoAuthorsFound
-                                                        )
-                                                    | Remote.Loaded data when data.TotalCount > data.Authors.Count ->
-                                                        SearchButtonProps.SearchComplete(
-                                                            SearchCompletionStatus.Info(
-                                                                translations.Product.AuthorSearchLimit(
-                                                                    limit = data.Authors.Count,
-                                                                    totalFound = data.TotalCount
-                                                                )
-                                                            )
-                                                        )
-                                                    | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
-
-                                            let allAuthors =
-                                                Set.unionMany [
-                                                    book.Authors
-                                                    booksData.Authors
-                                                    searchedAuthors
-                                                ]
-
-                                            let authorItems = [
-                                                for author in allAuthors do
-                                                    let cover =
-                                                        Cover.BookAuthor(
-                                                            key = $"author-{author.OLID.Value}",
-                                                            author = author,
-                                                            container = CoverContainer.LinkToAuthorCard,
-                                                            sizeCssClass = "w-[40px] min-w-[40px] h-[40px] min-h-[40px]",
-                                                            translations = translations
-                                                        )
-
-                                                    let symbol = if searchedAuthors.Contains author then "✨" else ""
-
-                                                    {
-                                                        Text = author.Name + symbol
-                                                        Value = author
-                                                        Image = Some cover
-                                                        Selected = book.Authors.Contains author
-                                                        Filterable = not (searchedAuthors.Contains author)
-                                                        SearchTarget = SearchTarget.BookAuthor author
-                                                    }
-                                            ]
-
-                                            Daisy.fieldset [
-                                                prop.key "authors-fieldset"
-                                                prop.className "mb-2"
-                                                prop.children [
-                                                    Daisy.fieldsetLabel [
-                                                        prop.key "authors-label"
-                                                        prop.children [ Html.text translations.Product.Authors ]
-                                                    ]
-                                                    MultiSelect(
-                                                        key = "authors-select",
-                                                        items = authorItems,
-                                                        onSearchTermChange =
-                                                            (fun searchInfo ->
-                                                                setAuthorSearchInfo searchInfo
-                                                                dispatch ClearSearchedAuthors
-                                                            ),
-                                                        onSelect = toggleAuthor,
-                                                        readonly = (catalogAccess <> Some Edit),
-                                                        translations = translations,
-                                                        searchMoreButtonProps = searchMoreButtonProps
-                                                    )
-                                                ]
-                                            ]
-
-                                    // -- Image Url ----
-
-                                    Daisy.fieldset [
-                                        prop.key "image-fieldset"
-                                        prop.className "mb-2"
-                                        prop.children [
-                                            let props =
-                                                Product.Guard.ImageUrl.props (
-                                                    product.ImageUrl.Url, // ↩
-                                                    translations,
-                                                    invalid = product.ImageUrl.Broken
-                                                )
-
-                                            Daisy.fieldsetLabel [
-                                                prop.key "image-label"
-                                                prop.children [
-                                                    Html.text translations.Product.ImageUrl
-                                                    Html.small [ prop.key "image-required"; yield! props.textRequired ]
-                                                    Html.small [ prop.key "image-spacer"; prop.className "flex-1" ]
-                                                    Html.span [ prop.key "image-char-count"; yield! props.textCharCount ]
-                                                ]
-                                            ]
-
-                                            Daisy.validator.input [
-                                                prop.key "image-input"
-                                                prop.className "w-full"
-                                                prop.placeholder translations.Product.ImageUrl
-                                                props.value
-                                                yield! props.validation
-                                                yield!
-                                                    propOnChangeOrReadonly (fun url ->
-                                                        dispatch (ProductChanged { product with ImageUrl = ImageUrl.Valid url })
-                                                    )
-                                            ]
-                                        ]
-                                    ]
+                                    fieldset.imageUrl ()
                                 ]
                             ]
 
-                            // -- Image Preview ----
-
-                            Html.div [
-                                prop.key "image-preview-column"
-                                prop.className "h-[230px] w-[180px] relative overflow-hidden flex items-center justify-center rounded-box"
-                                prop.children [
-                                    // 1. Conditional Rendering: Image vs Broken Link Fallback
-                                    if product.ImageUrl.Broken then
-                                        Html.div [
-                                            prop.key "image-fallback"
-                                            prop.className [
-                                                "flex flex-col items-center justify-center w-full h-full"
-                                                "bg-gray-100 border border-base-300 text-error text-3xl"
-                                            ]
-                                            prop.children (icon fa6Solid.linkSlash)
-                                        ]
-                                    else
-                                        Html.img [
-                                            prop.key "image-preview"
-                                            prop.src product.ImageUrl.Url
-                                            prop.className [
-                                                "w-full h-full object-contain transition-all"
-                                                if productModel.SoldOut then
-                                                    "grayscale opacity-40"
-                                            ]
-                                            prop.onError (fun (_: Browser.Types.Event) ->
-                                                dispatch (ProductChanged { product with Product.ImageUrl.Broken = true })
-                                            )
-                                        ]
-
-                                    // 2. Sold Out Ribbon (Optimized geometry for visual centering)
-                                    if productModel.SoldOut then
-                                        Html.div [
-                                            prop.key "image-sold-out-overlay"
-                                            prop.className "absolute inset-0 overflow-hidden pointer-events-none"
-                                            prop.children [
-                                                Html.div [
-                                                    prop.key "image-sold-out-text"
-                                                    prop.className [
-                                                        "absolute top-8 -right-12 w-48 rotate-45"
-                                                        "bg-red-600 text-white text-[10px] font-bold py-1 shadow-md uppercase tracking-wider"
-                                                        "flex items-center justify-center text-center"
-                                                    ]
-                                                    prop.text translations.Product.SoldOut
-                                                ]
-                                            ]
-                                        ]
-                                ]
-                            ]
+                            buildImagePreview product
                         ]
                     ]
 
-                    // -- Description ----
-
-                    let props = Product.Guard.Description.props (product.Description, translations)
-
-                    Daisy.fieldsetLabel [
-                        prop.key "description-label"
-                        prop.children [
-                            Html.text translations.Product.Description
-                            Html.small [ prop.key "description-required"; yield! props.textRequired ]
-                            Html.small [ prop.key "description-spacer"; prop.className "flex-1" ]
-                            Html.span [ prop.key "description-char-count"; yield! props.textCharCount ]
-                        ]
-                    ]
-
-                    Daisy.textarea [
-                        prop.key "description-textarea"
-                        prop.className "validator h-21 w-full mb-2"
-                        prop.placeholder translations.Product.Description
-                        props.value
-                        yield! props.validation
-                        yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
-                    ]
-
-                    // -- Book Tags ----
+                    fieldset.description ()
 
                     match product.Category with
                     | Category.Bazaar _ -> ()
@@ -513,60 +552,7 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                         | Remote.Empty -> ()
                         | Remote.LoadError apiError -> Alert.apiError "tags-load-error" apiError fullContext.User
                         | Remote.Loading -> Daisy.skeleton [ prop.className "h-12 w-full"; prop.key "tags-skeleton" ]
-                        | Remote.Loaded booksData ->
-                            let toggleTag (isChecked, tag) =
-                                let productCategory = Category.Books { book with Tags = book.Tags.Toggle(tag, isChecked) }
-                                dispatch (ProductChanged { product with Category = productCategory })
-
-                            let tagItems = [
-                                for tag in Set.union book.Tags booksData.Tags do
-                                    {
-                                        Text = tag
-                                        Value = tag
-                                        Image = None
-                                        Selected = book.Tags.Contains tag
-                                        Filterable = true
-                                        SearchTarget = SearchTarget.BookTag tag
-                                    }
-                            ]
-
-                            let searchMoreButtonProps =
-                                let tag = tagSearchInfo.SearchTerm.Trim()
-
-                                if tag.Length > 0 && not (booksData.Tags.Contains tag) then
-                                    SearchButtonProps.Active(
-                                        icon = fa6Solid.plus,
-                                        tooltip = translations.Product.AddTag,
-                                        onSearch =
-                                            fun () ->
-                                                let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
-                                                dispatch (ProductChanged { product with Category = productCategory })
-                                                AfterSearch(shouldClearTerm = true)
-                                    )
-                                else
-                                    SearchButtonProps.None
-
-                            Daisy.fieldset [
-                                prop.key "tags-fieldset"
-                                prop.className "mb-2"
-                                prop.children [
-                                    Daisy.fieldsetLabel [ // ↩
-                                        prop.key "tags-label"
-                                        prop.text translations.Product.Tags
-                                    ]
-                                    MultiSelect(
-                                        key = "tags-select",
-                                        items = tagItems,
-                                        onSelect = toggleTag,
-                                        onSearchTermChange = setTagSearchInfo,
-                                        readonly = (catalogAccess <> Some Edit),
-                                        translations = translations,
-                                        searchMoreButtonProps = searchMoreButtonProps
-                                    )
-                                ]
-                            ]
-
-                    // -- Save ----
+                        | Remote.Loaded booksData -> fieldset.bookTags (book, booksData, tagSearchInfo, setTagSearchInfo)
 
                     match catalogAccess with
                     | None
