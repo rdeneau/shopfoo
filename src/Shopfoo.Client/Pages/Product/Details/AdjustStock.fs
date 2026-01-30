@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.AdjustStock
+﻿module Shopfoo.Client.Pages.Product.Details.AdjustStock
 
 open System
 open Elmish
@@ -7,6 +7,7 @@ open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
 open Shopfoo.Client.Components
+open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Warehouse

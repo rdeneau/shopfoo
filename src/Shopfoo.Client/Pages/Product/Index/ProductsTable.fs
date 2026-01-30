@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Table
+﻿module Shopfoo.Client.Pages.Product.Index.ProductsTable
 
 open Feliz
 open Feliz.DaisyUI

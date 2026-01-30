@@ -1,14 +1,14 @@
-﻿module Shopfoo.Client.Pages.Product.Details
+﻿module Shopfoo.Client.Pages.Product.Details.Page
 
 open Elmish
 open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client.Pages.Product
-open Shopfoo.Client.Pages.Product.Actions
-open Shopfoo.Client.Pages.Product.AdjustStock
-open Shopfoo.Client.Pages.Product.CatalogInfo
-open Shopfoo.Client.Pages.Product.ManagePrice
+open Shopfoo.Client.Pages.Product.Details.Actions
+open Shopfoo.Client.Pages.Product.Details.AdjustStock
+open Shopfoo.Client.Pages.Product.Details.CatalogInfo
+open Shopfoo.Client.Pages.Product.Details.ManagePrice
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types.Security
@@ -28,7 +28,7 @@ let private update msg (model: Model) =
     | OpenDrawer drawer -> { model with Drawer = Some drawer }, Cmd.none
 
 [<ReactComponent>]
-let DetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.IShowToast) sku =
+let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.IShowToast) sku =
     let model, dispatch = React.useElmish (init, update)
     let productModel, updateProductModel = React.useState { ProductModel.SKU = sku; SoldOut = false }
 

@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Filters
+﻿module Shopfoo.Client.Pages.Product.Index.FilterBar
 
 open Feliz
 open Feliz.DaisyUI

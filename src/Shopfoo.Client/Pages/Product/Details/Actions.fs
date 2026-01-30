@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Actions
+﻿module Shopfoo.Client.Pages.Product.Details.Actions
 
 open System
 open Browser.Types
@@ -12,6 +12,7 @@ open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Actions
 open Shopfoo.Client.Components.Dialog
 open Shopfoo.Client.Components.Icon
+open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
 open Shopfoo.Domain.Types

@@ -1,4 +1,4 @@
-module Shopfoo.Client.Pages.Product.Index
+module Shopfoo.Client.Pages.Product.Index.Page
 
 open Elmish
 open Feliz
@@ -9,8 +9,8 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Filters
-open Shopfoo.Client.Pages.Product.Table
-open Shopfoo.Client.Pages.Product.Filters
+open Shopfoo.Client.Pages.Product.Index.ProductsTable
+open Shopfoo.Client.Pages.Product.Index.FilterBar
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
@@ -89,7 +89,7 @@ type private ProviderProps = {
 }
 
 [<ReactComponent>]
-let IndexView env (filters: Filters) =
+let ProductIndexView env (filters: Filters) =
     match Env.user env with
     | UserCanNotAccess Feat.Catalog ->
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))

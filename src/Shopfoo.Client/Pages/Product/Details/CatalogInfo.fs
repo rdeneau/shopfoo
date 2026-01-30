@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.CatalogInfo
+﻿module Shopfoo.Client.Pages.Product.Details.CatalogInfo
 
 open System
 open Elmish
@@ -11,6 +11,7 @@ open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open type Shopfoo.Client.Components.MultiSelect
+open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Search
 open Shopfoo.Common
