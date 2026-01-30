@@ -255,7 +255,7 @@ type private Tab(filters: Filters, translations: AppTranslations) =
         ]
 
 [<ReactComponent>]
-let IndexFilterBar key (filters: Filters) (products: Product list) selectedProvider selectProvider (translations: AppTranslations) =
+let ProductFilterBar key (filters: Filters) (products: Product list) selectedProvider selectProvider (translations: AppTranslations) =
     let tab = Tab(filters, translations)
 
     let productCountByCategory =

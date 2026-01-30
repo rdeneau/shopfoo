@@ -160,7 +160,7 @@ let ProductIndexView env (filters: Filters) =
                     Alert.apiError "products-load-error" apiError fullContext.User
 
                 | Remote.Loaded(provider, products) ->
-                    IndexFilterBar "products-filter-bar" filters products (Some provider) selectProvider translations
+                    ProductFilterBar "products-filter-bar" filters products (Some provider) selectProvider translations
                     IndexTable "products-table" filters products provider translations
             ]
         ]
