@@ -5,43 +5,18 @@ open Fable.Core
 open Feliz
 open Feliz.DaisyUI
 open Feliz.DaisyUI.Operators
-open Glutinum.Iconify
-open Glutinum.IconifyIcons.Fa6Solid
-open Shopfoo.Client
-open Shopfoo.Client.Components.Icon
+open type Shopfoo.Client.Components.Checkbox
+open type Shopfoo.Client.Components.SearchBox
 open Shopfoo.Client.Search
+open Shopfoo.Client.UI
 open Shopfoo.Common
 open Shopfoo.Shared.Translations
-open type Shopfoo.Client.Components.Checkbox
-
-type AfterSearch = AfterSearch of shouldClearTerm: bool
-
-type private AfterSearchCallbacks = { ClearTerm: unit -> unit }
-
-type private SearchRunner(afterSearch: AfterSearchCallbacks) =
-    member _.Run onSearch =
-        match onSearch () with
-        | AfterSearch(shouldClearTerm = true) -> afterSearch.ClearTerm()
-        | _ -> ()
 
 type SearchInfo = { SearchTerm: string; NoExactMatches: bool }
 
 [<RequireQualifiedAccess>]
 module SearchInfo =
     let empty = { SearchTerm = ""; NoExactMatches = false }
-
-[<RequireQualifiedAccess>]
-type SearchCompletionStatus =
-    | Success
-    | Info of message: string
-    | Error of message: string
-
-[<RequireQualifiedAccess>]
-type SearchButtonProps =
-    | None
-    | Active of icon: IconifyIcon * tooltip: string * onSearch: (unit -> AfterSearch)
-    | Searching
-    | SearchComplete of status: SearchCompletionStatus
 
 type SelectItem<'a> = {
     Value: 'a
@@ -61,57 +36,6 @@ type private SearchedItem<'a> = {
 
 [<Erase>]
 type MultiSelect =
-    static member private searchButton(key, props: SearchButtonProps, search: SearchRunner) =
-        match props with
-        | SearchButtonProps.None -> Html.none
-        | _ ->
-            Daisy.button.button [
-                button.ghost ++ button.circle ++ button.sm
-                prop.key $"search-input-button-%s{key}"
-                prop.type' "button"
-                prop.onMouseDown (fun ev ->
-                    ev.preventDefault ()
-                    ev.stopPropagation ()
-                )
-
-                match props with
-                | SearchButtonProps.Active(iconifyIcon, tooltip, onSearch) ->
-                    prop.title tooltip
-
-                    prop.onClick (fun ev ->
-                        ev.preventDefault ()
-                        ev.stopPropagation ()
-                        search.Run(onSearch)
-                    )
-
-                    prop.children [ icon iconifyIcon ]
-
-                | SearchButtonProps.Searching ->
-                    prop.children [
-                        Daisy.loading [
-                            loading.spinner
-                            loading.xs
-                            prop.key $"search-input-%s{key}-spinner"
-                        ]
-                    ]
-
-                | SearchButtonProps.SearchComplete(SearchCompletionStatus.Error message) ->
-                    prop.title message
-                    prop.className "text-error"
-                    prop.children [ icon fa6Solid.circleXmark ]
-
-                | SearchButtonProps.SearchComplete(SearchCompletionStatus.Info message) ->
-                    prop.title message
-                    prop.className "text-info"
-                    prop.children [ icon fa6Solid.info ]
-
-                | SearchButtonProps.SearchComplete SearchCompletionStatus.Success ->
-                    prop.className "text-success"
-                    prop.children [ icon fa6Solid.circleCheck ]
-
-                | SearchButtonProps.None -> ()
-            ]
-
     [<ReactComponent>]
     static member MultiSelect
         (
@@ -129,7 +53,7 @@ type MultiSelect =
         let filterText, setFilterText = React.useState ""
         let searchInputRef = React.useInputRef ()
 
-        let focusSearchInput _ =
+        let focusSearchBox _ =
             fun () -> searchInputRef.current |> Option.iter _.focus()
             |> JS.runAfter (TimeSpan.FromMilliseconds 150)
 
@@ -158,17 +82,6 @@ type MultiSelect =
             | _ ->
                 searchedItems |> Array.forall (fun x -> x.Item.Text.ToLower() <> filterText.ToLower()),
                 searchedItems |> Array.filter (fun x -> x.Item.Selected || x.HasMatches || not x.Item.Filterable)
-
-        let clearSearchTerm () =
-            setFilterText ""
-            onSearchTermChange SearchInfo.empty
-
-        let searchRunner = SearchRunner({ ClearTerm = clearSearchTerm })
-        let searchButton key props = MultiSelect.searchButton (key, props, searchRunner)
-
-        let searchMoreButton =
-            searchMoreButtonProps
-            |> Option.map (fun props -> props, searchButton $"%s{key}-search-more-btn" props)
 
         let selectedValues =
             Set [
@@ -204,7 +117,7 @@ type MultiSelect =
                         if readonly then
                             "bg-base-300"
                     ]
-                    prop.onFocus focusSearchInput
+                    prop.onFocus focusSearchBox
                     prop.children [
                         for { Key = key; Item = item } in searchedItems do
                             if item.Selected then
@@ -246,79 +159,60 @@ type MultiSelect =
                                 prop.key $"%s{key}-search"
                                 prop.className "p-2"
                                 prop.children [
-                                    Daisy.label.input [
-                                        prop.key $"%s{key}-search-input"
-                                        prop.className "input input-bordered w-full flex items-center gap-2"
-                                        prop.children [
-                                            icon fa6Solid.magnifyingGlass
-                                            Html.input [
-                                                prop.ref searchInputRef
-                                                prop.key $"%s{key}-search-input-field"
-                                                prop.type' "text"
-                                                prop.autoFocus true // Not working but left for documentation purpose
-                                                prop.className "grow bg-transparent outline-none"
-                                                prop.placeholder translations.Home.Search
-                                                prop.value filterText
-                                                prop.onChange (fun searchTerm ->
-                                                    setFilterText searchTerm
-                                                    onSearchTermChange { SearchTerm = searchTerm; NoExactMatches = noExactMatches }
-                                                )
-
-                                                match searchMoreButton with
-                                                | Some(SearchButtonProps.Active(_, _, onSearch), _) ->
-                                                    prop.onKeyDown (
-                                                        Feliz.key.enter,
-                                                        fun ev ->
-                                                            ev.preventDefault ()
-                                                            searchRunner.Run(onSearch)
-                                                    )
+                                    SearchBox(
+                                        key = $"%s{key}-search-input",
+                                        value = filterText,
+                                        onChange =
+                                            (fun searchTerm ->
+                                                setFilterText searchTerm
+                                                onSearchTermChange { SearchTerm = searchTerm; NoExactMatches = noExactMatches }
+                                            ),
+                                        translations = translations,
+                                        inputRef = searchInputRef,
+                                        onKeyDown =
+                                            (fun ev ->
+                                                match searchMoreButtonProps with
+                                                | Some(SearchButtonProps.Active(_, _, onSearch)) when ev.key = "Enter" ->
+                                                    ev.preventDefault ()
+                                                    onSearch () |> ignore
                                                 | _ -> ()
-                                            ]
-
-                                            match searchMoreButton with
-                                            | Some(_, button) -> button
-                                            | None -> ()
-
-                                            if filterText <> "" then
-                                                searchButton $"%s{key}-clear-search-btn"
-                                                <| SearchButtonProps.Active(
-                                                    icon = fa6Solid.xmark,
-                                                    tooltip = translations.Home.Clear,
-                                                    onSearch = fun _ -> AfterSearch(shouldClearTerm = true)
-                                                )
-                                        ]
-                                    ]
+                                            ),
+                                        ?searchMoreButtonProps = searchMoreButtonProps
+                                    )
                                 ]
                             ]
 
                             // Select All/None checkbox
                             if searchedItems.Length > 1 then
+                                let checkBoxState =
+                                    match selectedValues.Count, searchedItems.Length with
+                                    | 0, _ -> CheckboxState.NotChecked
+                                    | n, p when n = p -> CheckboxState.Checked
+                                    | _ -> CheckboxState.Indeterminate
+
+                                let onCheck isChecked =
+                                    if isChecked then
+                                        // Select all visible
+                                        visibleItems
+                                        |> Seq.iter (fun { Item = item } ->
+                                            if not item.Selected then
+                                                onSelect (true, item.Value)
+                                        )
+                                    else
+                                        // Deselect all
+                                        selectedValues |> Seq.iter (fun value -> onSelect (false, value))
+
                                 Html.li [
                                     prop.key $"%s{key}-select-all"
                                     prop.className "text-primary border-b border-base-200"
                                     prop.children [
                                         Checkbox(
                                             key = $"%s{key}-select-all-checkbox",
-                                            state =
-                                                (match selectedValues.Count, searchedItems.Length with
-                                                 | 0, _ -> CheckboxState.NotChecked
-                                                 | n, p when n = p -> CheckboxState.Checked
-                                                 | _ -> CheckboxState.Indeterminate),
+                                            state = checkBoxState,
+                                            onCheck = onCheck,
                                             children = [ // ↩
                                                 Html.text $"%s{translations.Home.SelectedPlural} (%d{selectedValues.Count})"
-                                            ],
-                                            onCheck =
-                                                fun isChecked ->
-                                                    if isChecked then
-                                                        // Select all visible
-                                                        visibleItems
-                                                        |> Seq.iter (fun { Item = item } ->
-                                                            if not item.Selected then
-                                                                onSelect (true, item.Value)
-                                                        )
-                                                    else
-                                                        // Deselect all
-                                                        selectedValues |> Seq.iter (fun value -> onSelect (false, value))
+                                            ]
                                         )
                                     ]
                                 ]
@@ -330,11 +224,11 @@ type MultiSelect =
                                     prop.children [
                                         Checkbox(
                                             key = $"%s{key}-select-%s{item.Key}-checkbox",
-                                            state = CheckboxState.CheckedIf(item.Item.Selected),
+                                            state = CheckboxState.CheckedIf item.Item.Selected,
+                                            onCheck = toggle item.Item.Value,
                                             children = [
                                                 item.SearchResult |> Highlight.matches Html.span [ prop.key $"%s{key}-select-%s{item.Key}-label" ]
-                                            ],
-                                            onCheck = toggle item.Item.Value
+                                            ]
                                         )
                                         match item.Item.Image with
                                         | Some img -> img

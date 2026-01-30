@@ -28,6 +28,7 @@
     <Compile Include="Components\Dialog.fs" />
     <Compile Include="Components\FilterTab.fs" />
     <Compile Include="Components\Highlight.fs" />
+    <Compile Include="Components\SearchBox.fs" />
     <Compile Include="Components\MultiSelect.fs" />
     <Compile Include="Components\Lang.fs" />
     <Compile Include="Components\Theme.fs" />

@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Index.FilterBar
+module Shopfoo.Client.Pages.Product.Index.FilterBar
 
 open Feliz
 open Feliz.DaisyUI
@@ -9,6 +9,7 @@ open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
+open type Shopfoo.Client.Components.SearchBox
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Search
@@ -211,34 +212,13 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             prop.key "search-bar"
             prop.className "flex items-center gap-3 ml-auto"
             prop.children [
-                Daisy.label.input [
-                    prop.key "search-box"
-                    prop.className "ml-2"
-                    prop.children [
-                        icon fa6Solid.magnifyingGlass
-                        Html.input [
-                            prop.key "search-input"
-                            prop.type' "text"
-                            prop.placeholder translations.Home.Search
-                            match filters.Search.Term with
-                            | Some value -> prop.value value
-                            | None -> prop.value ""
-                            prop.onChange (fun searchTerm ->
-                                match searchTerm |> String.trimWhiteSpace with
-                                | "" -> setSearchTerm None
-                                | s -> setSearchTerm (Some s)
-                            )
-                        ]
-                        if filters.Search.Term.IsSome then
-                            Daisy.button.button [
-                                button.ghost ++ button.circle ++ button.sm
-                                prop.key "search-tab-close-button"
-                                prop.className "mr-[-8px]"
-                                prop.onClick (fun _ -> setSearchTerm None)
-                                prop.text "✕"
-                            ]
-                    ]
-                ]
+                SearchBox(
+                    key = "search-box",
+                    value = (filters.Search.Term |> Option.defaultValue ""),
+                    onChange = (Option.ofNonNullOrWhitespace >> setSearchTerm),
+                    translations = translations,
+                    className = "ml-2"
+                )
                 this.toggle (
                     key = "matchCase",
                     text = translations.Product.MatchCase,
