@@ -29,6 +29,8 @@ module private Keys =
             | SKUType.FSID _, (String.StartsWith "FS-" as value) -> value
             | SKUType.FSID _, value -> $"FS-%s{value}"
             | SKUType.ISBN _, value -> $"BN-%s{value}"
+            | SKUType.OLID _, (String.StartsWith "OL" as value) -> value
+            | SKUType.OLID _, value -> $"OL%s{value}"
             | SKUType.Unknown, _ -> ""
 
     [<RequireQualifiedAccess>]
@@ -259,6 +261,7 @@ module private Route =
         match routeSegment with
         | Dashed [ "FS"; Route.Int fsid ] -> Some (FSID fsid).AsSKU
         | Dashed [ "BN"; isbn ] -> Some (ISBN isbn).AsSKU
+        | String.StartsWith "OL" as olid -> Some (OLID olid).AsSKU
         | _ -> None
 
     let (|Tag|) queryParams : string option =
@@ -305,6 +308,7 @@ let (|PageUrl|) =
 
     | Page.ProductDetail({ Type = SKUType.FSID _ } as sku) -> PageUrl.WithSegments("bazaar", sku.Key)
     | Page.ProductDetail({ Type = SKUType.ISBN _ } as sku) -> PageUrl.WithSegments("books", sku.Key)
+    | Page.ProductDetail({ Type = SKUType.OLID _ } as sku) -> PageUrl.WithSegments("books", sku.Key)
     | Page.ProductDetail { Type = SKUType.Unknown } -> PageUrl.WithSegments("notfound").WithQueryParam("url", Router.currentUrl "unknown")
 
     | Page.ProductIndex { CategoryFilters = None } -> PageUrl.WithSegments("products")

@@ -10,11 +10,13 @@ open Shopfoo.Client
 open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Icon
 open type Shopfoo.Client.Components.SearchBox
+open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
 type private BazaarTabProps = {
@@ -34,7 +36,14 @@ type private ProviderTabProps = {
     TargetPage: Page
 }
 
-type private Tab(filters: Filters, translations: AppTranslations) =
+type private Tab
+    (
+        filters: Filters,
+        translations: AppTranslations,
+        searchedBooks: Remote<SearchBooksResponse>,
+        onSearchBooks: string -> unit,
+        onClearSearchedBooks: unit -> unit
+    ) =
     let reactKeyOf x = String.toKebab $"%A{x}"
     let pageWithFilters changeFilters = Page.ProductIndex(changeFilters filters)
 
@@ -208,16 +217,55 @@ type private Tab(filters: Filters, translations: AppTranslations) =
             pageWithFilters (fun filters -> { filters with Filters.Search.Term = searchTerm })
             |> Router.navigatePage
 
+        let searchTerm = filters.Search.Term |> Option.defaultValue ""
+
+        let searchMoreButtonProps =
+            match searchTerm with
+            | String.NullOrWhiteSpace -> SearchButtonProps.None
+            | _ ->
+                match searchedBooks with
+                | Remote.Empty ->
+                    SearchButtonProps.Active(
+                        icon = fa6Solid.magnifyingGlass,
+                        tooltip = translations.Product.SearchBooks,
+                        onSearch =
+                            fun () ->
+                                onSearchBooks searchTerm
+                                AfterSearch(shouldClearTerm = false)
+                    )
+                | Remote.Loading -> SearchButtonProps.Searching
+                | Remote.LoadError apiError -> SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
+                | Remote.Loaded { Books = []; TotalCount = 0 } ->
+                    SearchButtonProps.SearchComplete(SearchCompletionStatus.Info translations.Product.NoBooksFound)
+                | Remote.Loaded data when data.TotalCount > data.Books.Length ->
+                    SearchButtonProps.SearchComplete(
+                        SearchCompletionStatus.Info(translations.Product.BookSearchLimit(limit = data.Books.Length, totalFound = data.TotalCount))
+                    )
+                | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
+
         Html.div [
             prop.key "search-bar"
             prop.className "flex items-center gap-3 ml-auto"
             prop.children [
                 SearchBox(
                     key = "search-box",
-                    value = (filters.Search.Term |> Option.defaultValue ""),
-                    onChange = (Option.ofNonNullOrWhitespace >> setSearchTerm),
+                    value = searchTerm,
+                    onChange =
+                        (fun term ->
+                            onClearSearchedBooks ()
+                            Option.ofNonNullOrWhitespace term |> setSearchTerm
+                        ),
                     translations = translations,
-                    className = "ml-2"
+                    className = "ml-2",
+                    searchMoreButtonProps = searchMoreButtonProps,
+                    onKeyDown =
+                        (fun ev ->
+                            match searchMoreButtonProps with
+                            | SearchButtonProps.Active(_, _, onSearch) when ev.key = "Enter" ->
+                                ev.preventDefault ()
+                                onSearch () |> ignore
+                            | _ -> ()
+                        )
                 )
                 this.toggle (
                     key = "matchCase",
@@ -235,8 +283,18 @@ type private Tab(filters: Filters, translations: AppTranslations) =
         ]
 
 [<ReactComponent>]
-let ProductFilterBar key (filters: Filters) (products: Product list) selectedProvider selectProvider (translations: AppTranslations) =
-    let tab = Tab(filters, translations)
+let ProductFilterBar
+    key
+    (filters: Filters)
+    (products: Product list)
+    selectedProvider
+    selectProvider
+    searchedBooks
+    onSearchBooks
+    onClearSearchedBooks
+    (translations: AppTranslations)
+    =
+    let tab = Tab(filters, translations, searchedBooks, onSearchBooks, onClearSearchedBooks)
 
     let productCountByCategory =
         products

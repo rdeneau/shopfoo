@@ -237,6 +237,14 @@ module internal Pipeline =
             return product |> Option.map Mappers.DtoToModel.mapBook
         }
 
+    let addProduct product =
+        async {
+            do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
+            let dto = Mappers.ModelToDto.mapBook product
+            repository.Add(dto.ISBN, dto)
+            return Ok()
+        }
+
     let saveProduct product =
         async {
             do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency

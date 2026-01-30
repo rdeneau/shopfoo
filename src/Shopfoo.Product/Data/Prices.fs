@@ -44,8 +44,11 @@ module Pipeline =
                 let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
                 return prices
             | SKUType.FSID fsid -> return! FakeStore.Pipeline.getPrice fsid
+            | SKUType.OLID _
             | SKUType.Unknown -> return None
         }
+
+    // TODO RDE: feature "add price"
 
     let savePrices (prices: Prices) =
         async {

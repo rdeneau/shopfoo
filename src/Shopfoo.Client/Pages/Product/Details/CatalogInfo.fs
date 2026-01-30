@@ -12,9 +12,11 @@ open Shopfoo.Client.Components.Icon
 open type Shopfoo.Client.Components.MultiSelect
 open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
+open Shopfoo.Client.Routing
 open Shopfoo.Client.Search
 open Shopfoo.Client.UI
 open Shopfoo.Common
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
@@ -33,6 +35,7 @@ type private Msg =
     | BooksFetched of ApiResult<GetBooksDataResponse>
     | ProductChanged of Product
     | SaveProduct of Product * ApiCall<unit>
+    | AddProduct of Product * ApiCall<unit>
     | SearchAuthors of searchTerm: string
     | AuthorsSearched of ApiResult<SearchAuthorsResponse>
     | ClearSearchedAuthors
@@ -58,6 +61,13 @@ module private Cmd =
             Call = fun api -> api.Catalog.SaveProduct request
             Error = fun err -> SaveProduct(request.Body, Done(Error err))
             Success = fun () -> SaveProduct(request.Body, Done(Ok()))
+        }
+
+    let addProduct (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Catalog.AddProduct request
+            Error = fun err -> AddProduct(request.Body, Done(Error err))
+            Success = fun () -> AddProduct(request.Body, Done(Ok()))
         }
 
     let searchAuthors (cmder: Cmder, request) =
@@ -106,6 +116,20 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
 
         { model with SaveDate = saveDate }, // ↩
         Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
+
+    | AddProduct(product, Start) ->
+        { model with SaveDate = Remote.Loading }, // ↩
+        Cmd.addProduct (fullContext.PrepareRequest product)
+
+    | AddProduct(product, Done result) ->
+        let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
+
+        let cmd =
+            match product.Category, product.SKU.Type with
+            | Category.Books book, SKUType.OLID _ -> Cmd.navigatePage (Page.ProductDetail book.ISBN.AsSKU)
+            | _ -> Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
+
+        { model with SaveDate = saveDate }, cmd
 
     | SearchAuthors searchTerm ->
         { model with SearchedAuthors = Remote.Loading }, // ↩
@@ -560,16 +584,30 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                     | Some Edit ->
                         let productSku = $"%s{translations.Home.Product} %s{sku.Value}"
 
-                        Buttons.SaveButton(
-                            key = "save-product",
-                            label = translations.Home.Save,
-                            tooltipOk = translations.Home.SavedOk productSku,
-                            tooltipError = (fun err -> translations.Home.SavedError(productSku, err.ErrorMessage)),
-                            tooltipProps = [ tooltip.right ],
-                            saveDate = model.SaveDate,
-                            disabled = false,
-                            onClick = (fun () -> dispatch (SaveProduct(product, Start)))
-                        )
+                        // Add or Save button
+                        match product.Category, sku.Type with
+                        | Category.Books _, SKUType.OLID _ ->
+                            Buttons.SaveButton(
+                                key = "add-product",
+                                label = translations.Home.Add,
+                                tooltipOk = translations.Home.SavedOk productSku,
+                                tooltipError = (fun err -> translations.Home.SavedError(productSku, err.ErrorMessage)),
+                                tooltipProps = [ tooltip.right ],
+                                saveDate = model.SaveDate,
+                                disabled = false,
+                                onClick = (fun () -> dispatch (AddProduct(product, Start)))
+                            )
+                        | _ ->
+                            Buttons.SaveButton(
+                                key = "save-product",
+                                label = translations.Home.Save,
+                                tooltipOk = translations.Home.SavedOk productSku,
+                                tooltipError = (fun err -> translations.Home.SavedError(productSku, err.ErrorMessage)),
+                                tooltipProps = [ tooltip.right ],
+                                saveDate = model.SaveDate,
+                                disabled = false,
+                                onClick = (fun () -> dispatch (SaveProduct(product, Start)))
+                            )
                 ]
             ]
     ]

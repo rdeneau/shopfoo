@@ -3,7 +3,9 @@
 module internal Shopfoo.Product.Data.OpenLibrary
 
 open System
+open System.Net
 open System.Net.Http
+open System.Text.Json.Serialization
 open FsToolkit.ErrorHandling
 open Shopfoo.Data.Http
 open Shopfoo.Domain.Types
@@ -43,6 +45,14 @@ module internal Dto =
 
         /// Example: [ { "key": "/works/OL19809141W" } ]
         Works: {| Key: string |} list
+
+        /// Example: [ "0132350882" ]
+        [<JsonPropertyName("isbn_10")>]
+        Isbn10: string list option
+
+        /// Example: [ "9780132350884" ]
+        [<JsonPropertyName("isbn_13")>]
+        Isbn13: string list option
     }
 
     [<RequireQualifiedAccess>]
@@ -84,6 +94,29 @@ module internal Dto =
     [<CLIMutable>]
     type SearchAuthorsResponseDto = { NumFound: int; Docs: AuthorSearchDto list }
 
+    [<CLIMutable>]
+    type BookSearchDto = {
+        /// Example: "/works/OL17618370W"
+        Key: string
+
+        /// Example: "Clean Code"
+        Title: string
+
+        /// Example: [ "OL2653686A" ]
+        [<JsonPropertyName("author_key")>]
+        AuthorKey: string list option
+
+        /// Example: [ "Robert C. Martin" ]
+        [<JsonPropertyName("author_name")>]
+        AuthorName: string list option
+
+        /// Example: { "docs": [ { "key": "/books/OL26222911M", "title": "Clean Code" } ] }
+        Editions: {| Docs: {| Key: string; Title: string |} list |} option
+    }
+
+    [<CLIMutable>]
+    type SearchBooksResponseDto = { NumFound: int; Docs: BookSearchDto list }
+
 type internal OpenLibraryClientSettings = { CoverBaseUrl: string }
 
 type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFactory: HttpApiSerializerFactory) =
@@ -99,15 +132,33 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFact
 
     member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
     member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
-    member this.GetWorkAsync(workKey) = this.GetByKeyAsync<WorkDto>($"/works/%s{workKey}")
+    member this.GetBookByOlidAsync(OLID olid) = this.GetByKeyAsync<BookDto>($"/books/%s{olid}.json")
+
+    member this.GetWorkAsync(workKey: string) =
+        let key =
+            if workKey.StartsWith("/works/") then workKey
+            elif workKey.StartsWith("works/") then $"/%s{workKey}"
+            else $"/works/%s{workKey}"
+
+        this.GetByKeyAsync<WorkDto>(key)
 
     member _.SearchAuthorsAsync(searchTerm: string) =
         task {
-            let encodedTerm = System.Net.WebUtility.UrlEncode(searchTerm)
+            let encodedTerm = WebUtility.UrlEncode(searchTerm)
             use request = HttpRequestMessage.Get(Uri.Relative $"/search/authors.json?q=%s{encodedTerm}&limit=10")
             use! response = httpClient.SendAsync(request)
             let! content = response.TryReadContentAsStringAsync(request)
             return serializer.TryDeserializeResult<SearchAuthorsResponseDto>(content)
+        }
+
+    member _.SearchBooksAsync(searchTerm: string) =
+        task {
+            let encodedTerm = WebUtility.UrlEncode(searchTerm)
+            let fields = "author_key,author_name,key,title,editions"
+            use request = HttpRequestMessage.Get(Uri.Relative $"/search.json?q=%s{encodedTerm}&limit=10&language=eng&fields=%s{fields}")
+            use! response = httpClient.SendAsync(request)
+            let! content = response.TryReadContentAsStringAsync(request)
+            return serializer.TryDeserializeResult<SearchBooksResponseDto>(content)
         }
 
     member _.GetCoverUrl(coverKey, coverSize) =
@@ -148,6 +199,38 @@ module private Mappers =
             TotalCount = response.NumFound
         }
 
+        let mapEditionKey (editionKey: string) : OLID =
+            match editionKey.TrimStart('/').Split('/') with
+            | [| "books"; olid |] -> OLID olid
+            | _ -> failwithf $"Invalid edition key format: %s{editionKey}"
+
+        let mapSearchedBook (bookDto: BookSearchDto) : SearchedBook option =
+            match bookDto.AuthorKey, bookDto.AuthorName with
+            | Some authorKeys, Some authorNames ->
+                let authors =
+                    List.zip (authorKeys |> List.truncate authorNames.Length) authorNames
+                    |> List.map (fun (key, name) -> { OLID = OLID key; Name = name })
+                    |> Set.ofList
+
+                let editionKey =
+                    bookDto.Editions
+                    |> Option.bind (fun editions -> editions.Docs |> List.tryHead)
+                    |> Option.map (fun edition -> mapEditionKey edition.Key)
+                    |> Option.defaultWith (fun () -> failwithf $"No edition found for book: %s{bookDto.Title}")
+
+                Some {
+                    EditionKey = editionKey
+                    Title = bookDto.Title
+                    Subtitle = "" // Subtitle not available in search results
+                    Authors = authors
+                }
+            | _ -> None // Skip books without author information
+
+        let mapSearchedBooks (response: SearchBooksResponseDto) : BookSearchResults = {
+            Books = response.Docs |> List.choose mapSearchedBook
+            TotalCount = response.NumFound
+        }
+
         let mapBookCategory (authors: AuthorDto list) (book: BookDto) isbn : Category =
             Category.Books {
                 ISBN = isbn
@@ -171,17 +254,24 @@ module private Mappers =
             |> Option.defaultValue (CoverKey.ISBN isbn)
 
 module internal Pipeline =
-    let getProduct (client: OpenLibraryClient) isbn =
+    let getProductByOlid (client: OpenLibraryClient) olid =
         taskResult {
-            let! bookDto = client.GetBookByIsbnAsync isbn
+            let! bookDto = client.GetBookByOlidAsync olid
+
+            let isbn =
+                match bookDto.Isbn13, bookDto.Isbn10 with
+                | Some(isbn13 :: _), _ -> ISBN isbn13
+                | _, Some(isbn10 :: _) -> ISBN isbn10
+                | _ -> ISBN ""
+
             let! workDto = client.GetWorkAsync bookDto.Works[0].Key
             let! authorDtos = workDto.Authors |> List.traverseTaskResultM (fun x -> client.GetAuthorAsync x.Author.Key)
 
             let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
             let coverKey = Mappers.DtoToModel.mapCoverKey isbn bookDto.Covers
-            let imageUrl = client.GetCoverUrl(coverKey, CoverSize.Small) |> ImageUrl.Valid
+            let imageUrl = client.GetCoverUrl(coverKey, CoverSize.Medium) |> ImageUrl.Valid
 
-            return Mappers.DtoToModel.mapBook isbn.AsSKU category imageUrl bookDto
+            return Mappers.DtoToModel.mapBook olid.AsSKU category imageUrl bookDto
         }
         |> Async.AwaitTask
 
@@ -189,4 +279,10 @@ module internal Pipeline =
         async {
             let! result = client.SearchAuthorsAsync(searchTerm) |> Async.AwaitTask
             return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedAuthors
+        }
+
+    let searchBooks (client: OpenLibraryClient) searchTerm =
+        async {
+            let! result = client.SearchBooksAsync(searchTerm) |> Async.AwaitTask
+            return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedBooks
         }

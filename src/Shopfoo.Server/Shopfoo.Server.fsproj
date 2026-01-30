@@ -18,11 +18,13 @@
     <Content Include="paket.references" />
     <Compile Include="Remoting\FeatApi.fs" />
     <Compile Include="Remoting\Security.fs" />
+    <Compile Include="Remoting\Catalog\AddProductHandler.fs" />
     <Compile Include="Remoting\Catalog\GetBooksDataHandler.fs" />
     <Compile Include="Remoting\Catalog\GetProductsHandler.fs" />
     <Compile Include="Remoting\Catalog\GetProductHandler.fs" />
     <Compile Include="Remoting\Catalog\SaveProductHandler.fs" />
     <Compile Include="Remoting\Catalog\SearchAuthorsHandler.fs" />
+    <Compile Include="Remoting\Catalog\SearchBooksHandler.fs" />
     <Compile Include="Remoting\Catalog\CatalogApiBuilder.fs" />
     <Compile Include="Remoting\Home\IndexHandler.fs" />
     <Compile Include="Remoting\Home\GetTranslationsHandler.fs" />

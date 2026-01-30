@@ -86,6 +86,7 @@ let AppNavBar key currentPage pageDisplayedInline translations children =
                                 match sku.Type with
                                 | SKUType.FSID _ -> nav.Bazaar
                                 | SKUType.ISBN _ -> nav.Books
+                                | SKUType.OLID _ -> nav.Books
                                 | SKUType.Unknown -> ()
 
                                 nav.Product sku

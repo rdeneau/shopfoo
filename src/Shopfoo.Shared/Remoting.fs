@@ -100,12 +100,17 @@ module CatalogApi =
     type SearchAuthorsRequest = { SearchTerm: string }
     type SearchAuthorsResponse = { Authors: Set<BookAuthor>; TotalCount: int }
 
+    type SearchBooksRequest = { SearchTerm: string }
+    type SearchBooksResponse = { Books: SearchedBook list; TotalCount: int }
+
     type CatalogApi = {
         GetBooksData: Query<unit, GetBooksDataResponse>
         GetProducts: QueryWithTranslations<Provider, GetProductsResponse>
         GetProduct: QueryWithTranslations<SKU, GetProductResponse>
         SaveProduct: Command<Product>
+        AddProduct: Command<Product>
         SearchAuthors: Query<SearchAuthorsRequest, SearchAuthorsResponse>
+        SearchBooks: Query<SearchBooksRequest, SearchBooksResponse>
     } with
         interface IApi
 

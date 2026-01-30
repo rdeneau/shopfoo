@@ -21,12 +21,15 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Model = { Products: Remote<Provider * Product list> }
+type private Model = { Products: Remote<Provider * Product list>; SearchedBooks: Remote<SearchBooksResponse> }
 
 type private Msg =
     | ResetProvider
     | SelectProvider of Provider
     | ProductsFetched of Provider * ApiResult<GetProductsResponse * Translations>
+    | SearchBooks of searchTerm: string
+    | BooksSearched of ApiResult<SearchBooksResponse>
+    | ClearSearchedBooks
 
 [<RequireQualifiedAccess>]
 module private Product =
@@ -56,8 +59,35 @@ module private Cmd =
             Success = fun data -> ProductsFetched(provider, Ok data)
         }
 
+    let searchBooks (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Catalog.SearchBooks request
+            Error = Error >> BooksSearched
+            Success = Ok >> BooksSearched
+        }
+
+[<RequireQualifiedAccess>]
+module private PreviewProduct =
+    let fromSearchedBook (searchedBook: SearchedBook) : Product =
+        let book = {
+            ISBN = ISBN ""
+            Subtitle = searchedBook.Subtitle
+            Authors = searchedBook.Authors
+            Tags = Set.empty
+        }
+
+        {
+            SKU = searchedBook.EditionKey.AsSKU
+            Title = $"✨ {searchedBook.Title}"
+            Description = ""
+            Category = Category.Books book
+            ImageUrl = ImageUrl.None
+        }
+
+    let fromSearchBooksResponse (response: SearchBooksResponse) : Product list = response.Books |> List.map fromSearchedBook
+
 let private init (filters: Filters) =
-    { Products = Remote.Empty },
+    { Products = Remote.Empty; SearchedBooks = Remote.Empty },
     Cmd.batch [
         match filters.Provider with
         | Some provider -> Cmd.ofMsg (SelectProvider provider)
@@ -67,10 +97,10 @@ let private init (filters: Filters) =
 let private update env msg (model: Model) =
     match msg with
     | ResetProvider -> // ↩
-        { model with Products = Remote.Empty }, Cmd.none
+        { model with Products = Remote.Empty; SearchedBooks = Remote.Empty }, Cmd.none
 
     | SelectProvider provider ->
-        { model with Products = Remote.Loading }, // ↩
+        { model with Products = Remote.Loading; SearchedBooks = Remote.Empty }, // ↩
         Cmd.loadProducts (Env.prepareQueryWithTranslations env provider)
 
     | ProductsFetched(provider, Ok(data, translations)) ->
@@ -80,6 +110,16 @@ let private update env msg (model: Model) =
     | ProductsFetched(_, Error apiError) ->
         { model with Products = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> Env.fillTranslations env apiError.Translations)
+
+    | SearchBooks searchTerm ->
+        { model with SearchedBooks = Remote.Loading }, // ↩
+        Cmd.searchBooks (env.FullContext.PrepareRequest { SearchTerm = searchTerm })
+
+    | BooksSearched(Ok response) -> { model with SearchedBooks = Remote.Loaded response }, Cmd.none
+
+    | BooksSearched(Error apiError) -> { model with SearchedBooks = Remote.LoadError apiError }, Cmd.none
+
+    | ClearSearchedBooks -> { model with SearchedBooks = Remote.Empty }, Cmd.none
 
 type private ProviderProps = {
     Provider: Provider
@@ -160,7 +200,24 @@ let ProductIndexView env (filters: Filters) =
                     Alert.apiError "products-load-error" apiError fullContext.User
 
                 | Remote.Loaded(provider, products) ->
-                    ProductFilterBar "products-filter-bar" filters products (Some provider) selectProvider translations
-                    IndexTable "products-table" filters products provider translations
+                    let previewProducts =
+                        match provider, model.SearchedBooks with
+                        | OpenLibrary, Remote.Loaded response -> PreviewProduct.fromSearchBooksResponse response
+                        | _ -> []
+
+                    let allProducts = previewProducts @ products
+
+                    ProductFilterBar
+                        "products-filter-bar"
+                        filters
+                        products
+                        (Some provider)
+                        selectProvider
+                        model.SearchedBooks
+                        (SearchBooks >> dispatch)
+                        (fun () -> dispatch ClearSearchedBooks)
+                        translations
+
+                    ProductsTable "products-table" filters allProducts provider translations
             ]
         ]

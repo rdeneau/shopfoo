@@ -14,6 +14,7 @@ open Shopfoo.Product.Workflows.Instructions
 type IProductApi =
     abstract member GetProducts: (Provider -> Async<Product list>)
     abstract member GetProduct: (SKU -> Async<Product option>)
+    abstract member AddProduct: (Product -> Async<Result<unit, Error>>)
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
     abstract member GetPrices: (SKU -> Async<Prices option>)
@@ -26,6 +27,7 @@ type IProductApi =
     abstract member GetSales: (SKU -> Async<Sale list option>)
 
     abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
+    abstract member SearchBooks: (string -> Async<Result<BookSearchResults, Error>>)
 
 type internal Api
     (
@@ -42,13 +44,15 @@ type internal Api
         | GetStockEvents query -> interpret.Query(query, Warehouse.Pipeline.getStockEvents)
         | SavePrices command -> interpret.Command(command, Prices.Pipeline.savePrices)
         | SaveProduct command -> interpret.Command(command, Catalog.Pipeline.saveProduct)
+        | AddProduct command -> interpret.Command(command, Catalog.Pipeline.addProduct)
 
     let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args = // ↩
         interpret.Workflow runEffect workflow args
 
     interface IProductApi with
         member val GetProducts = Catalog.Pipeline.getProducts fakeStoreClient
-        member val GetProduct = Catalog.Pipeline.getProduct
+        member val GetProduct = Catalog.Pipeline.getProduct openLibraryClient
+        member val AddProduct = interpretWorkflow AddProductWorkflow.Instance
         member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
 
         member val GetPrices = Prices.Pipeline.getPrices
@@ -61,3 +65,4 @@ type internal Api
         member val GetSales = Sales.Pipeline.getSales
 
         member val SearchAuthors = OpenLibrary.Pipeline.searchAuthors openLibraryClient
+        member val SearchBooks = OpenLibrary.Pipeline.searchBooks openLibraryClient

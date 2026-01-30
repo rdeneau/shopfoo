@@ -60,6 +60,7 @@ module TranslationPages =
         member this.Products = this.Get "Products"
         member this.SelectedPlural = this.Get "SelectedPlural"
 
+        member this.Add = this.Get "Add"
         member this.Cancel = this.Get "Cancel"
         member this.Clear = this.Get "Clear"
         member this.Close = this.Get "Close"
@@ -141,6 +142,9 @@ module TranslationPages =
         member this.SearchAuthors = this.Get "SearchAuthors"
         member this.NoAuthorsFound = this.Get "NoAuthorsFound"
         member this.AuthorSearchLimit(limit: int, totalFound: int) = this.Format("AuthorSearchLimit", limit, totalFound)
+        member this.SearchBooks = this.Get "SearchBooks"
+        member this.NoBooksFound = this.Get "NoBooksFound"
+        member this.BookSearchLimit(limit: int, totalFound: int) = this.Format("BookSearchLimit", limit, totalFound)
         member this.OpenLibraryAuthorPage(authorName: string) = this.Format("OpenLibraryAuthorPage", authorName)
 
         member this.Discount = this.Get "Discount"

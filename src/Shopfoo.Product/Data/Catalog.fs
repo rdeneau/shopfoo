@@ -20,13 +20,22 @@ module Pipeline =
                 | Error _ -> return []
         }
 
-    let getProduct (sku: SKU) =
+    let getProduct (client: OpenLibrary.OpenLibraryClient) (sku: SKU) =
         match sku.Type with
         | SKUType.FSID fsid -> FakeStore.Pipeline.getProduct fsid
         | SKUType.ISBN isbn -> Books.Pipeline.getProduct isbn
+        | SKUType.OLID olid -> OpenLibrary.Pipeline.getProductByOlid client olid |> Async.map Result.toOption
         | SKUType.Unknown -> Async.retn None
 
     let saveProduct (product: Product) =
-        match product.Category with
-        | Category.Books _ -> Books.Pipeline.saveProduct product
-        | Category.Bazaar _ -> FakeStore.Pipeline.saveProduct product
+        match product.Category, product.SKU.Type with
+        | Category.Bazaar _, SKUType.FSID _ -> FakeStore.Pipeline.saveProduct product
+        | Category.Bazaar _ , _ -> failwith $"Cannot save a Bazaar product with the SKU type {product.SKU.Type}."
+        | Category.Books _ , SKUType.ISBN _ -> Books.Pipeline.saveProduct product
+        | Category.Books _ , _ -> failwith $"Cannot save a book with the SKU type {product.SKU.Type}."
+
+    let addProduct (product: Product) =
+        match product.Category, product.SKU.Type with
+        | Category.Books _ , SKUType.OLID _ -> Books.Pipeline.addProduct product
+        | Category.Books _ , _ -> failwith $"Cannot add a book with the SKU type {product.SKU.Type}."
+        | Category.Bazaar _ , _ -> failwith $"Cannot save a Bazaar product with the SKU type {product.SKU.Type}."

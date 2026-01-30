@@ -184,8 +184,8 @@ let AppView () =
         | Page.Admin -> Pages.Admin.AdminView env
         | Page.Login -> Pages.Login.LoginView env
         | Page.NotFound url -> Pages.NotFound.NotFoundView env url
-        | Page.ProductIndex filters -> Pages.Product.Index.Page.ProductIndexView env filters
         | Page.ProductDetail sku -> Pages.Product.Details.Page.ProductDetailsView env sku
+        | Page.ProductIndex filters -> Pages.Product.Index.Page.ProductIndexView env filters
 
     let navbar =
         AppNavBar "app-nav" model.Page pageToDisplayInline translations [

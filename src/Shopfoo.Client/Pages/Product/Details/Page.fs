@@ -11,6 +11,7 @@ open Shopfoo.Client.Pages.Product.Details.CatalogInfo
 open Shopfoo.Client.Pages.Product.Details.ManagePrice
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Remoting
 
@@ -48,9 +49,8 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
     )
 
     let hasActions =
-        match fullContext.User with
-        | UserCanAccess Feat.Sales
-        | UserCanAccess Feat.Warehouse -> true
+        match fullContext.User, sku.Type with
+        | (UserCanAccess Feat.Sales | UserCanAccess Feat.Warehouse), (SKUType.FSID _ | SKUType.ISBN _) -> true
         | _ -> false
 
     let isDrawerOpen = model.Drawer.IsSome

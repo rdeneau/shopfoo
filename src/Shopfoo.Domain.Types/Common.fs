@@ -72,18 +72,19 @@ type Lang =
 /// Stock Keeping Unit
 /// </summary>
 /// <remarks>
-/// Common abstraction for <c>FSID</c>, <c>ISBN</c>, and <c>SKUUnknown</c>.
+/// Common abstraction for <c>FSID</c>, <c>ISBN</c>, <c>OLID</c>, and <c>SKUUnknown</c>.
 /// Defined as a record instead of an interface to overcome serialization issue with Fable.Remoting V5 (that does not accept custom Coders anymore)!
-/// Use <c>AsSKU</c> property to convert to SKU from <c>FSID</c>, <c>ISBN</c>, and <c>SKUUnknown</c>.
+/// Use <c>AsSKU</c> property to convert to SKU from <c>FSID</c>, <c>ISBN</c>, <c>OLID</c>, and <c>SKUUnknown</c>.
 /// </remarks>
 type SKU = {
     Type: SKUType
     Value: string
 } with
-    member this.Match(withFSID, withISBN) =
+    member this.Match(withFSID, withISBN, withOLID) =
         match this.Type with
         | SKUType.FSID fsid -> withFSID fsid
         | SKUType.ISBN isbn -> withISBN isbn
+        | SKUType.OLID olid -> withOLID olid
         | SKUType.Unknown -> failwith "SKU type is unknown"
 
 /// FakeStore Product Identifier
@@ -98,6 +99,12 @@ and ISBN =
     member this.Value = let (ISBN isbn) = this in isbn
     member this.AsSKU = { Type = SKUType.ISBN this; Value = this.Value }
 
+/// OpenLibrary Identifier
+and OLID =
+    | OLID of string
+    member this.Value = let (OLID v) = this in v
+    member this.AsSKU = { Type = SKUType.OLID this; Value = this.Value }
+
 and SKUUnknown =
     | SKUUnknown
     member this.Value = String.empty
@@ -106,6 +113,7 @@ and SKUUnknown =
 and [<RequireQualifiedAccess>] SKUType =
     | FSID of FSID
     | ISBN of ISBN
+    | OLID of OLID
     | Unknown
 
 #if !FABLE_COMPILER

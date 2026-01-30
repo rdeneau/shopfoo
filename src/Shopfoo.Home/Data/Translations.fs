@@ -26,6 +26,7 @@ let private translationPages = [
         TagCode "Products", "Products", "Produits"
         TagCode "SelectedPlural", "Selected", "Sélectionnés"
 
+        TagCode "Add", "Add", "Ajouter"
         TagCode "Cancel", "Cancel", "Annuler"
         TagCode "Clear", "Clear", "Effacer"
         TagCode "Close", "Close", "Fermer"
@@ -91,6 +92,9 @@ let private translationPages = [
         TagCode "SearchAuthors", "Search book authors on Open Library", "Rechercher les auteurs de livres sur Open Library"
         TagCode "NoAuthorsFound", "No authors found", "Aucun auteur trouvé"
         TagCode "AuthorSearchLimit", "{1} authors found but only {0} are displayed", "{1} auteurs trouvés mais seuls {0} sont affichés"
+        TagCode "SearchBooks", "Search books on Open Library", "Rechercher les livres sur Open Library"
+        TagCode "NoBooksFound", "No books found", "Aucun livre trouvé"
+        TagCode "BookSearchLimit", "{1} books found but only {0} are displayed", "{1} livres trouvés mais seuls {0} sont affichés"
         TagCode "OpenLibraryAuthorPage", "{0} page on Open Library", "Page de {0} sur Open Library"
 
         TagCode "Discount", "Discount", "Réduction"

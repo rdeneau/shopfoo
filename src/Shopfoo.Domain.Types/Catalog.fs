@@ -16,12 +16,17 @@ type BazaarCategory =
 
 type BazaarProduct = { FSID: FSID; Category: BazaarCategory }
 
-type OLID =
-    | OLID of string
-    member this.Value = let (OLID v) = this in v
-
 type BookAuthor = { OLID: OLID; Name: string }
 type BookAuthorSearchResults = { Authors: BookAuthor list; TotalCount: int }
+
+type SearchedBook = {
+    EditionKey: OLID
+    Title: string
+    Subtitle: string
+    Authors: Set<BookAuthor>
+}
+
+type BookSearchResults = { Books: SearchedBook list; TotalCount: int }
 
 type BookTag = string
 

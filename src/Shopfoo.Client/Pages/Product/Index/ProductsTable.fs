@@ -175,7 +175,7 @@ type private Td(filters: Filters, row: Row) =
         ]
 
 [<ReactComponent>]
-let IndexTable key (filters: Filters) products provider (translations: AppTranslations) =
+let ProductsTable key (filters: Filters) products provider (translations: AppTranslations) =
     let columnDefinitions = [
         Column.Num.SortableBy Column.Num
         Column.SKU.SortableBy Column.SKU
