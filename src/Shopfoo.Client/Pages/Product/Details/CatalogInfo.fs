@@ -363,24 +363,28 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
     member _.description() =
         let props = Product.Guard.Description.props (product.Description, translations)
 
-        React.fragment [
-            Daisy.fieldsetLabel [
-                prop.key "description-label"
-                prop.children [
-                    Html.text translations.Product.Description
-                    Html.small [ prop.key "description-required"; yield! props.textRequired ]
-                    Html.small [ prop.key "description-spacer"; prop.className "flex-1" ]
-                    Html.span [ prop.key "description-char-count"; yield! props.textCharCount ]
+        Html.div [
+            prop.key "description-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                Daisy.fieldsetLabel [
+                    prop.key "description-label"
+                    prop.children [
+                        Html.text translations.Product.Description
+                        Html.small [ prop.key "description-required"; yield! props.textRequired ]
+                        Html.small [ prop.key "description-spacer"; prop.className "flex-1" ]
+                        Html.span [ prop.key "description-char-count"; yield! props.textCharCount ]
+                    ]
                 ]
-            ]
 
-            Daisy.textarea [
-                prop.key "description-textarea"
-                prop.className "validator h-21 w-full mb-2"
-                prop.placeholder translations.Product.Description
-                props.value
-                yield! props.validation
-                yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
+                Daisy.textarea [
+                    prop.key "description-textarea"
+                    prop.className "validator h-21 w-full"
+                    prop.placeholder translations.Product.Description
+                    props.value
+                    yield! props.validation
+                    yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
+                ]
             ]
         ]
 
