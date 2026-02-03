@@ -60,6 +60,6 @@ module Pipeline =
 
     let getSales sku =
         async {
-            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
+            do! Fake.latencyInMilliseconds 250
             return repository.TryGetValue(sku) |> Option.ofPair
         }

@@ -5,6 +5,10 @@ open System
 open Shopfoo.Domain.Types
 
 [<RequireQualifiedAccess>]
+module Fake =
+    let latencyInMilliseconds ms = Async.Sleep(millisecondsDueTime = ms)
+
+[<RequireQualifiedAccess>]
 module ISBN =
     let CleanArchitecture = ISBN "9780134494166"
     let CleanCode = ISBN "9780132350884"

@@ -226,20 +226,20 @@ module internal Pipeline =
 
     let getProducts () =
         async {
-            do! Async.Sleep(millisecondsDueTime = 500) // Simulate latency
+            do! Fake.latencyInMilliseconds 500
             return [ for dto in repository.Values -> Mappers.DtoToModel.mapBook dto ]
         }
 
     let getProduct (isbn: ISBN) =
         async {
-            do! Async.Sleep(millisecondsDueTime = 250) // Simulate latency
+            do! Fake.latencyInMilliseconds 250
             let product = repository.Values |> Seq.tryFind (fun x -> x.ISBN = isbn)
             return product |> Option.map Mappers.DtoToModel.mapBook
         }
 
     let addProduct product =
         async {
-            do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
+            do! Fake.latencyInMilliseconds 300
             let dto = Mappers.ModelToDto.mapBook product
             repository.Add(dto.ISBN, dto)
             return Ok()
@@ -247,7 +247,7 @@ module internal Pipeline =
 
     let saveProduct product =
         async {
-            do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
+            do! Fake.latencyInMilliseconds 400
             let dto = Mappers.ModelToDto.mapBook product
             return repository |> Dictionary.tryUpdateBy _.ISBN dto |> liftDataRelatedError
         }

@@ -75,7 +75,7 @@ module Pipeline =
 
     let getStockEvents sku =
         async {
-            do! Async.Sleep(millisecondsDueTime = 150) // Simulate latency
+            do! Fake.latencyInMilliseconds 150
 
             match repository.TryGetValue(sku) with
             | true, events -> return Some(events |> List.ofSeq)

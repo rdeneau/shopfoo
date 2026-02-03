@@ -40,7 +40,7 @@ module Pipeline =
         async {
             match sku.Type with
             | SKUType.ISBN _ ->
-                do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
+                do! Fake.latencyInMilliseconds 100
                 let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
                 return prices
             | SKUType.FSID fsid -> return! FakeStore.Pipeline.getPrice fsid
@@ -53,5 +53,6 @@ module Pipeline =
     let savePrices (prices: Prices) =
         async {
             do! Async.Sleep(millisecondsDueTime = 200) // Simulate latency
+            do! Fake.latencyInMilliseconds 200
             return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError
         }

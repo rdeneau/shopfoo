@@ -143,24 +143,24 @@ module internal Pipeline =
 
     let getPrice fsid =
         async {
-            do! Async.Sleep(millisecondsDueTime = 100) // Simulate latency
+            do! Fake.latencyInMilliseconds 100
             return cache.TryGetPrice(fsid)
         }
 
     let getProduct fsid =
         async {
-            do! Async.Sleep(millisecondsDueTime = 150) // Simulate latency
+            do! Fake.latencyInMilliseconds 150
             return cache.TryGetProduct(fsid)
         }
 
     let savePrices prices =
         asyncResult {
-            do! Async.Sleep(millisecondsDueTime = 280) // Simulate latency
+            do! Fake.latencyInMilliseconds 280
             do! cache.SetPrices(prices)
         }
 
     let saveProduct product =
         asyncResult {
-            do! Async.Sleep(millisecondsDueTime = 400) // Simulate latency
+            do! Fake.latencyInMilliseconds 400
             do! cache.SetProduct(product)
         }
