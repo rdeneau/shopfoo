@@ -115,9 +115,12 @@ type SearchBox =
                     prop.key $"{key}-input"
                     prop.type' "text"
                     prop.className "grow bg-transparent outline-none"
-                    prop.placeholder translations.Home.Search
                     prop.value value
                     prop.onChange onChange
+
+                    match searchMoreButtonProps with
+                    | Some _ -> prop.placeholder translations.Home.SearchOrAdd
+                    | None -> prop.placeholder translations.Home.Search
 
                     match inputRef with
                     | Some ref -> prop.ref ref

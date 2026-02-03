@@ -32,6 +32,7 @@ let private translationPages = [
         TagCode "Close", "Close", "Fermer"
         TagCode "Save", "Save", "Enregistrer"
         TagCode "Search", "Search", "Rechercher"
+        TagCode "SearchOrAdd", "Search or add", "Rechercher ou ajouter"
 
         TagCode "Confirmation", "Confirmation", "Confirmation"
         TagCode "Completed", "Completed", "Réussi"

@@ -66,6 +66,7 @@ module TranslationPages =
         member this.Close = this.Get "Close"
         member this.Save = this.Get "Save"
         member this.Search = this.Get "Search"
+        member this.SearchOrAdd = this.Get "SearchOrAdd"
 
         member this.Confirmation = this.Get "Confirmation"
         member this.Completed = this.Get "Completed"
