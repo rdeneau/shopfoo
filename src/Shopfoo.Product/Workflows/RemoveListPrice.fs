@@ -8,6 +8,7 @@ open Shopfoo.Product.Workflows.Instructions
 [<Sealed>]
 type internal RemoveListPriceWorkflow private () =
     inherit ProductWorkflow<SKU, unit>()
+    static member val Instance = RemoveListPriceWorkflow()
 
     override _.Run sku =
         program {
@@ -15,5 +16,3 @@ type internal RemoveListPriceWorkflow private () =
             do! Program.savePrices { prices with ListPrice = None }
             return Ok()
         }
-
-    static member val Instance = RemoveListPriceWorkflow()

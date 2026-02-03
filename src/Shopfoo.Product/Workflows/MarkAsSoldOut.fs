@@ -10,6 +10,7 @@ open Shopfoo.Product.Workflows.Instructions
 [<Sealed>]
 type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineStockWorkflow) =
     inherit ProductWorkflow<SKU, unit>()
+    static member val Instance = MarkAsSoldOutWorkflow(DetermineStockWorkflow.Instance)
 
     override _.Run sku =
         program {
@@ -20,5 +21,3 @@ type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineSt
             do! Program.savePrices { prices with RetailPrice = RetailPrice.SoldOut }
             return Ok()
         }
-
-    static member val Instance = MarkAsSoldOutWorkflow(DetermineStockWorkflow.Instance)

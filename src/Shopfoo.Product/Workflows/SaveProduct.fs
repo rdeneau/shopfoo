@@ -8,6 +8,7 @@ open Shopfoo.Product.Workflows.Instructions
 [<Sealed>]
 type internal SaveProductWorkflow private () =
     inherit ProductWorkflow<Product, unit>()
+    static member val Instance = SaveProductWorkflow()
 
     override _.Run product =
         program {
@@ -15,5 +16,3 @@ type internal SaveProductWorkflow private () =
             do! Program.saveProduct product
             return Ok()
         }
-
-    static member val Instance = SaveProductWorkflow()

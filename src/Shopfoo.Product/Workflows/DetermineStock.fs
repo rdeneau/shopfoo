@@ -15,6 +15,7 @@ type private StockEventType =
 [<Sealed>]
 type internal DetermineStockWorkflow private () =
     inherit ProductWorkflow<SKU, Stock>()
+    static member val Instance = DetermineStockWorkflow()
 
     override _.Run sku =
         program {
@@ -44,5 +45,3 @@ type internal DetermineStockWorkflow private () =
 
             return Ok { SKU = sku; Quantity = quantity }
         }
-
-    static member val Instance = DetermineStockWorkflow()
