@@ -33,6 +33,8 @@ type Buttons =
                 | Remote.Empty -> ()
                 | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key $"%s{key}-spinner" ]
                 | Remote.LoadError apiError ->
+                    JS.console.warn $"Error on save %s{apiError.ErrorMessage}"
+
                     Daisy.tooltip [
                         tooltip.text (tooltipError apiError)
                         tooltip.error
