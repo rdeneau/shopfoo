@@ -122,9 +122,11 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
 let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice setSoldOut =
     let model, dispatch = React.useElmish (init fullContext sku, update fullContext onSavePrice, [||])
 
-    match model.Prices with
-    | Remote.Loaded prices -> setSoldOut (prices.RetailPrice = RetailPrice.SoldOut)
-    | _ -> ()
+    React.useEffectOnce (fun () ->
+        match model.Prices with
+        | Remote.Loaded prices -> setSoldOut (prices.RetailPrice = RetailPrice.SoldOut)
+        | _ -> ()
+    )
 
     let translations = fullContext.Translations
 
