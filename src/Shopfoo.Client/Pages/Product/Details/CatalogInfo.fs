@@ -123,13 +123,18 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
 
     | AddProduct(product, Done result) ->
         let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
+        let error = result |> Result.tryGetError
 
-        let cmd =
+        { model with SaveDate = saveDate },
+        Cmd.batch [
             match product.Category, product.SKU.Type with
-            | Category.Books book, SKUType.OLID _ -> Cmd.navigatePage (Page.ProductDetail book.ISBN.AsSKU)
-            | _ -> Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
-
-        { model with SaveDate = saveDate }, cmd
+            | Category.Books book, SKUType.OLID _ when error.IsNone ->
+                let product = { product with SKU = book.ISBN.AsSKU }
+                Cmd.navigatePage (Page.ProductDetail book.ISBN.AsSKU)
+                Cmd.ofEffect (fun _ -> onSaveProduct (product, error))
+            | _ -> // ↩
+                Cmd.ofEffect (fun _ -> onSaveProduct (product, error))
+        ]
 
     | SearchAuthors searchTerm ->
         { model with SearchedAuthors = Remote.Loading }, // ↩
@@ -392,7 +397,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
     member _.description() =
         let props = Product.Guard.Description.props (product.Description, translations)
 
-        Html.div [
+        Daisy.fieldset [
             prop.key "description-fieldset"
             prop.className "mb-2"
             prop.children [
@@ -479,7 +484,9 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
     let translations = fullContext.Translations
     let catalogAccess = fullContext.User.AccessTo Feat.Catalog
 
-    let model, dispatch = React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [||])
+    let model, dispatch =
+        React.useElmish (init fullContext sku, update fillTranslations onSaveProduct fullContext, [| box sku |])
+
     let authorSearchInfo, setAuthorSearchInfo = React.useState SearchInfo.empty
     let tagSearchInfo, setTagSearchInfo = React.useState SearchInfo.empty
 
@@ -556,6 +563,36 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
         | Remote.LoadError apiError -> Alert.apiError "product-load-error" apiError fullContext.User
 
         | Remote.Loaded product ->
+            // -- New Product Alert ----
+
+            let isNewProduct =
+                match product.Category, sku.Type with
+                | Category.Books _, SKUType.OLID _ -> true
+                | _ -> false
+
+            if isNewProduct then
+                Daisy.alert [
+                    alert.info
+                    prop.key "catalog-info-alert"
+                    prop.className "mb-3"
+                    prop.children [
+                        Html.div [
+                            prop.key "catalog-info-alert-content"
+                            prop.className "flex-col items-start"
+                            prop.children [
+                                Html.h3 [
+                                    prop.key "catalog-info-alert-title"
+                                    prop.className "font-bold flex items-center gap-2 mb-1"
+                                    prop.children [ icon fa6Solid.circleInfo; Html.text $"%s{translations.Product.NewProductTitle} ✨" ]
+                                ]
+                                Html.div [ prop.key "catalog-info-alert-disclaimer"; prop.text translations.Product.NewProductDisclaimer ]
+                            ]
+                        ]
+                    ]
+                ]
+
+            // -- Product Fieldsets ----
+
             let fieldset = Fieldset(catalogAccess, product, translations, dispatch)
 
             Daisy.fieldset [
@@ -618,8 +655,7 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                         let productSku = $"%s{translations.Home.Product} %s{sku.Value}"
 
                         // Add or Save button
-                        match product.Category, sku.Type with
-                        | Category.Books _, SKUType.OLID _ ->
+                        if isNewProduct then
                             Buttons.SaveButton(
                                 key = "add-product",
                                 label = translations.Home.Add,
@@ -630,7 +666,7 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                                 disabled = false,
                                 onClick = (fun () -> dispatch (AddProduct(product, Start)))
                             )
-                        | _ ->
+                        else
                             Buttons.SaveButton(
                                 key = "save-product",
                                 label = translations.Home.Save,

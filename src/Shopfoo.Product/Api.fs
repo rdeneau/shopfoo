@@ -44,6 +44,7 @@ type internal Api
         | GetStockEvents query -> interpret.Query(query, Warehouse.Pipeline.getStockEvents)
         | SavePrices command -> interpret.Command(command, Prices.Pipeline.savePrices)
         | SaveProduct command -> interpret.Command(command, Catalog.Pipeline.saveProduct)
+        | AddPrices command -> interpret.Command(command, Prices.Pipeline.addPrices)
         | AddProduct command -> interpret.Command(command, Catalog.Pipeline.addProduct)
 
     let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args = // ↩
@@ -52,8 +53,8 @@ type internal Api
     interface IProductApi with
         member val GetProducts = Catalog.Pipeline.getProducts fakeStoreClient
         member val GetProduct = Catalog.Pipeline.getProduct openLibraryClient
-        member val AddProduct = interpretWorkflow AddProductWorkflow.Instance
         member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
+        member val AddProduct = interpretWorkflow AddProductWorkflow.Instance
 
         member val GetPrices = Prices.Pipeline.getPrices
         member val SavePrices = interpretWorkflow SavePricesWorkflow.Instance

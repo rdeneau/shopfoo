@@ -11,6 +11,7 @@ type GetSalesQuery<'a> = Query<SKU, Sale list, 'a>
 type GetStockEventsQuery<'a> = Query<SKU, StockEvent list, 'a>
 type SavePricesCommand<'a> = Command<Prices, 'a>
 type SaveProductCommand<'a> = Command<Product, 'a>
+type AddPricesCommand<'a> = Command<Prices, 'a>
 type AddProductCommand<'a> = Command<Product, 'a>
 
 type ProductInstruction<'a> =
@@ -19,6 +20,7 @@ type ProductInstruction<'a> =
     | GetStockEvents of GetStockEventsQuery<'a>
     | SavePrices of SavePricesCommand<'a>
     | SaveProduct of SaveProductCommand<'a>
+    | AddPrices of AddPricesCommand<'a>
     | AddProduct of AddProductCommand<'a>
 
 [<Interface>]
@@ -51,6 +53,11 @@ type SaveProductEffect<'a>(command: SaveProductCommand<'a>) =
         override _.Map(f) = SaveProductEffect(command.Map f)
         override val Instruction = SaveProduct command
 
+type AddPricesEffect<'a>(command: AddPricesCommand<'a>) =
+    interface IProductEffect<'a> with
+        override _.Map(f) = AddPricesEffect(command.Map f)
+        override val Instruction = AddPrices command
+
 type AddProductEffect<'a>(command: AddProductCommand<'a>) =
     interface IProductEffect<'a> with
         override _.Map(f) = AddProductEffect(command.Map f)
@@ -63,4 +70,5 @@ module Program =
     let getStockEvents = Program.effect GetStockEventsEffect GetStockEventsQuery
     let savePrices = Program.effect SavePricesEffect SavePricesCommand
     let saveProduct = Program.effect SaveProductEffect SaveProductCommand
+    let addPrices = Program.effect AddPricesEffect AddPricesCommand
     let addProduct = Program.effect AddProductEffect AddProductCommand

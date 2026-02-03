@@ -87,6 +87,11 @@ let private translationPages = [
         TagCode "MatchCase", "Match case", "Sensible à la casse"
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
+        TagCode "NewProductTitle", "New product", "Nouveau produit"
+        TagCode "NewProductDisclaimer",
+        "Pricing and inventory can be configured once the product is added.",
+        "Les prix et le stock pourront être configurés une fois le produit ajouté."
+
         TagCode "SoldOut", "Sold-out", "Épuisé"
         TagCode "Subtitle", "Subtitle", "Sous-titre"
         TagCode "Tags", "Tags", "Libellés"

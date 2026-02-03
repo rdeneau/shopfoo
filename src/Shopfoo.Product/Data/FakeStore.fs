@@ -81,10 +81,12 @@ type private InMemoryProductCache() =
         }
 
     member private _.WhenFromFakeStore(sku: SKU, f) =
+        let error = GuardClause { EntityName = nameof SKU; ErrorMessage = $"Expected FSID, received %s{sku.Value}" }
+
         sku.Match( // ↩
             withFSID = f,
-            withISBN = (fun _ -> Error(GuardClause { EntityName = nameof SKU; ErrorMessage = "Expected FSID type" })),
-            withOLID = (fun _ -> Error(GuardClause { EntityName = nameof SKU; ErrorMessage = "Expected FSID type" }))
+            withISBN = (fun _ -> Error error),
+            withOLID = (fun _ -> Error error)
         )
 
     member this.SetProduct(product: Product) = this.WhenFromFakeStore(product.SKU, fun fsid -> this.Set(fsid, product = product))

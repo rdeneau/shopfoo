@@ -48,11 +48,15 @@ module Pipeline =
             | SKUType.Unknown -> return None
         }
 
-    // TODO RDE: feature "add price"
-
     let savePrices (prices: Prices) =
         async {
-            do! Async.Sleep(millisecondsDueTime = 200) // Simulate latency
-            do! Fake.latencyInMilliseconds 200
+            do! Fake.latencyInMilliseconds 250
             return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError
+        }
+
+    let addPrices (prices: Prices) =
+        async {
+            do! Fake.latencyInMilliseconds 200
+            repository.Add(prices.SKU, prices)
+            return Ok()
         }

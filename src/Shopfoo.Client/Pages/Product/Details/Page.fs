@@ -12,6 +12,7 @@ open Shopfoo.Client.Pages.Product.Details.ManagePrice
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Remoting
 
@@ -34,13 +35,6 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
     let productModel, updateProductModel = React.useState { ProductModel.SKU = sku; SoldOut = false }
 
     let fullContext = env.FullContext
-    let onSave = env.ShowToast
-
-    let drawerControl =
-        DrawerControl( // ↩
-            open' = (fun drawer -> dispatch (OpenDrawer drawer)),
-            close = (fun () -> dispatch CloseDrawer)
-        )
 
     // Access to the Catalog is required. PageNotFound otherwise.
     React.useEffectOnce (fun () ->
@@ -48,15 +42,24 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
             Router.navigatePage (Page.CurrentNotFound())
     )
 
+    let drawerControl =
+        DrawerControl( // ↩
+            open' = (fun drawer -> dispatch (OpenDrawer drawer)),
+            close = (fun () -> dispatch CloseDrawer)
+        )
+
     let hasActions =
         match fullContext.User, sku.Type with
         | (UserCanAccess Feat.Sales | UserCanAccess Feat.Warehouse), (SKUType.FSID _ | SKUType.ISBN _) -> true
         | _ -> false
 
     let isDrawerOpen = model.Drawer.IsSome
-    let onSavePrice (price, error) = onSave (Toast.Prices(price, error))
-    let onSaveProduct (product, error) = onSave (Toast.Product(product, error))
-    let onSaveStock (stock, error) = onSave (Toast.Stock(stock, error))
+
+    let onSavePrice (price, error) = env.ShowToast(Toast.Prices(price, error))
+    let onSaveStock (stock, error) = env.ShowToast(Toast.Stock(stock, error))
+    let onSaveProduct (product: Product, error) =
+        updateProductModel { productModel with SKU = product.SKU }
+        env.ShowToast(Toast.Product(product, error))
 
     let setSoldOut soldOut =
         if soldOut <> productModel.SoldOut then

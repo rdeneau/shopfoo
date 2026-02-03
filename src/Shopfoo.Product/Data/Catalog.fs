@@ -4,17 +4,20 @@ module internal Shopfoo.Product.Data.Catalog
 open FsToolkit.ErrorHandling
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Data
 
-/// Facade design pattern hiding the different data sources: Books and FakeStore
+/// <summary>
+/// Facade pattern hiding the different data sources: <c>Books</c>, <c>OpenLibrary</c>, <c>FakeStore</c>
+/// </summary>
 module Pipeline =
     let getProducts fakeStoreClient provider =
         async {
             match provider with
-            | OpenLibrary -> // ↩
+            | Provider.OpenLibrary -> // ↩
                 return! Books.Pipeline.getProducts ()
 
-            | FakeStore ->
+            | Provider.FakeStore ->
                 match! FakeStore.Pipeline.getProducts fakeStoreClient with
                 | Ok data -> return data
                 | Error _ -> return []
@@ -25,17 +28,15 @@ module Pipeline =
         | SKUType.FSID fsid -> FakeStore.Pipeline.getProduct fsid
         | SKUType.ISBN isbn -> Books.Pipeline.getProduct isbn
         | SKUType.OLID olid -> OpenLibrary.Pipeline.getProductByOlid client olid |> Async.map Result.toOption
-        | SKUType.Unknown -> Async.retn None
+        | SKUType.Unknown -> async { return None }
 
     let saveProduct (product: Product) =
-        match product.Category, product.SKU.Type with
-        | Category.Bazaar _, SKUType.FSID _ -> FakeStore.Pipeline.saveProduct product
-        | Category.Bazaar _, _ -> failwith $"Cannot save a Bazaar product with the SKU type {product.SKU.Type}."
-        | Category.Books _, SKUType.ISBN _ -> Books.Pipeline.saveProduct product
-        | Category.Books _, _ -> failwith $"Cannot save a book with the SKU type {product.SKU.Type}."
+        match product.Category with
+        | Category.Bazaar _ -> FakeStore.Pipeline.saveProduct product
+        | Category.Books _ -> Books.Pipeline.saveProduct product
 
     let addProduct (product: Product) =
-        match product.Category, product.SKU.Type with
-        | Category.Books _, SKUType.OLID _ -> Books.Pipeline.addProduct product
-        | Category.Books _, _ -> failwith $"Cannot add a book with the SKU type {product.SKU.Type}."
-        | Category.Bazaar _, _ -> failwith $"Cannot save a Bazaar product with the SKU type {product.SKU.Type}."
+        match product.Category with
+        | Category.Books _ -> Books.Pipeline.addProduct product
+        | Category.Bazaar _ ->
+            async { return Error(GuardClause { EntityName = nameof Product; ErrorMessage = "Adding Bazaar products is not supported" }) }
