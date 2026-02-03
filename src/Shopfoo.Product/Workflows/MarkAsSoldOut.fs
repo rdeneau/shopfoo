@@ -3,28 +3,18 @@
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
-open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects
+open Shopfoo.Product.Model
 open Shopfoo.Product.Workflows.Instructions
 
 [<Sealed>]
 type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineStockWorkflow) =
     inherit ProductWorkflow<SKU, unit>()
 
-    let verifyZeroStock (stock: Stock) =
-        validation {
-            let! _ =
-                Guard(nameof Stock) // ↩
-                    .Satisfies(stock.Quantity = 0, "Stock quantity must be zero to mark as sold out.")
-                    .ToValidation()
-
-            return ()
-        }
-
     override _.Run sku =
         program {
             let! stock = determineStockWorkflow.Run sku
-            do! verifyZeroStock stock
+            do! Stock.verifyNoStock stock
 
             let! prices = Program.getPrices sku |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
             do! Program.savePrices { prices with RetailPrice = RetailPrice.SoldOut }
