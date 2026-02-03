@@ -3,24 +3,16 @@
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Effects
+open Shopfoo.Product.Model
 open Shopfoo.Product.Workflows.Instructions
 
 [<Sealed>]
 type internal SaveProductWorkflow private () =
     inherit ProductWorkflow<Product, unit>()
 
-    let validate (product: Product) =
-        validation {
-            let! _ = Guard(nameof Product.Guard.SKU).Satisfies(product.SKU.Value, Product.Guard.SKU).ToValidation()
-            and! _ = Guard(nameof Product.Guard.Name).Satisfies(product.Title, Product.Guard.Name).ToValidation()
-            and! _ = Guard(nameof Product.Guard.Description).Satisfies(product.Description, Product.Guard.Description).ToValidation()
-            and! _ = Guard(nameof Product.Guard.ImageUrl).Satisfies(product.ImageUrl.Url, Product.Guard.ImageUrl).ToValidation()
-            return ()
-        }
-
     override _.Run product =
         program {
-            do! validate product |> liftGuardClauses
+            do! Product.validate product |> liftGuardClauses
             do! Program.saveProduct product
             return Ok()
         }

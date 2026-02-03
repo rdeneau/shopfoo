@@ -6,6 +6,8 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
+    <Compile Include="Model\Extensions.fs" />
+    <Compile Include="Model\Product.fs" />
     <Compile Include="Workflows\Types.fs" />
     <Compile Include="Workflows\Instructions.fs" />
     <Compile Include="Workflows\AddProduct.fs" />

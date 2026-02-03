@@ -63,4 +63,5 @@ module Product =
         let SKU = GuardCriteria.Create(required = true)
         let Name = GuardCriteria.Create(required = true, maxLength = 128)
         let Description = GuardCriteria.Create(maxLength = 512)
+        let BookSubtitle = GuardCriteria.Create(required = true, maxLength = 256)
         let ImageUrl = GuardCriteria.None
