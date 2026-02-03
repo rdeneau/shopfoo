@@ -137,6 +137,7 @@ module TranslationPages =
         member this.ImageUrl = this.Get "ImageUrl"
         member this.Name = this.Get "Name"
         member this.SoldOut = this.Get "SoldOut"
+        member this.Subtitle = this.Get "Subtitle"
         member this.Tags = this.Get "Tags"
         member this.AddTag = this.Get "AddTag"
         member this.SearchAuthors = this.Get "SearchAuthors"

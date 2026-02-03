@@ -140,6 +140,9 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
     | ClearSearchedAuthors -> { model with SearchedAuthors = Remote.Empty }, Cmd.none
 
 type private Fieldset(catalogAccess, product: Product, translations: AppTranslations, dispatch) =
+    let bookChanged book = // ↩
+        ProductChanged { product with Category = Category.Books book }
+
     let propsOrReadonly (props: IReactProperty seq) = [
         match catalogAccess with
         | Some Access.Edit -> yield! props
@@ -226,9 +229,8 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
             authorSearchInfo: SearchInfo,
             setAuthorSearchInfo: SearchInfo -> unit
         ) =
-        let toggleAuthor (isChecked, author) =
-            let productCategory = Category.Books { book with Authors = book.Authors.Toggle(author, isChecked) }
-            dispatch (ProductChanged { product with Category = productCategory })
+        let toggleAuthor (isChecked, author) = // ↩
+            dispatch (bookChanged { book with Authors = book.Authors.Toggle(author, isChecked) })
 
         let searchedAuthors =
             match remoteSearchedAuthors with
@@ -310,10 +312,37 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
             ]
         ]
 
+    member _.bookSubtitle(book: Book) =
+        Daisy.fieldset [
+            prop.key "subtitle-fieldset"
+            prop.className "mb-2"
+            prop.children [
+                let props = Product.Guard.BookSubtitle.props (book.Subtitle, translations)
+
+                Daisy.fieldsetLabel [
+                    prop.key "subtitle-label"
+                    prop.children [
+                        Html.text translations.Product.Subtitle
+                        Html.small [ prop.key "subtitle-required"; yield! props.textRequired ]
+                        Html.small [ prop.key "subtitle-spacer"; prop.className "flex-1" ]
+                        Html.span [ prop.key "subtitle-char-count"; yield! props.textCharCount ]
+                    ]
+                ]
+
+                Daisy.validator.input [
+                    prop.key "subtitle-input"
+                    prop.className "w-full"
+                    prop.placeholder translations.Product.Subtitle
+                    props.value
+                    yield! props.validation
+                    yield! propOnChangeOrReadonly (fun subtitle -> dispatch (bookChanged { book with Subtitle = subtitle }))
+                ]
+            ]
+        ]
+
     member _.bookTags(book: Book, booksData: GetBooksDataResponse, tagSearchInfo: SearchInfo, setTagSearchInfo: SearchInfo -> unit) =
-        let toggleTag (isChecked, tag) =
-            let productCategory = Category.Books { book with Tags = book.Tags.Toggle(tag, isChecked) }
-            dispatch (ProductChanged { product with Category = productCategory })
+        let toggleTag (isChecked, tag) = // ↩
+            dispatch (bookChanged { book with Tags = book.Tags.Toggle(tag, isChecked) })
 
         let tagItems = [
             for tag in Set.union book.Tags booksData.Tags do
@@ -550,7 +579,7 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
                                     fieldset.name ()
 
                                     match product.Category with
-                                    | Category.Books _ -> ()
+                                    | Category.Books book -> fieldset.bookSubtitle book
                                     | Category.Bazaar bazaarProduct -> fieldset.bazaarCategory bazaarProduct
 
                                     match product.Category with

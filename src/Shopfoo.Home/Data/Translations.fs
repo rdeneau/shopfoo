@@ -87,6 +87,7 @@ let private translationPages = [
         TagCode "ImageUrl", "Image Url", "Url de l'image"
         TagCode "Name", "Name", "Nom"
         TagCode "SoldOut", "Sold-out", "Épuisé"
+        TagCode "Subtitle", "Subtitle", "Sous-titre"
         TagCode "Tags", "Tags", "Libellés"
         TagCode "AddTag", "Add tag", "Ajouter le libellé"
         TagCode "SearchAuthors", "Search book authors on Open Library", "Rechercher les auteurs de livres sur Open Library"
