@@ -1,6 +1,5 @@
 ﻿namespace Shopfoo.Product.Workflows
 
-open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Effects
 open Shopfoo.Product.Model
@@ -12,7 +11,7 @@ type internal SaveProductWorkflow private () =
 
     override _.Run product =
         program {
-            do! Product.validate product |> liftGuardClauses
+            do! Product.validate product
             do! Program.saveProduct product
             return Ok()
         }

@@ -28,7 +28,7 @@ type internal SavePricesWorkflow private () =
 
     override _.Run prices =
         program {
-            do! validate prices |> liftGuardClauses
+            do! validate prices
             do! Program.savePrices prices
             return Ok()
         }

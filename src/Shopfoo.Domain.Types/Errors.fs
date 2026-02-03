@@ -225,9 +225,9 @@ module Helpers =
     let dataException exn = Error(DataException exn)
 
     let liftDataRelatedError result = Result.mapError DataError result
-    let liftGuardClause result = Result.mapError GuardClause result
-    let liftGuardClauses (validation: Validation<'a, GuardClauseError>) = validation |> Result.mapError Validation
     let liftOperationNotAllowed result = Result.mapError OperationNotAllowed result
+    let liftGuardClause guardClause = Result.mapError GuardClause guardClause
+    let liftValidation (validation: Validation<'a, GuardClauseError>) = validation |> Result.mapError Validation
 
     let createAndLiftGuardClause constructor input = constructor input |> liftGuardClause
 

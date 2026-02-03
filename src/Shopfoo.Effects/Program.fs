@@ -70,12 +70,17 @@ module ProgramBuilder =
         | Ok v -> f v
         | Error e -> Stop(Error e)
 
+    let private bindValidation (f: 'v -> Program<_>) (validation: Result<'v, GuardClauseError list>) : Program<_> =
+        match validation with
+        | Ok v -> f v
+        | Error errors -> Stop((errors |> Error.Validation) |> Error)
+
     type ProgramBuilder() =
         member _.Zero() = Stop()
         member _.Return(value) = Stop value
         member _.ReturnFrom(value) = value
         member _.Bind(program: Program<_>, f) = program >>= f
-        member _.Bind(program: Program<Result<_, _>>, f) = program >>= (bindResult f)
+        member _.Bind(programR: Program<Result<_, _>>, f) = programR >>= (bindResult f)
         member _.Bind(result: Result<_, _>, f) = result |> bindResult f // Useful to bind the result of a domain type smart constructor
 
     let program = ProgramBuilder()
@@ -98,14 +103,13 @@ module Program =
             return f x
         }
 
-    let mapError (f: 'error -> Error) (prog: Program<Result<_, 'error>>) =
+    let mapError (f: 'error -> Error) (programR: Program<Result<_, 'error>>) =
         program {
-            let! result = prog //here we retrieve return value from our program `prog`. Like async/await in C#
+            let! result = programR //here we retrieve return value from our program `prog`. Like async/await in C#
             return result |> Result.mapError f
         }
 
-    let mapDataRelatedError prog = prog |> mapError DataError
-    let mapResult f prog = map (Result.map f) prog
+    let mapResult f programR = map (Result.map f) programR
 
     let defaultValue value prog = prog |> map (Option.defaultValue value)
     let ignore prog = prog |> map Result.ignore
@@ -119,6 +123,30 @@ module Program =
             let! result = xProg
             return result |> Result.tryGetError
         }
+
+[<AutoOpen>]
+module ProgramBuilderExtensions =
+    type ProgramBuilder with
+        // Overloads to bind `Result<'a, XxxError>` and lift the error part to `Error`
+
+        member inline x.Bind(result: Result<_, DataRelatedError>, f) = x.Bind(liftDataRelatedError result, f)
+        member inline x.Bind(result: Result<_, OperationNotAllowedError>, f) = x.Bind(liftOperationNotAllowed result, f)
+        member inline x.Bind(guardClause: Result<_, GuardClauseError>, f) = x.Bind(liftGuardClause guardClause, f)
+        member inline x.Bind(validation: Validation<_, GuardClauseError>, f) = x.Bind(liftValidation validation, f)
+
+        // Overloads to bind `Program<Result<'a, XxxError>>` and lift the error part to `Error`
+
+        member inline x.Bind(programR: Program<Result<_, DataRelatedError>>, f) = // ↩
+            x.Bind(programR = (programR |> Program.mapError DataError), f = f)
+
+        member inline x.Bind(programR: Program<Result<_, OperationNotAllowedError>>, f) = // ↩
+            x.Bind(programR = (programR |> Program.mapError OperationNotAllowed), f = f)
+
+        member inline x.Bind(programR: Program<Result<_, GuardClauseError>>, f) = // ↩
+            x.Bind(programR = (programR |> Program.mapError GuardClause), f = f)
+
+        member inline x.Bind(programV: Program<Validation<_, GuardClauseError>>, f) = // ↩
+            x.Bind(programR = (programV |> Program.map liftValidation), f = f)
 
 [<Interface>]
 type IDomain =

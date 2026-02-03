@@ -1,7 +1,6 @@
 ﻿namespace Shopfoo.Product.Workflows
 
 open Shopfoo.Domain.Types
-open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Effects
@@ -21,7 +20,7 @@ type internal AddProductWorkflow private () =
 
             let product = { product with SKU = sku }
 
-            do! Product.validate product |> liftGuardClauses
+            do! Product.validate product
             do! Program.addProduct product
 
             let initialPrices = {
