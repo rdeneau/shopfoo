@@ -9,6 +9,7 @@ open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Search
+open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Shared.Translations
 
@@ -155,7 +156,8 @@ type private Td(filters: Filters, row: Row) =
                             ]
 
                         match row.SearchResult[Column.BookSubtitle] with
-                        | [] -> ()
+                        | []
+                        | [ { Text = String.NullOrWhiteSpace } ] -> ()
                         | results ->
                             Html.span [
                                 prop.key $"%s{row.Key}-sep"
