@@ -57,6 +57,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
 
     let onSavePrice (price, error) = env.ShowToast(Toast.Prices(price, error))
     let onSaveStock (stock, error) = env.ShowToast(Toast.Stock(stock, error))
+
     let onSaveProduct (product: Product, error) =
         updateProductModel { productModel with SKU = product.SKU }
         env.ShowToast(Toast.Product(product, error))

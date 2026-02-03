@@ -220,12 +220,12 @@ let AppView () =
     let onDismiss () = dispatch Msg.ToastOff
 
     let toast name error =
-        let alertType, text =
+        let alertType, text, dismiss =
             match error with
-            | None -> alert.success, translations.Home.SavedOk name
-            | Some err -> alert.error, translations.Home.SavedError(name, err.ErrorMessage)
+            | None -> alert.success, translations.Home.SavedOk name, Toast.Dismiss.Auto
+            | Some err -> alert.error, translations.Home.SavedError(name, err.ErrorMessage), Toast.Dismiss.Manual
 
-        Toast.Toast $"toast-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+        Toast.Toast $"toast-{DateTime.Now.Ticks}" [ alertType ] dismiss onDismiss [ // ↩
             Html.text text
         ]
 
@@ -247,12 +247,12 @@ let AppView () =
                     model.LangMenus |> List.find (fun menu -> menu.Lang = lang)
 
                 let langToast (error: ApiError option) =
-                    let alertType, text =
+                    let alertType, text, dismiss =
                         match error with
-                        | None -> alert.success, translations.Home.ChangeLangOk
-                        | Some err -> alert.error, translations.Home.ChangeLangError(langMenu.Label, err.ErrorMessage)
+                        | None -> alert.success, translations.Home.ChangeLangOk, Toast.Dismiss.Auto
+                        | Some err -> alert.error, translations.Home.ChangeLangError(langMenu.Label, err.ErrorMessage), Toast.Dismiss.Manual
 
-                    Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" [ alertType ] onDismiss [ // ↩
+                    Toast.Toast $"toast-lang-{DateTime.Now.Ticks}" [ alertType ] dismiss onDismiss [ // ↩
                         Html.text text
                     ]
 
