@@ -22,7 +22,6 @@ type internal AddProductWorkflow private () =
             let product = { product with SKU = sku }
 
             do! Product.validate product
-            do! Program.addProduct product
 
             let initialPrices = {
                 SKU = sku
@@ -31,6 +30,9 @@ type internal AddProductWorkflow private () =
                 RetailPrice = RetailPrice.SoldOut
             }
 
+            // TODO RDE: handle addProduct and addPrices in an Unit of work
+            // TODO RDE: handle addProduct and addPrices in Parallel
+            do! Program.addProduct product
             do! Program.addPrices initialPrices
 
             return Ok()
