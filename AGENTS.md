@@ -1,5 +1,12 @@
 # AGENTS.md
 
+## Agent Implementation Guardrails
+
+- **Plan-First Protocol:** Whenever you are in Plan Mode, in a `/plan` prompt, or asked to "plan", you are strictly forbidden from using `write_file`, `patch_file`, or any tools that modify the repository.
+- **Explicit Handover:** You must only provide a conceptual roadmap or update the `plan.md`.
+- **Approval Gate:** Even if the user prompt implies action (e.g., "Plan and fix this"), you must respond: "The plan is ready. Please switch to Edit Mode and type 'execute' to begin implementation."
+- **Tool Restriction:** Use `read_file`, `ls`, and `grep` to gather context, but wait for a mode shift before applying changes.
+
 ## F# Development Rules
 
 ### General Style
