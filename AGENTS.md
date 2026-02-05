@@ -109,6 +109,13 @@ Next paragraph
 
 **CRITICAL**: In F#, declarations must appear in dependency order. A type/function must be declared BEFORE it is referenced.
 
+#### Rules
+
+1. Always declare types/functions BEFORE using them
+2. Order matters within modules - read top to bottom
+3. **Declare types in order without the `and` keyword whenever possible** - only use `and` for mutually recursive types
+4. Avoid using `rec module` unless strictly required, for instance when using `nameof` function with the module
+
 #### Examples
 
 ❌ **WRONG** - Converter references `BookSearchDto` before it's declared:
@@ -131,12 +138,45 @@ type SkipInvalidBooksConverter() =
     // ...
 ```
 
-#### Rules
+❌ **WRONG** - Using `and` when it's not necessary for recursion:
 
-1. Always declare types/functions BEFORE using them
-2. Order matters within modules - read top to bottom
-3. Use `and` keyword for mutually recursive types if needed
-4. Avoid using `rec module` unless strictly required, for instance when using `nameof` function with the module.
+```fsharp
+type Container and Item = { name: string }
+```
+
+✅ **CORRECT** - Separate declarations in order:
+
+```fsharp
+type Item = { name: string }
+type Container = { items: Item list }
+```
+
+### Interface Definitions
+
+**Always use the `[<Interface>]` attribute** on interfaces to prevent accidental conversion to abstract classes. The `IXxx` naming convention alone is not sufficient.
+
+**Exception**: Pure marker interfaces defined with `interface end` syntax don't require the attribute.
+
+❌ **WRONG** - Missing attribute:
+
+```fsharp
+type ILogger =
+    abstract member Log: string -> unit
+```
+
+✅ **CORRECT** - With attribute:
+
+```fsharp
+[<Interface>]
+type ILogger =
+    abstract member Log: string -> unit
+```
+
+✅ **CORRECT** - Pure marker interface without attribute:
+
+```fsharp
+type IMarker = interface end
+```
 
 ### F# Idioms
 
