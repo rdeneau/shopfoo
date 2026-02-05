@@ -10,7 +10,10 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
+    <Compile Include="Fakes.fs" />
+    <Compile Include="Workflows\MockInterpreterFactory.fs" />
     <Compile Include="Workflows\AddProductWorkflowTests.fs" />
+    <Compile Include="Workflows\DetermineStockWorkflowTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />
