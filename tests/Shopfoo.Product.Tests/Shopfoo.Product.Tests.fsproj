@@ -12,8 +12,8 @@
     <Content Include="paket.references" />
     <Compile Include="Fakes.fs" />
     <Compile Include="Workflows\MockInterpreterFactory.fs" />
-    <Compile Include="Workflows\AddProductWorkflowTests.fs" />
-    <Compile Include="Workflows\DetermineStockWorkflowTests.fs" />
+    <Compile Include="Workflows\AddProductWorkflowShould.fs" />
+    <Compile Include="Workflows\DetermineStockWorkflowShould.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />

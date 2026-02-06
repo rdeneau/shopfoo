@@ -5,9 +5,9 @@ open Shopfoo.Product
 open Shopfoo.Product.Tests.Fakes
 open TUnit.Core
 
-type AddProductWorkflowTests() =
+type AddProductWorkflowShould() =
     [<Test>]
-    member this.``AddProductWorkflow should add product and prices without downcasting errors``() =
+    member this.``add product and prices without downcasting errors``() =
         async {
             let interpreterFactory = MockInterpreterFactory()
             let api: IProductApi = Api(interpreterFactory, null, null)
