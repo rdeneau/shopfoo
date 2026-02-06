@@ -23,17 +23,10 @@ type internal AddProductWorkflow private () =
 
             do! Product.validate product
 
-            let initialPrices = {
-                SKU = sku
-                Currency = currency
-                ListPrice = None
-                RetailPrice = RetailPrice.SoldOut
-            }
-
             // TODO RDE: handle addProduct and addPrices in Parallel
             // TODO RDE: handle addProduct and addPrices in a "saga", with compensation actions in case of failure (e.g. if addPrices fails, remove the product that was just added)
             do! Program.addProduct product
-            do! Program.addPrices initialPrices
+            do! Program.addPrices (Prices.Initial(sku, currency))
 
             return Ok()
         }

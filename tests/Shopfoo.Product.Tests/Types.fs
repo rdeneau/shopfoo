@@ -7,8 +7,8 @@ type CurrencyEnum =
     | EUR = 'e'
     | USD = 'u'
 
-module CurrencyEnum =
-    let toCurrency (currency: CurrencyEnum) =
+module Currency =
+    let (|FromEnum|) (currency: CurrencyEnum) =
         match currency with
         | CurrencyEnum.EUR -> Currency.EUR
         | CurrencyEnum.USD -> Currency.USD

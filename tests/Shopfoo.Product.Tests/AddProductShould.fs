@@ -124,10 +124,9 @@ type AddProductShould() =
     [<Test>]
     [<Arguments(CurrencyEnum.EUR)>]
     [<Arguments(CurrencyEnum.USD)>]
-    member _.``add initial prices too, in the given currency`` currencyEnum =
+    member _.``add initial prices too, in the given currency`` (Currency.FromEnum currency) =
         async {
             use fixture = new ApiTestFixture()
-            let currency = CurrencyEnum.toCurrency currencyEnum
             let product = createValidBookProduct ()
             let! existingProduct = fixture.Api.GetProduct product.SKU
             existingProduct =! None // Assume that the product doesn't already exist

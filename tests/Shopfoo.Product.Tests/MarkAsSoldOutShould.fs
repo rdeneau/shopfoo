@@ -26,11 +26,10 @@ type MarkAsSoldOutShould() =
     [<Test>]
     [<Arguments(CurrencyEnum.EUR, 19.99)>]
     [<Arguments(CurrencyEnum.USD, 24.99)>]
-    member _.``update retail price to SoldOut given a product with no stock`` currencyEnum retailPrice =
+    member _.``update retail price to SoldOut given a product with no stock`` (Currency.FromEnum currency) retailPrice =
         async {
             let isbn = ISBN "978-0-13-468599-2"
             let sku = isbn.AsSKU
-            let currency = CurrencyEnum.toCurrency currencyEnum
             let prices = Prices.Create(isbn, currency, retailPrice)
             use fixture = new ApiTestFixture(pricesSet = [ prices ])
 

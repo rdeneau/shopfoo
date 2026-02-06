@@ -18,6 +18,7 @@
     <Compile Include="AddProductShould.fs" />
     <Compile Include="DetermineStockShould.fs" />
     <Compile Include="MarkAsSoldOutShould.fs" />
+    <Compile Include="SavePricesShould.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />

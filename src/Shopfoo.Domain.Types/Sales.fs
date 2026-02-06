@@ -41,6 +41,13 @@ type Prices = {
     static member Create(isbn: ISBN, currency, retailPrice, ?listPrice) = // ↩
         Prices.Create(isbn.AsSKU, currency, retailPrice, ?listPrice = listPrice)
 
+    static member Initial(sku, currency) : Prices = {
+        SKU = sku
+        Currency = currency
+        RetailPrice = RetailPrice.SoldOut
+        ListPrice = None
+    }
+
 type Sale = {
     SKU: SKU
     Date: DateOnly
