@@ -34,7 +34,8 @@ type internal Api
         interpreterFactory: IInterpreterFactory, // ↩
         fakeStoreClient: FakeStore.IFakeStoreClient,
         openLibraryClient: OpenLibrary.IOpenLibraryClient,
-        saleRepository: Sales.SaleRepository
+        saleRepository: Sales.SaleRepository,
+        stockEventRepository: Warehouse.StockEventRepository
     ) =
     let interpret = interpreterFactory.Create(ProductDomain)
 
@@ -42,7 +43,7 @@ type internal Api
         match productEffect.Instruction with
         | GetPrices query -> interpret.Query(query, Prices.Pipeline.getPrices)
         | GetSales query -> interpret.Query(query, Sales.Pipeline.getSales saleRepository)
-        | GetStockEvents query -> interpret.Query(query, Warehouse.Pipeline.getStockEvents)
+        | GetStockEvents query -> interpret.Query(query, Warehouse.Pipeline.getStockEvents stockEventRepository)
         | SavePrices command -> interpret.Command(command, Prices.Pipeline.savePrices)
         | SaveProduct command -> interpret.Command(command, Catalog.Pipeline.saveProduct)
         | AddPrices command -> interpret.Command(command, Prices.Pipeline.addPrices)
@@ -62,7 +63,7 @@ type internal Api
         member val MarkAsSoldOut = interpretWorkflow MarkAsSoldOutWorkflow.Instance
         member val RemoveListPrice = interpretWorkflow RemoveListPriceWorkflow.Instance
 
-        member val AdjustStock = Warehouse.Pipeline.adjustStock
+        member val AdjustStock = Warehouse.Pipeline.adjustStock stockEventRepository
         member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
         member val GetSales = Sales.Pipeline.getSales saleRepository
 

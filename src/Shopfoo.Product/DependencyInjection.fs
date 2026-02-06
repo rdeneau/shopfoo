@@ -44,5 +44,6 @@ type IServiceCollection with
             )
             .AddSingleton<IFakeStoreClient>(fun sp -> sp.GetRequiredService<FakeStoreClient>() :> IFakeStoreClient)
             .AddSingleton<IOpenLibraryClient>(fun sp -> sp.GetRequiredService<OpenLibraryClient>() :> IOpenLibraryClient)
-            .AddSingleton<Sales.SaleRepository>(Sales.Pipeline.fakeRepository)
+            .AddSingleton<Sales.SaleRepository>(Sales.Fakes.repository)
+            .AddSingleton<Warehouse.StockEventRepository>(Warehouse.Fakes.repository)
             .AddSingleton<IProductApi, Api>()

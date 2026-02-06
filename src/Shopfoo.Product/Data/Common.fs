@@ -1,11 +1,14 @@
 ﻿[<AutoOpen>]
-module internal Shopfoo.Product.Data.Common
+module Shopfoo.Product.Data.Common
 
 open System
+open System.Collections.Generic
+open System.Linq
+open Shopfoo.Common
 open Shopfoo.Domain.Types
 
 [<RequireQualifiedAccess>]
-module Fake =
+module internal Fake =
     let latencyInMilliseconds ms = Async.Sleep(millisecondsDueTime = ms)
 
 [<RequireQualifiedAccess>]
@@ -25,3 +28,21 @@ module ISBN =
     let UnitTesting = ISBN "9781617296277"
 
 let daysAgo (days: int) = DateOnly.FromDateTime(DateTime.Now.AddDays(-days))
+
+type internal FakeRepository<'k, 'v when 'k: comparison>(data: 'v seq, getKey: 'v -> 'k) =
+    let repository: Dictionary<'k, ResizeArray<'v>> =
+        data
+        |> Seq.groupBy getKey
+        |> Seq.map (fun (key, values) -> key, ResizeArray values)
+        |> _.ToDictionary(fst, snd)
+
+    member _.Add(value: 'v) : unit =
+        let key = getKey value
+        match repository.TryGetValue(key) with
+        | true, events -> events.Add(value)
+        | false, _ -> repository.Add(key, ResizeArray [ value ])
+
+    member _.Get(key: 'k) : 'v list option =
+        repository.TryGetValue(key) // ↩
+        |> Option.ofPair
+        |> Option.map List.ofSeq
