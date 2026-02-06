@@ -1,6 +1,18 @@
 ﻿module Shopfoo.Product.Tests.Types
 
 open FsCheck
+open Shopfoo.Domain.Types.Common
+
+type CurrencyEnum =
+    | EUR = 'e'
+    | USD = 'u'
+
+module CurrencyEnum =
+    let toCurrency (currency: CurrencyEnum) =
+        match currency with
+        | CurrencyEnum.EUR -> Currency.EUR
+        | CurrencyEnum.USD -> Currency.USD
+        | _ -> invalidArg "currency" $"Invalid currency: {currency}"
 
 [<RequireQualifiedAccess>]
 type WhitespaceChar =

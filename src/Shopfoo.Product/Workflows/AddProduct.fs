@@ -9,10 +9,10 @@ open Shopfoo.Product.Workflows.Instructions
 
 [<Sealed>]
 type internal AddProductWorkflow private () =
-    inherit ProductWorkflow<Product, unit>()
+    inherit ProductWorkflow<Product * Currency, unit>()
     static member val Instance = AddProductWorkflow()
 
-    override _.Run product =
+    override _.Run((product, currency)) =
         program {
             let sku =
                 match product.SKU.Type, product.Category with
@@ -25,7 +25,7 @@ type internal AddProductWorkflow private () =
 
             let initialPrices = {
                 SKU = sku
-                Currency = Currency.EUR
+                Currency = currency
                 ListPrice = None
                 RetailPrice = RetailPrice.SoldOut
             }

@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Catalog
 
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
@@ -11,7 +12,7 @@ type AddProductHandler(api: FeatApi) =
 
     override _.Handle _ product user =
         async {
-            let! result = api.Product.AddProduct(product)
+            let! result = api.Product.AddProduct(product, Currency.EUR) // TODO: choose currency in the Frontend
             let response = ResponseBuilder.plain user
 
             return

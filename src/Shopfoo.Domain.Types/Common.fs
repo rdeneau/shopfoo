@@ -88,33 +88,42 @@ type SKU = {
         | SKUType.Unknown -> failwith "SKU type is unknown"
 
 /// FakeStore Product Identifier
-and FSID =
-    | FSID of int
-    member this.Value = let (FSID fsid) = this in $"FS-%i{fsid}"
-    member this.AsSKU = { Type = SKUType.FSID this; Value = this.Value }
+and FSID = FSID of int
 
 /// International Standard Book Number
-and ISBN =
-    | ISBN of string
-    member this.Value = let (ISBN isbn) = this in isbn
-    member this.AsSKU = { Type = SKUType.ISBN this; Value = this.Value }
+and ISBN = ISBN of string
 
 /// OpenLibrary Identifier
-and OLID =
-    | OLID of string
-    member this.Value = let (OLID v) = this in v
-    member this.AsSKU = { Type = SKUType.OLID this; Value = this.Value }
+and OLID = OLID of string
 
-and SKUUnknown =
-    | SKUUnknown
-    member this.Value = String.empty
-    member this.AsSKU = { Type = SKUType.Unknown; Value = this.Value }
+and SKUUnknown = | SKUUnknown
 
 and [<RequireQualifiedAccess>] SKUType =
     | FSID of FSID
     | ISBN of ISBN
     | OLID of OLID
     | Unknown
+
+/// Separate extension properties to avoid:
+/// - infinite recursion when trying to convert between FSID, ISBN, OLID and SKU
+/// - to serialize them and probable issues when trying to do it
+[<AutoOpen>]
+module SKUExtensions =
+    type FSID with
+        member this.Value = let (FSID fsid) = this in $"FS-%i{fsid}"
+        member this.AsSKU = { Type = SKUType.FSID this; Value = this.Value }
+
+    type ISBN with
+        member this.Value = let (ISBN isbn) = this in isbn
+        member this.AsSKU = { Type = SKUType.ISBN this; Value = this.Value }
+
+    type OLID with
+        member this.Value = let (OLID v) = this in v
+        member this.AsSKU = { Type = SKUType.OLID this; Value = this.Value }
+
+    type SKUUnknown with
+        member this.Value = String.empty
+        member this.AsSKU = { Type = SKUType.Unknown; Value = this.Value }
 
 #if !FABLE_COMPILER
 

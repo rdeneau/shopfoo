@@ -18,7 +18,7 @@ open Shopfoo.Product.Workflows.Instructions
 type IProductApi =
     abstract member GetProducts: (Provider -> Async<Product list>)
     abstract member GetProduct: (SKU -> Async<Product option>)
-    abstract member AddProduct: (Product -> Async<Result<unit, Error>>)
+    abstract member AddProduct: (Product * Currency -> Async<Result<unit, Error>>)
     abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
 
     abstract member GetPrices: (SKU -> Async<Prices option>)

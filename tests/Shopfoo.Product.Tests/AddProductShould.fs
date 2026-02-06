@@ -6,6 +6,7 @@ open Shopfoo.Client.Tests.FsCheckArbs
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
+open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Tests
 open Shopfoo.Product.Tests.Fakes
 open Shopfoo.Product.Tests.Types
@@ -110,7 +111,7 @@ type AddProductShould() =
                 ||> Seq.fold (fun (product, errors) issue -> issue.UpdateProduct product, issue.ExpectedError :: errors)
 
             use fixture = new ApiTestFixture()
-            let! result = fixture.Api.AddProduct invalidProduct
+            let! result = fixture.Api.AddProduct(invalidProduct, Currency.EUR)
 
             let cleanResult =
                 match result with
@@ -121,26 +122,38 @@ type AddProductShould() =
         }
 
     [<Test>]
-    member this.``add initial prices with EUR currency when adding book product``() =
+    [<Arguments(CurrencyEnum.EUR)>]
+    [<Arguments(CurrencyEnum.USD)>]
+    member this.``add initial prices too, in the given currency`` currencyEnum =
         async {
-            let product = createValidBookProduct ()
-
             use fixture = new ApiTestFixture()
-            let! addResult = fixture.Api.AddProduct product
+            let currency = CurrencyEnum.toCurrency currencyEnum
+            let product = createValidBookProduct ()
+            let! existingProduct = fixture.Api.GetProduct product.SKU
+            existingProduct =! None // Assume that the product doesn't already exist
 
-            match addResult with
-            | Ok() ->
-                // Verify prices were added by attempting to fetch them
-                let! priceResult = fixture.Api.GetPrices product.SKU
+            let! addResult = fixture.Api.AddProduct(product, currency)
 
-                priceResult
-                |> function
-                    | Some prices ->
-                        if prices.SKU <> product.SKU then
-                            raise (Exception("Prices SKU does not match product SKU"))
+            let! actual =
+                match addResult with
+                | Error err -> async { return Error err }
+                | Ok() ->
+                    async {
+                        let! addedProduct = fixture.Api.GetProduct product.SKU
+                        let! addedPrice = fixture.Api.GetPrices product.SKU
 
-                        if prices.Currency <> Currency.EUR then
-                            raise (Exception($"Expected EUR currency but got {prices.Currency}"))
-                    | None -> raise (Exception("Expected prices to be created but got None"))
-            | Error err -> raise (Exception($"AddProduct failed: {err}"))
+                        match addedProduct, addedPrice with
+                        | None, _ -> return Error(DataError(DataNotFound(product.SKU.Value, "Product")))
+                        | _, None -> return Error(DataError(DataNotFound(product.SKU.Value, "Prices")))
+                        | Some product, Some prices -> return Ok(product, prices)
+                    }
+
+            let expectedPrices = {
+                SKU = product.SKU
+                Currency = currency
+                ListPrice = None
+                RetailPrice = RetailPrice.SoldOut
+            }
+
+            actual =! Ok(product, expectedPrices)
         }

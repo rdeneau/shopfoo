@@ -3,6 +3,7 @@
 open Fable.Core
 open Feliz
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Common
 open Shopfoo.Shared.Translations
 
 [<RequireQualifiedAccess>]
