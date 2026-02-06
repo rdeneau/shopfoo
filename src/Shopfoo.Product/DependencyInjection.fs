@@ -4,6 +4,7 @@ open System
 open System.Net.Http
 open Shopfoo.Data.DependencyInjection
 open Shopfoo.Domain.Types.Errors
+open Shopfoo.Product.Data
 open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Data.OpenLibrary
 open Microsoft.Extensions.DependencyInjection
@@ -43,4 +44,5 @@ type IServiceCollection with
             )
             .AddSingleton<IFakeStoreClient>(fun sp -> sp.GetRequiredService<FakeStoreClient>() :> IFakeStoreClient)
             .AddSingleton<IOpenLibraryClient>(fun sp -> sp.GetRequiredService<OpenLibraryClient>() :> IOpenLibraryClient)
+            .AddSingleton<Sales.SaleRepository>(Sales.Pipeline.fakeRepository)
             .AddSingleton<IProductApi, Api>()

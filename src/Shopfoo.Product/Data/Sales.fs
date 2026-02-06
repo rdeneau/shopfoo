@@ -1,5 +1,5 @@
 ﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Product.Data.Sales
+module Shopfoo.Product.Data.Sales
 
 open System.Linq
 open Shopfoo.Common
@@ -7,8 +7,19 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
 
-module private Fakes =
-    let private unitsSold price date quantity : Sale = {
+type SaleRepository(sales: Sale seq) =
+    let repository =
+        sales
+        |> Seq.groupBy _.SKU
+        |> Seq.map (fun (sku, sales) -> sku, sales |> Seq.toList)
+        |> _.ToDictionary(fst, snd)
+
+    member _.GetBookSales(sku) =
+            repository.TryGetValue(sku) |> Option.ofPair
+
+[<AutoOpen>]
+module Helpers =
+    let unitsSold price date quantity : Sale = {
         SKU = SKUUnknown.SKUUnknown.AsSKU
         Date = date
         Price = price
@@ -18,6 +29,7 @@ module private Fakes =
     type ISBN with
         member isbn.Sales(sales: Sale seq) = [ for sale in sales -> { sale with SKU = isbn.AsSKU } ]
 
+module private FakeSales =
     let oneYear =
         ResizeArray [
             yield!
@@ -51,15 +63,11 @@ module private Fakes =
                 ]
         ]
 
-module Pipeline =
-    let private repository =
-        Fakes.oneYear
-        |> Seq.groupBy _.SKU
-        |> Seq.map (fun (sku, sales) -> sku, sales |> Seq.toList)
-        |> _.ToDictionary(fst, snd)
+module internal Pipeline =
+    let fakeRepository = SaleRepository(FakeSales.oneYear)
 
-    let getSales sku =
+    let getSales (repository: SaleRepository) sku =
         async {
             do! Fake.latencyInMilliseconds 250
-            return repository.TryGetValue(sku) |> Option.ofPair
+            return repository.GetBookSales(sku)
         }
