@@ -18,12 +18,12 @@ module Pipeline =
                 return! Books.Pipeline.getProducts ()
 
             | Provider.FakeStore ->
-                match! FakeStore.Pipeline.getProducts fakeStoreClient with
+                match! FakeStore.Pipeline.getProducts (fakeStoreClient :> FakeStore.IFakeStoreClient) with
                 | Ok data -> return data
                 | Error _ -> return []
         }
 
-    let getProduct (client: OpenLibrary.OpenLibraryClient) (sku: SKU) =
+    let getProduct (client: OpenLibrary.IOpenLibraryClient) (sku: SKU) =
         match sku.Type with
         | SKUType.FSID fsid -> FakeStore.Pipeline.getProduct fsid
         | SKUType.ISBN isbn -> Books.Pipeline.getProduct isbn

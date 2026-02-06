@@ -32,8 +32,8 @@ type IProductApi =
 type internal Api
     (
         interpreterFactory: IInterpreterFactory, // ↩
-        fakeStoreClient: FakeStore.FakeStoreClient,
-        openLibraryClient: OpenLibrary.OpenLibraryClient
+        fakeStoreClient: FakeStore.IFakeStoreClient,
+        openLibraryClient: OpenLibrary.IOpenLibraryClient
     ) =
     let interpret = interpreterFactory.Create(ProductDomain)
 

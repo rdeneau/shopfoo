@@ -5,6 +5,7 @@ module internal Shopfoo.Product.Data.FakeStore
 open System
 open System.Collections.Concurrent
 open System.Net.Http
+open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Shopfoo.Common
 open Shopfoo.Data.Http
@@ -25,6 +26,10 @@ type ProductDto = {
     Image: string
 }
 
+[<Interface>]
+type IFakeStoreClient =
+    abstract member GetProductsAsync: unit -> Task<Result<ProductDto list, DataRelatedError>>
+
 type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApiSerializerFactory) =
     let serializer = serializerFactory.Json(HttpApiName.FakeStore)
 
@@ -35,6 +40,9 @@ type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApi
             let! content = response.TryReadContentAsStringAsync(request)
             return serializer.TryDeserializeResult<ProductDto list>(content)
         }
+
+    interface IFakeStoreClient with
+        member this.GetProductsAsync() = this.GetProductsAsync()
 
 [<RequireQualifiedAccess>]
 module private Mappers =
@@ -107,7 +115,7 @@ type private InMemoryProductCache() =
 module internal Pipeline =
     let private cache = InMemoryProductCache()
 
-    let getProducts (client: FakeStoreClient) =
+    let getProducts (client: IFakeStoreClient) =
         asyncResult {
             match cache.TryGetAllProducts() with
             | Some cachedProducts -> // ↩

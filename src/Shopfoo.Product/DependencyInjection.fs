@@ -41,4 +41,6 @@ type IServiceCollection with
                 let options = sp.GetRequiredService<IOptions<OpenLibrarySettings>>()
                 { CoverBaseUrl = options.Value.CoverBaseUrl }
             )
+            .AddSingleton<IFakeStoreClient>(fun sp -> sp.GetRequiredService<FakeStoreClient>() :> IFakeStoreClient)
+            .AddSingleton<IOpenLibraryClient>(fun sp -> sp.GetRequiredService<OpenLibraryClient>() :> IOpenLibraryClient)
             .AddSingleton<IProductApi, Api>()

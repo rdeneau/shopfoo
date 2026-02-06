@@ -6,6 +6,7 @@ open System
 open System.Net
 open System.Net.Http
 open System.Text.Json.Serialization
+open System.Threading.Tasks
 open FsToolkit.ErrorHandling
 open Shopfoo.Data.Http
 open Shopfoo.Domain.Types
@@ -119,6 +120,16 @@ module internal Dto =
 
 type internal OpenLibraryClientSettings = { CoverBaseUrl: string }
 
+[<Interface>]
+type IOpenLibraryClient =
+    abstract member GetAuthorAsync: string -> Task<Result<AuthorDto, DataRelatedError>>
+    abstract member GetBookByIsbnAsync: ISBN -> Task<Result<BookDto, DataRelatedError>>
+    abstract member GetBookByOlidAsync: OLID -> Task<Result<BookDto, DataRelatedError>>
+    abstract member GetWorkAsync: string -> Task<Result<WorkDto, DataRelatedError>>
+    abstract member SearchAuthorsAsync: string -> Task<Result<SearchAuthorsResponseDto, DataRelatedError>>
+    abstract member SearchBooksAsync: string -> Task<Result<SearchBooksResponseDto, DataRelatedError>>
+    abstract member GetCoverUrl: CoverKey * CoverSize -> string
+
 type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFactory: HttpApiSerializerFactory) =
     let serializer = serializerFactory.Json(HttpApiName.OpenLibrary)
 
@@ -175,6 +186,15 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFact
             | CoverSize.Large -> "L"
 
         $"%s{settings.CoverBaseUrl}/%s{key}-%s{size}.jpg"
+
+    interface IOpenLibraryClient with
+        member this.GetAuthorAsync(authorKey) = this.GetAuthorAsync(authorKey)
+        member this.GetBookByIsbnAsync(isbn) = this.GetBookByIsbnAsync(isbn)
+        member this.GetBookByOlidAsync(olid) = this.GetBookByOlidAsync(olid)
+        member this.GetWorkAsync(workKey) = this.GetWorkAsync(workKey)
+        member this.SearchAuthorsAsync(searchTerm) = this.SearchAuthorsAsync(searchTerm)
+        member this.SearchBooksAsync(searchTerm) = this.SearchBooksAsync(searchTerm)
+        member this.GetCoverUrl(coverKey, coverSize) = this.GetCoverUrl(coverKey, coverSize)
 
 [<RequireQualifiedAccess>]
 module private Mappers =
@@ -254,7 +274,7 @@ module private Mappers =
             |> Option.defaultValue (CoverKey.ISBN isbn)
 
 module internal Pipeline =
-    let getProductByOlid (client: OpenLibraryClient) olid =
+    let getProductByOlid (client: IOpenLibraryClient) olid =
         taskResult {
             let! bookDto = client.GetBookByOlidAsync olid
 
@@ -275,13 +295,13 @@ module internal Pipeline =
         }
         |> Async.AwaitTask
 
-    let searchAuthors (client: OpenLibraryClient) searchTerm =
+    let searchAuthors (client: IOpenLibraryClient) searchTerm =
         async {
             let! result = client.SearchAuthorsAsync(searchTerm) |> Async.AwaitTask
             return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedAuthors
         }
 
-    let searchBooks (client: OpenLibraryClient) searchTerm =
+    let searchBooks (client: IOpenLibraryClient) searchTerm =
         async {
             let! result = client.SearchBooksAsync(searchTerm) |> Async.AwaitTask
             return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedBooks

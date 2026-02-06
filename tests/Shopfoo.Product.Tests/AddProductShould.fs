@@ -1,16 +1,17 @@
-namespace Shopfoo.Product.Tests.Workflows
+namespace Shopfoo.Product.Tests
 
 open System
 open Shopfoo.Product
+open Shopfoo.Product.Tests
 open Shopfoo.Product.Tests.Fakes
 open TUnit.Core
 
-type AddProductWorkflowShould() =
+type AddProductShould() =
     [<Test>]
     member this.``add product and prices without downcasting errors``() =
         async {
-            let interpreterFactory = MockInterpreterFactory()
-            let api: IProductApi = Api(interpreterFactory, null, null)
+            use fixture = new ApiTestFixture()
+            let api = fixture.GetService<IProductApi>()
             let product = createValidBookProduct ()
 
             let! result = api.AddProduct product
