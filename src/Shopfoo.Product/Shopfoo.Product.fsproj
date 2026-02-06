@@ -20,6 +20,7 @@
     <Compile Include="Workflows\SaveProduct.fs" />
     <Compile Include="Data\Prelude.fs" />
     <Compile Include="Data\Helpers.fs" />
+    <Compile Include="Data\InMemoryProductCache.fs" />
     <Compile Include="Data\FakeStore.fs" />
     <Compile Include="Data\OpenLibrary.fs" />
     <Compile Include="Data\Books.fs" />

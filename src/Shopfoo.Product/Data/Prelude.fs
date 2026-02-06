@@ -30,7 +30,7 @@ type internal FakeRepository<'k, 'v when 'k: comparison>(data: 'v seq, getKey: '
         |> Option.map List.ofSeq
 
 [<RequireQualifiedAccess>]
-module ISBN =
+module internal ISBN =
     let CleanArchitecture = ISBN "9780134494166"
     let CleanCode = ISBN "9780132350884"
     let CodeThatFitsInYourHead = ISBN "9780137464326"

@@ -1,6 +1,6 @@
-﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Product.Data.Books
+﻿module Shopfoo.Product.Data.Books
 
+open System.Collections.Generic
 open FsToolkit.ErrorHandling
 open Shopfoo.Common
 open Shopfoo.Domain.Types
@@ -9,7 +9,7 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Product.Data
 
 [<AutoOpen>]
-module internal Dto =
+module Dto =
     type AuthorDto = { Id: OLID; Name: string }
 
     type BookDto = {
@@ -22,7 +22,82 @@ module internal Dto =
         Tags: string list
     }
 
-module private Db =
+type BooksRepository = Dictionary<ISBN, BookDto>
+
+module private Mappers =
+    module DtoToModel =
+        let mapBookDetails (dto: BookDto) : Book = {
+            ISBN = dto.ISBN
+            Authors = Set [ for authorDto in dto.Authors -> { OLID = authorDto.Id; Name = authorDto.Name } ]
+            Subtitle = dto.Subtitle
+            Tags = dto.Tags |> Set.ofList
+        }
+
+        let mapBook (dto: BookDto) : Product = {
+            SKU = dto.ISBN.AsSKU
+            Title = dto.Title
+            Description = dto.Description
+            Category = Category.Books(mapBookDetails dto)
+            ImageUrl = ImageUrl.Valid dto.Image
+        }
+
+    module ModelToDto =
+        let mapBook (book: Book) (product: Product) : BookDto = {
+            ISBN = book.ISBN
+            Title = product.Title
+            Description = product.Description
+            Authors = [ for author in book.Authors -> { Id = author.OLID; Name = author.Name } ]
+            Subtitle = book.Subtitle
+            Image = product.ImageUrl.Url
+            Tags = book.Tags |> Set.toList
+        }
+
+type internal BooksPipeline(repository: BooksRepository) =
+    let tryGetBookWithIsbn (product: Product) =
+        match product.Category, product.SKU.Type with
+        | Category.Bazaar _, _ -> // ↩
+            Error(GuardClause { EntityName = nameof product; ErrorMessage = "Expected Book" })
+        | Category.Books { ISBN = ISBN String.NullOrWhiteSpace }, _ ->
+            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Book %s{product.SKU.Value} without ISBN" })
+        | Category.Books book, SKUType.ISBN isbn when isbn <> book.ISBN ->
+            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Mismatch between SKU %s{product.SKU.Value} and ISBN %s{book.ISBN.Value}" })
+        | Category.Books book, SKUType.ISBN _ -> // ↩
+            Ok book
+        | Category.Books _, _ -> // ↩
+            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Expected ISBN SKU, received %s{product.SKU.Value}" })
+
+    member _.GetProducts() : Async<Product list> =
+        async {
+            do! Fake.latencyInMilliseconds 500
+            return [ for dto in repository.Values -> Mappers.DtoToModel.mapBook dto ]
+        }
+
+    member _.GetProduct(isbn: ISBN) : Async<Product option> =
+        async {
+            do! Fake.latencyInMilliseconds 250
+            let product = repository.Values |> Seq.tryFind (fun x -> x.ISBN = isbn)
+            return product |> Option.map Mappers.DtoToModel.mapBook
+        }
+
+    member _.AddProduct(product: Product) : Async<Result<unit, Error>> =
+        asyncResult {
+            do! Fake.latencyInMilliseconds 250
+            let! book = tryGetBookWithIsbn product
+            let dto = Mappers.ModelToDto.mapBook book product
+
+            repository.Add(dto.ISBN, dto)
+            return ()
+        }
+
+    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
+        asyncResult {
+            do! Fake.latencyInMilliseconds 300
+            let! book = tryGetBookWithIsbn product
+            let dto = Mappers.ModelToDto.mapBook book product
+            return! repository |> Dictionary.tryUpdateBy _.ISBN dto |> liftDataRelatedError
+        }
+
+module private Fakes =
     let andyHunt = { Id = OLID "OL1391034A"; Name = "Andy Hunt" }
     let daveThomas = { Id = OLID "OL1439324A"; Name = "Dave Thomas" }
     let douglasCrockford = { Id = OLID "OL14426346A"; Name = "Douglas Crockford" }
@@ -176,7 +251,7 @@ module private Db =
         Tags = [ "Software Craftsmanship"; "Testing" ]
     }
 
-    let all = [
+    let allBooks = [
         cleanArchitecture
         cleanCode
         codeThatFitsInYourHead
@@ -192,76 +267,6 @@ module private Db =
         unitTesting
     ]
 
-module private Mappers =
-    module DtoToModel =
-        let mapBookDetails (dto: BookDto) : Book = {
-            ISBN = dto.ISBN
-            Authors = Set [ for authorDto in dto.Authors -> { OLID = authorDto.Id; Name = authorDto.Name } ]
-            Subtitle = dto.Subtitle
-            Tags = dto.Tags |> Set.ofList
-        }
-
-        let mapBook (dto: BookDto) : Product = {
-            SKU = dto.ISBN.AsSKU
-            Title = dto.Title
-            Description = dto.Description
-            Category = Category.Books(mapBookDetails dto)
-            ImageUrl = ImageUrl.Valid dto.Image
-        }
-
-    module ModelToDto =
-        let mapBook (book: Book) (product: Product) : BookDto = {
-            ISBN = book.ISBN
-            Title = product.Title
-            Description = product.Description
-            Authors = [ for author in book.Authors -> { Id = author.OLID; Name = author.Name } ]
-            Subtitle = book.Subtitle
-            Image = product.ImageUrl.Url
-            Tags = book.Tags |> Set.toList
-        }
-
-module internal Pipeline =
-    let repository = Db.all |> Dictionary.ofListBy _.ISBN
-
-    let getProducts () =
-        async {
-            do! Fake.latencyInMilliseconds 500
-            return [ for dto in repository.Values -> Mappers.DtoToModel.mapBook dto ]
-        }
-
-    let getProduct (isbn: ISBN) =
-        async {
-            do! Fake.latencyInMilliseconds 250
-            let product = repository.Values |> Seq.tryFind (fun x -> x.ISBN = isbn)
-            return product |> Option.map Mappers.DtoToModel.mapBook
-        }
-
-    let private tryGetBookWithIsbn (product: Product) =
-        match product.Category, product.SKU.Type with
-        | Category.Bazaar _, _ -> // ↩
-            Error(GuardClause { EntityName = nameof product; ErrorMessage = "Expected Book" })
-        | Category.Books { ISBN = ISBN String.NullOrWhiteSpace }, _ ->
-            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Book %s{product.SKU.Value} without ISBN" })
-        | Category.Books book, SKUType.ISBN isbn when isbn <> book.ISBN ->
-            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Mismatch between SKU %s{product.SKU.Value} and ISBN %s{book.ISBN.Value}" })
-        | Category.Books book, SKUType.ISBN _ -> // ↩
-            Ok book
-        | Category.Books _, _ -> // ↩
-            Error(GuardClause { EntityName = nameof SKU; ErrorMessage = $"Expected ISBN SKU, received %s{product.SKU.Value}" })
-
-    let addProduct product =
-        asyncResult {
-            do! Fake.latencyInMilliseconds 250
-            let! book = tryGetBookWithIsbn product
-            let dto = Mappers.ModelToDto.mapBook book product
-            repository.Add(dto.ISBN, dto)
-            return ()
-        }
-
-    let saveProduct product =
-        asyncResult {
-            do! Fake.latencyInMilliseconds 300
-            let! book = tryGetBookWithIsbn product
-            let dto = Mappers.ModelToDto.mapBook book product
-            return! repository |> Dictionary.tryUpdateBy _.ISBN dto |> liftDataRelatedError
-        }
+[<RequireQualifiedAccess>]
+module internal BooksRepository =
+    let instance: BooksRepository = Fakes.allBooks |> Dictionary.ofListBy _.ISBN

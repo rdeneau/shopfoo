@@ -1,48 +1,34 @@
 ﻿/// Fake Store API
 /// https://fakestoreapi.com/
-module internal Shopfoo.Product.Data.FakeStore
+module Shopfoo.Product.Data.FakeStore
 
 open System
-open System.Collections.Concurrent
 open System.Net.Http
 open System.Threading.Tasks
 open FsToolkit.ErrorHandling
-open Shopfoo.Common
 open Shopfoo.Data.Http
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 
-type ProductId = int
+[<AutoOpen>]
+module Dto =
+    type ProductId = int
 
-[<CLIMutable>]
-type ProductDto = {
-    Id: ProductId
-    Title: string
-    Price: decimal
-    Description: string
-    Category: string
-    Image: string
-}
+    [<CLIMutable>]
+    type ProductDto = {
+        Id: ProductId
+        Title: string
+        Price: decimal
+        Description: string
+        Category: string
+        Image: string
+    }
 
 [<Interface>]
 type IFakeStoreClient =
     abstract member GetProductsAsync: unit -> Task<Result<ProductDto list, DataRelatedError>>
-
-type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApiSerializerFactory) =
-    let serializer = serializerFactory.Json(HttpApiName.FakeStore)
-
-    member _.GetProductsAsync() =
-        task {
-            use request = HttpRequestMessage.Get(Uri.Relative "products")
-            use! response = httpClient.SendAsync(request)
-            let! content = response.TryReadContentAsStringAsync(request)
-            return serializer.TryDeserializeResult<ProductDto list>(content)
-        }
-
-    interface IFakeStoreClient with
-        member this.GetProductsAsync() = this.GetProductsAsync()
 
 [<RequireQualifiedAccess>]
 module private Mappers =
@@ -63,59 +49,10 @@ module private Mappers =
             | "jewelery" -> Some BazaarCategory.Jewelry
             | _ -> None
 
-type private InMemoryProductCache() =
-    let cache = ConcurrentDictionary<FSID, Product * Prices>()
+type internal FakeStorePipeline(fakeStoreClient: IFakeStoreClient) =
+    let cache = InMemoryProductCache()
 
-    member _.TryGetProduct(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map fst
-    member _.TryGetPrice(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map snd
-
-    member _.TryGetAllProducts() =
-        match cache.Values |> Seq.toList with
-        | [] -> None
-        | xs -> Some [ for product, _ in xs -> product ]
-
-    member private _.Set(fsid, ?product: Product, ?prices: Prices) =
-        result {
-            let! entry =
-                match product, prices, cache.TryGetValue(fsid) |> Option.ofPair with
-                | Some product, Some prices, _ -> Ok(product, prices)
-                | Some product, None, Some(_, existingPrices) -> Ok(product, existingPrices)
-                | None, Some prices, Some(existingProduct, _) -> Ok(existingProduct, prices)
-                | None, None, Some(existingProduct, existingPrices) -> Ok(existingProduct, existingPrices)
-                | _, _, None -> Error(GuardClause { EntityName = nameof FSID; ErrorMessage = "Either product or prices must be provided" })
-
-            cache.AddOrUpdate(fsid, entry, fun _ _ -> entry) |> ignore
-            return ()
-        }
-
-    member private _.WhenFromFakeStore(sku: SKU, f) =
-        let error = GuardClause { EntityName = nameof SKU; ErrorMessage = $"Expected FSID, received %s{sku.Value}" }
-
-        sku.Match( // ↩
-            withFSID = f,
-            withISBN = (fun _ -> Error error),
-            withOLID = (fun _ -> Error error)
-        )
-
-    member this.SetProduct(product: Product) = this.WhenFromFakeStore(product.SKU, fun fsid -> this.Set(fsid, product = product))
-    member this.SetPrices(prices: Prices) = this.WhenFromFakeStore(prices.SKU, fun fsid -> this.Set(fsid, prices = prices))
-
-    member this.SetAll(entries) =
-        cache.Clear()
-
-        entries
-        |> List.traverseResultM (fun (fsid, product: Product, prices: Prices) ->
-            if product.SKU = prices.SKU then
-                this.Set(fsid, product, prices)
-            else
-                Error(GuardClause { EntityName = nameof SKU; ErrorMessage = "Mismatched SKUs between product and prices" })
-        )
-        |> Result.map ignore
-
-module internal Pipeline =
-    let private cache = InMemoryProductCache()
-
-    let getProducts (client: IFakeStoreClient) =
+    member _.GetProducts() : Async<Result<Product list, Error>> =
         asyncResult {
             match cache.TryGetAllProducts() with
             | Some cachedProducts -> // ↩
@@ -124,7 +61,7 @@ module internal Pipeline =
             | None ->
                 let! productsDtos =
                     task {
-                        let! res = client.GetProductsAsync()
+                        let! res = fakeStoreClient.GetProductsAsync()
                         return res |> liftDataRelatedError
                     }
 
@@ -151,26 +88,40 @@ module internal Pipeline =
                 return entries |> List.map (fun (_, product, _) -> product)
         }
 
-    let getPrice fsid =
+    member _.GetPrice(fsid: FSID) : Async<Prices option> =
         async {
             do! Fake.latencyInMilliseconds 100
             return cache.TryGetPrice(fsid)
         }
 
-    let getProduct fsid =
+    member _.GetProduct(fsid: FSID) : Async<Product option> =
         async {
             do! Fake.latencyInMilliseconds 150
             return cache.TryGetProduct(fsid)
         }
 
-    let savePrices prices =
+    member _.SavePrices(prices: Prices) : Async<Result<unit, Error>> =
         asyncResult {
             do! Fake.latencyInMilliseconds 280
             do! cache.SetPrices(prices)
         }
 
-    let saveProduct product =
+    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
         asyncResult {
             do! Fake.latencyInMilliseconds 400
             do! cache.SetProduct(product)
         }
+
+type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApiSerializerFactory) =
+    let serializer = serializerFactory.Json(HttpApiName.FakeStore)
+
+    member _.GetProductsAsync() =
+        task {
+            use request = HttpRequestMessage.Get(Uri.Relative "products")
+            use! response = httpClient.SendAsync(request)
+            let! content = response.TryReadContentAsStringAsync(request)
+            return serializer.TryDeserializeResult<ProductDto list>(content)
+        }
+
+    interface IFakeStoreClient with
+        member this.GetProductsAsync() = this.GetProductsAsync()

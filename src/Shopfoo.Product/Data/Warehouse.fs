@@ -1,5 +1,4 @@
-﻿[<RequireQualifiedAccess>]
-module Shopfoo.Product.Data.Warehouse
+﻿module Shopfoo.Product.Data.Warehouse
 
 open System
 open Shopfoo.Domain.Types
@@ -13,8 +12,8 @@ type StockEventRepository(stockEvents: StockEvent seq) =
     member _.AddStockEvent(stockEvent: StockEvent) : unit = repository.Add stockEvent
     member _.GetStockEvents(sku: SKU) : StockEvent list option = repository.Get sku
 
-module internal Pipeline =
-    let adjustStock (repository: StockEventRepository) { Stock.SKU = sku; Quantity = quantity } =
+type internal WarehousePipeline(repository: StockEventRepository) =
+    member _.AdjustStock({ SKU = sku; Quantity = quantity }: Stock) : Async<Result<unit, 'a>> =
         async {
             do! Fake.latencyInMilliseconds 250
 
@@ -28,15 +27,14 @@ module internal Pipeline =
             return Ok()
         }
 
-    let getStockEvents (repository: StockEventRepository) sku =
+    member _.GetStockEvents(sku: SKU) : Async<StockEvent list option> =
         async {
             do! Fake.latencyInMilliseconds 150
             return repository.GetStockEvents sku
         }
 
-[<RequireQualifiedAccess>]
-module internal Fakes =
-    let private oneYear = [
+module private Fakes =
+    let oneYear = [
         yield!
             ISBN.CleanArchitecture.Events [ // ↩
                 10 |> Units.Purchased (Dollars 24.99m) (365 |> daysAgo)
@@ -61,4 +59,6 @@ module internal Fakes =
             ]
     ]
 
-    let repository = StockEventRepository oneYear
+[<RequireQualifiedAccess>]
+module internal StockEventRepository =
+    let instance = StockEventRepository Fakes.oneYear

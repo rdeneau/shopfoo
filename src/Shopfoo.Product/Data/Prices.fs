@@ -1,10 +1,39 @@
-﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Product.Data.Prices
+﻿module Shopfoo.Product.Data.Prices
 
+open System.Collections.Generic
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
+open Shopfoo.Product.Data.FakeStore
+
+type PricesRepository = Dictionary<SKU, Prices>
+
+type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: FakeStorePipeline) =
+    member _.GetPrices(sku: SKU) : Async<Prices option> =
+        async {
+            match sku.Type with
+            | SKUType.ISBN _ ->
+                do! Fake.latencyInMilliseconds 100
+                let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
+                return prices
+            | SKUType.FSID fsid -> return! fakeStorePipeline.GetPrice fsid
+            | SKUType.OLID _
+            | SKUType.Unknown -> return None
+        }
+
+    member _.SavePrices(prices: Prices) : Async<Result<unit, Error>> =
+        async {
+            do! Fake.latencyInMilliseconds 250
+            return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError
+        }
+
+    member _.AddPrices(prices: Prices) : Async<Result<unit, 'a>> =
+        async {
+            do! Fake.latencyInMilliseconds 200
+            repository.Add(prices.SKU, prices)
+            return Ok()
+        }
 
 module private Fakes =
     let private cleanArchitecture = Prices.Create(ISBN.CleanArchitecture, USD, 39.90m)
@@ -19,7 +48,7 @@ module private Fakes =
     let private thePragmaticProgrammer = Prices.Create(ISBN.ThePragmaticProgrammer, EUR, 32.86m, 49.37m)
     let private unitTesting = Prices.Create(ISBN.UnitTesting, EUR, 36.44m, 45.17m)
 
-    let all = [
+    let allPrices = [
         cleanArchitecture
         cleanCode
         codeThatFitsInYourHead
@@ -33,30 +62,6 @@ module private Fakes =
         unitTesting
     ]
 
-module Pipeline =
-    let repository = Fakes.all |> Dictionary.ofListBy _.SKU
-
-    let getPrices (sku: SKU) =
-        async {
-            match sku.Type with
-            | SKUType.ISBN _ ->
-                do! Fake.latencyInMilliseconds 100
-                let prices = repository.Values |> Seq.tryFind (fun x -> x.SKU = sku)
-                return prices
-            | SKUType.FSID fsid -> return! FakeStore.Pipeline.getPrice fsid
-            | SKUType.OLID _
-            | SKUType.Unknown -> return None
-        }
-
-    let savePrices (prices: Prices) =
-        async {
-            do! Fake.latencyInMilliseconds 250
-            return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError
-        }
-
-    let addPrices (prices: Prices) =
-        async {
-            do! Fake.latencyInMilliseconds 200
-            repository.Add(prices.SKU, prices)
-            return Ok()
-        }
+[<RequireQualifiedAccess>]
+module internal PricesRepository =
+    let instance: PricesRepository = Fakes.allPrices |> Dictionary.ofListBy _.SKU

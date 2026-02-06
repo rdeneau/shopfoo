@@ -1,27 +1,25 @@
-﻿[<RequireQualifiedAccess>]
-module Shopfoo.Product.Data.Sales
+﻿module Shopfoo.Product.Data.Sales
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
 open Shopfoo.Product.Data.Helpers
 
-type SaleRepository(sales: Sale seq) =
+type SalesRepository(sales: Sale seq) =
     let repository = FakeRepository(sales, _.SKU)
 
     member _.AddSale(sale: Sale) : unit = repository.Add sale
     member _.GetSales(sku: SKU) : Sale list option = repository.Get sku
 
-module internal Pipeline =
-    let getSales (repository: SaleRepository) sku =
+type internal SalesPipeline(repository: SalesRepository) =
+    member _.GetSales(sku: SKU) : Async<Sale list option> =
         async {
             do! Fake.latencyInMilliseconds 250
             return repository.GetSales sku
         }
 
-[<RequireQualifiedAccess>]
-module internal Fakes =
-    let private oneYear = [
+module private Fakes =
+    let oneYear = [
         yield!
             ISBN.CleanArchitecture.Sales [
                 1 |> unitsSold (Dollars 38.99m) (342 |> daysAgo)
@@ -53,4 +51,6 @@ module internal Fakes =
             ]
     ]
 
-    let repository = SaleRepository oneYear
+[<RequireQualifiedAccess>]
+module internal SalesRepository =
+    let instance = SalesRepository Fakes.oneYear

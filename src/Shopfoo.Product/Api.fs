@@ -6,7 +6,11 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects.Dependencies
-open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Catalog
+open Shopfoo.Product.Data.OpenLibrary
+open Shopfoo.Product.Data.Prices
+open Shopfoo.Product.Data.Sales
+open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.Workflows
 open Shopfoo.Product.Workflows.Instructions
 
@@ -31,41 +35,43 @@ type IProductApi =
 
 type internal Api
     (
-        interpreterFactory: IInterpreterFactory, // ↩
-        fakeStoreClient: FakeStore.IFakeStoreClient,
-        openLibraryClient: OpenLibrary.IOpenLibraryClient,
-        saleRepository: Sales.SaleRepository,
-        stockEventRepository: Warehouse.StockEventRepository
+        interpreterFactory: IInterpreterFactory,
+        catalogPipeline: CatalogPipeline,
+        openLibraryPipeline: OpenLibraryPipeline,
+        pricesPipeline: PricesPipeline,
+        salesPipeline: SalesPipeline,
+        warehousePipeline: WarehousePipeline
     ) =
     let interpret = interpreterFactory.Create(ProductDomain)
 
     let runEffect (productEffect: IProductEffect<_>) =
         match productEffect.Instruction with
-        | GetPrices query -> interpret.Query(query, Prices.Pipeline.getPrices)
-        | GetSales query -> interpret.Query(query, Sales.Pipeline.getSales saleRepository)
-        | GetStockEvents query -> interpret.Query(query, Warehouse.Pipeline.getStockEvents stockEventRepository)
-        | SavePrices command -> interpret.Command(command, Prices.Pipeline.savePrices)
-        | SaveProduct command -> interpret.Command(command, Catalog.Pipeline.saveProduct)
-        | AddPrices command -> interpret.Command(command, Prices.Pipeline.addPrices)
-        | AddProduct command -> interpret.Command(command, Catalog.Pipeline.addProduct)
+        | GetPrices query -> interpret.Query(query, pricesPipeline.GetPrices)
+        | GetSales query -> interpret.Query(query, salesPipeline.GetSales)
+        | GetStockEvents query -> interpret.Query(query, warehousePipeline.GetStockEvents)
+        | SavePrices command -> interpret.Command(command, pricesPipeline.SavePrices)
+        | SaveProduct command -> interpret.Command(command, catalogPipeline.SaveProduct)
+        | AddPrices command -> interpret.Command(command, pricesPipeline.AddPrices)
+        | AddProduct command -> interpret.Command(command, catalogPipeline.AddProduct)
 
     let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args = // ↩
         interpret.Workflow runEffect workflow args
 
     interface IProductApi with
-        member val GetProducts = Catalog.Pipeline.getProducts fakeStoreClient
-        member val GetProduct = Catalog.Pipeline.getProduct openLibraryClient
+        member val GetProducts = catalogPipeline.GetProducts
+        member val GetProduct = catalogPipeline.GetProduct
         member val SaveProduct = interpretWorkflow SaveProductWorkflow.Instance
         member val AddProduct = interpretWorkflow AddProductWorkflow.Instance
 
-        member val GetPrices = Prices.Pipeline.getPrices
+        member val GetPrices = pricesPipeline.GetPrices
         member val SavePrices = interpretWorkflow SavePricesWorkflow.Instance
         member val MarkAsSoldOut = interpretWorkflow MarkAsSoldOutWorkflow.Instance
         member val RemoveListPrice = interpretWorkflow RemoveListPriceWorkflow.Instance
 
-        member val AdjustStock = Warehouse.Pipeline.adjustStock stockEventRepository
-        member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
-        member val GetSales = Sales.Pipeline.getSales saleRepository
+        member val GetSales = salesPipeline.GetSales
 
-        member val SearchAuthors = OpenLibrary.Pipeline.searchAuthors openLibraryClient
-        member val SearchBooks = OpenLibrary.Pipeline.searchBooks openLibraryClient
+        member val AdjustStock = warehousePipeline.AdjustStock
+        member val DetermineStock = interpretWorkflow DetermineStockWorkflow.Instance
+
+        member val SearchAuthors = openLibraryPipeline.SearchAuthors
+        member val SearchBooks = openLibraryPipeline.SearchBooks

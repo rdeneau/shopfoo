@@ -4,11 +4,15 @@ open System
 open System.Net.Http
 open Shopfoo.Data.DependencyInjection
 open Shopfoo.Domain.Types.Errors
-open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Books
+open Shopfoo.Product.Data.Catalog
 open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Data.OpenLibrary
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Options
+open Shopfoo.Product.Data.Prices
+open Shopfoo.Product.Data.Sales
+open Shopfoo.Product.Data.Warehouse
 
 module Sections =
     [<Literal>]
@@ -36,14 +40,38 @@ type IServiceCollection with
 
     member services.AddProductApi() =
         services
+            // FakeStore
             .AddClient<FakeStoreClient, FakeStoreSettings>(_.BaseUrl)
+            .AddSingleton<IFakeStoreClient>(fun sp -> sp.GetRequiredService<FakeStoreClient>() :> IFakeStoreClient)
+            .AddSingleton<FakeStorePipeline>()
+
+            // OpenLibrary
             .AddClient<OpenLibraryClient, OpenLibrarySettings>(_.BaseUrl)
             .AddSingleton<OpenLibraryClientSettings>(fun sp ->
                 let options = sp.GetRequiredService<IOptions<OpenLibrarySettings>>()
                 { CoverBaseUrl = options.Value.CoverBaseUrl }
             )
-            .AddSingleton<IFakeStoreClient>(fun sp -> sp.GetRequiredService<FakeStoreClient>() :> IFakeStoreClient)
             .AddSingleton<IOpenLibraryClient>(fun sp -> sp.GetRequiredService<OpenLibraryClient>() :> IOpenLibraryClient)
-            .AddSingleton(Sales.Fakes.repository)
-            .AddSingleton(Warehouse.Fakes.repository)
+            .AddSingleton<OpenLibraryPipeline>()
+
+            // Books
+            .AddSingleton(BooksRepository.instance)
+            .AddSingleton<BooksPipeline>()
+
+            // Catalog (Facade over FakeStore, OpenLibrary, Books)
+            .AddSingleton<CatalogPipeline>()
+
+            // Prices
+            .AddSingleton(PricesRepository.instance)
+            .AddSingleton<PricesPipeline>()
+
+            // Sales
+            .AddSingleton(SalesRepository.instance)
+            .AddSingleton<SalesPipeline>()
+
+            // Warehouse
+            .AddSingleton(StockEventRepository.instance)
+            .AddSingleton<WarehousePipeline>()
+
+            // API
             .AddSingleton<IProductApi, Api>()

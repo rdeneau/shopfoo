@@ -1,42 +1,52 @@
-﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Product.Data.Catalog
+﻿module Shopfoo.Product.Data.Catalog
 
 open FsToolkit.ErrorHandling
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
-open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Books
+open Shopfoo.Product.Data.FakeStore
+open Shopfoo.Product.Data.OpenLibrary
 
 /// <summary>
-/// Facade pattern hiding the different data sources: <c>Books</c>, <c>OpenLibrary</c>, <c>FakeStore</c>
+/// Facade pattern hiding the different data pipelines (<c>Books</c>, <c>FakeStore</c>, <c>OpenLibrary</c>)
+/// linked to different product categories and providers.
 /// </summary>
-module Pipeline =
-    let getProducts fakeStoreClient provider =
+type internal CatalogPipeline
+    (
+        booksPipeline: BooksPipeline, // ↩
+        fakeStorePipeline: FakeStorePipeline,
+        openLibraryPipeline: OpenLibraryPipeline
+    ) =
+    member _.GetProducts(provider: Provider) : Async<Product list> =
         async {
             match provider with
             | Provider.OpenLibrary -> // ↩
-                return! Books.Pipeline.getProducts ()
+                return! booksPipeline.GetProducts()
 
             | Provider.FakeStore ->
-                match! FakeStore.Pipeline.getProducts (fakeStoreClient :> FakeStore.IFakeStoreClient) with
+                match! fakeStorePipeline.GetProducts() with
                 | Ok data -> return data
                 | Error _ -> return []
         }
 
-    let getProduct (client: OpenLibrary.IOpenLibraryClient) (sku: SKU) =
+    member _.GetProduct(sku: SKU) =
         match sku.Type with
-        | SKUType.FSID fsid -> FakeStore.Pipeline.getProduct fsid
-        | SKUType.ISBN isbn -> Books.Pipeline.getProduct isbn
-        | SKUType.OLID olid -> OpenLibrary.Pipeline.getProductByOlid client olid |> Async.map Result.toOption
+        | SKUType.FSID fsid -> fakeStorePipeline.GetProduct fsid
+        | SKUType.ISBN isbn -> booksPipeline.GetProduct isbn
+        | SKUType.OLID olid -> openLibraryPipeline.GetProductByOlid olid |> Async.map Result.toOption
         | SKUType.Unknown -> async { return None }
 
-    let saveProduct (product: Product) =
+    member _.SaveProduct(product: Product) =
         match product.Category with
-        | Category.Bazaar _ -> FakeStore.Pipeline.saveProduct product
-        | Category.Books _ -> Books.Pipeline.saveProduct product
+        | Category.Bazaar _ -> fakeStorePipeline.SaveProduct product
+        | Category.Books _ -> booksPipeline.SaveProduct product
 
-    let addProduct (product: Product) =
+    member _.AddProduct(product: Product) =
         match product.Category with
-        | Category.Books _ -> Books.Pipeline.addProduct product
+        | Category.Books _ -> booksPipeline.AddProduct product
         | Category.Bazaar _ ->
-            async { return Error(GuardClause { EntityName = nameof Product; ErrorMessage = "Adding Bazaar products is not supported" }) }
+            async {
+                let error = GuardClause { EntityName = nameof Product; ErrorMessage = "Adding Bazaar products is not supported" }
+                return Error error
+            }

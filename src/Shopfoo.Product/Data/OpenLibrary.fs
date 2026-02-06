@@ -1,6 +1,6 @@
 ﻿/// Open Library
 /// https://openlibrary.org/dev
-module internal Shopfoo.Product.Data.OpenLibrary
+module Shopfoo.Product.Data.OpenLibrary
 
 open System
 open System.Net
@@ -14,7 +14,7 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 
 [<AutoOpen>]
-module internal Dto =
+module Dto =
     [<CLIMutable>]
     type AuthorDto = {
         /// Example: "/authors/OL2653686A"
@@ -118,8 +118,6 @@ module internal Dto =
     [<CLIMutable>]
     type SearchBooksResponseDto = { NumFound: int; Docs: BookSearchDto list }
 
-type internal OpenLibraryClientSettings = { CoverBaseUrl: string }
-
 [<Interface>]
 type IOpenLibraryClient =
     abstract member GetAuthorAsync: string -> Task<Result<AuthorDto, DataRelatedError>>
@@ -129,72 +127,6 @@ type IOpenLibraryClient =
     abstract member SearchAuthorsAsync: string -> Task<Result<SearchAuthorsResponseDto, DataRelatedError>>
     abstract member SearchBooksAsync: string -> Task<Result<SearchBooksResponseDto, DataRelatedError>>
     abstract member GetCoverUrl: CoverKey * CoverSize -> string
-
-type internal OpenLibraryClient(httpClient: HttpClient, settings, serializerFactory: HttpApiSerializerFactory) =
-    let serializer = serializerFactory.Json(HttpApiName.OpenLibrary)
-
-    member private _.GetByKeyAsync<'dto>(key) =
-        task {
-            use request = HttpRequestMessage.Get(Uri.Relative $"%s{key}")
-            use! response = httpClient.SendAsync(request)
-            let! content = response.TryReadContentAsStringAsync(request)
-            return serializer.TryDeserializeResult<'dto>(content)
-        }
-
-    member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
-    member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
-    member this.GetBookByOlidAsync(OLID olid) = this.GetByKeyAsync<BookDto>($"/books/%s{olid}.json")
-
-    member this.GetWorkAsync(workKey: string) =
-        let key =
-            if workKey.StartsWith("/works/") then workKey
-            elif workKey.StartsWith("works/") then $"/%s{workKey}"
-            else $"/works/%s{workKey}"
-
-        this.GetByKeyAsync<WorkDto>(key)
-
-    member _.SearchAuthorsAsync(searchTerm: string) =
-        task {
-            let encodedTerm = WebUtility.UrlEncode(searchTerm)
-            use request = HttpRequestMessage.Get(Uri.Relative $"/search/authors.json?q=%s{encodedTerm}&limit=10")
-            use! response = httpClient.SendAsync(request)
-            let! content = response.TryReadContentAsStringAsync(request)
-            return serializer.TryDeserializeResult<SearchAuthorsResponseDto>(content)
-        }
-
-    member _.SearchBooksAsync(searchTerm: string) =
-        task {
-            let encodedTerm = WebUtility.UrlEncode(searchTerm)
-            let fields = "author_key,author_name,key,title,editions"
-            use request = HttpRequestMessage.Get(Uri.Relative $"/search.json?q=%s{encodedTerm}&limit=10&language=eng&fields=%s{fields}")
-            use! response = httpClient.SendAsync(request)
-            let! content = response.TryReadContentAsStringAsync(request)
-            return serializer.TryDeserializeResult<SearchBooksResponseDto>(content)
-        }
-
-    member _.GetCoverUrl(coverKey, coverSize) =
-        let key =
-            match coverKey with
-            | CoverKey.Id id -> $"id/%d{id}"
-            | CoverKey.ISBN isbn -> $"isbn/%s{isbn}"
-            | CoverKey.OLID olid -> $"olid/%s{olid}"
-
-        let size =
-            match coverSize with
-            | CoverSize.Small -> "S"
-            | CoverSize.Medium -> "M"
-            | CoverSize.Large -> "L"
-
-        $"%s{settings.CoverBaseUrl}/%s{key}-%s{size}.jpg"
-
-    interface IOpenLibraryClient with
-        member this.GetAuthorAsync(authorKey) = this.GetAuthorAsync(authorKey)
-        member this.GetBookByIsbnAsync(isbn) = this.GetBookByIsbnAsync(isbn)
-        member this.GetBookByOlidAsync(olid) = this.GetBookByOlidAsync(olid)
-        member this.GetWorkAsync(workKey) = this.GetWorkAsync(workKey)
-        member this.SearchAuthorsAsync(searchTerm) = this.SearchAuthorsAsync(searchTerm)
-        member this.SearchBooksAsync(searchTerm) = this.SearchBooksAsync(searchTerm)
-        member this.GetCoverUrl(coverKey, coverSize) = this.GetCoverUrl(coverKey, coverSize)
 
 [<RequireQualifiedAccess>]
 module private Mappers =
@@ -273,10 +205,10 @@ module private Mappers =
             |> Option.map CoverKey.Id
             |> Option.defaultValue (CoverKey.ISBN isbn)
 
-module internal Pipeline =
-    let getProductByOlid (client: IOpenLibraryClient) olid =
+type internal OpenLibraryPipeline(openLibraryClient: IOpenLibraryClient) =
+    member _.GetProductByOlid(olid: OLID) : Async<Result<Product, DataRelatedError>> =
         taskResult {
-            let! bookDto = client.GetBookByOlidAsync olid
+            let! bookDto = openLibraryClient.GetBookByOlidAsync olid
 
             let isbn =
                 match bookDto.Isbn13, bookDto.Isbn10 with
@@ -284,25 +216,85 @@ module internal Pipeline =
                 | _, Some(isbn10 :: _) -> ISBN isbn10
                 | _ -> ISBN ""
 
-            let! workDto = client.GetWorkAsync bookDto.Works[0].Key
-            let! authorDtos = workDto.Authors |> List.traverseTaskResultM (fun x -> client.GetAuthorAsync x.Author.Key)
+            let! workDto = openLibraryClient.GetWorkAsync bookDto.Works[0].Key
+            let! authorDtos = workDto.Authors |> List.traverseTaskResultM (fun x -> openLibraryClient.GetAuthorAsync x.Author.Key)
 
             let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
             let coverKey = Mappers.DtoToModel.mapCoverKey isbn bookDto.Covers
-            let imageUrl = client.GetCoverUrl(coverKey, CoverSize.Medium) |> ImageUrl.Valid
+            let imageUrl = openLibraryClient.GetCoverUrl(coverKey, CoverSize.Medium) |> ImageUrl.Valid
 
             return Mappers.DtoToModel.mapBook olid.AsSKU category imageUrl bookDto
         }
         |> Async.AwaitTask
 
-    let searchAuthors (client: IOpenLibraryClient) searchTerm =
+    member _.SearchAuthors(searchTerm: string) : Async<Result<BookAuthorSearchResults, Error>> =
         async {
-            let! result = client.SearchAuthorsAsync(searchTerm) |> Async.AwaitTask
+            let! result = openLibraryClient.SearchAuthorsAsync(searchTerm) |> Async.AwaitTask
             return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedAuthors
         }
 
-    let searchBooks (client: IOpenLibraryClient) searchTerm =
+    member _.SearchBooks(searchTerm: string) : Async<Result<BookSearchResults, Error>> =
         async {
-            let! result = client.SearchBooksAsync(searchTerm) |> Async.AwaitTask
+            let! result = openLibraryClient.SearchBooksAsync(searchTerm) |> Async.AwaitTask
             return result |> liftDataRelatedError |> Result.map Mappers.DtoToModel.mapSearchedBooks
         }
+
+type internal OpenLibraryClientSettings = { CoverBaseUrl: string }
+
+type internal OpenLibraryClient(httpClient: HttpClient, settings: OpenLibraryClientSettings, serializerFactory: HttpApiSerializerFactory) =
+    let serializer = serializerFactory.Json(HttpApiName.OpenLibrary)
+
+    member private _.GetByKeyAsync<'dto>(key) =
+        task {
+            use request = HttpRequestMessage.Get(Uri.Relative $"%s{key}")
+            use! response = httpClient.SendAsync(request)
+            let! content = response.TryReadContentAsStringAsync(request)
+            return serializer.TryDeserializeResult<'dto>(content)
+        }
+
+    interface IOpenLibraryClient with
+        member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
+        member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
+        member this.GetBookByOlidAsync(OLID olid) = this.GetByKeyAsync<BookDto>($"/books/%s{olid}.json")
+
+        member this.GetWorkAsync(workKey: string) =
+            let key =
+                if workKey.StartsWith("/works/") then workKey
+                elif workKey.StartsWith("works/") then $"/%s{workKey}"
+                else $"/works/%s{workKey}"
+
+            this.GetByKeyAsync<WorkDto>(key)
+
+        member _.SearchAuthorsAsync(searchTerm: string) =
+            task {
+                let encodedTerm = WebUtility.UrlEncode(searchTerm)
+                use request = HttpRequestMessage.Get(Uri.Relative $"/search/authors.json?q=%s{encodedTerm}&limit=10")
+                use! response = httpClient.SendAsync(request)
+                let! content = response.TryReadContentAsStringAsync(request)
+                return serializer.TryDeserializeResult<SearchAuthorsResponseDto>(content)
+            }
+
+        member _.SearchBooksAsync(searchTerm: string) =
+            task {
+                let encodedTerm = WebUtility.UrlEncode(searchTerm)
+                let fields = "author_key,author_name,key,title,editions"
+                use request = HttpRequestMessage.Get(Uri.Relative $"/search.json?q=%s{encodedTerm}&limit=10&language=eng&fields=%s{fields}")
+                use! response = httpClient.SendAsync(request)
+                let! content = response.TryReadContentAsStringAsync(request)
+                return serializer.TryDeserializeResult<SearchBooksResponseDto>(content)
+            }
+
+        member _.GetCoverUrl(coverKey, coverSize) =
+            let key =
+                match coverKey with
+                | CoverKey.Id id -> $"id/%d{id}"
+                | CoverKey.ISBN isbn -> $"isbn/%s{isbn}"
+                | CoverKey.OLID olid -> $"olid/%s{olid}"
+
+            let size =
+                match coverSize with
+                | CoverSize.Small -> "S"
+                | CoverSize.Medium -> "M"
+                | CoverSize.Large -> "L"
+
+            $"%s{settings.CoverBaseUrl}/%s{key}-%s{size}.jpg"
