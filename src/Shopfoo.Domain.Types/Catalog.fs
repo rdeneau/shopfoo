@@ -60,8 +60,8 @@ type Product = {
 [<RequireQualifiedAccess>]
 module Product =
     module Guard =
-        let SKU = GuardCriteria.Create(required = true)
-        let Name = GuardCriteria.Create(required = true, maxLength = 128)
-        let Description = GuardCriteria.Create(maxLength = 512)
-        let BookSubtitle = GuardCriteria.Create(maxLength = 256)
+        let SKU = GuardCriteria.Create("SKU", required = true)
+        let Name = GuardCriteria.Create("Name", required = true, maxLength = 128)
+        let Description = GuardCriteria.Create("Description", maxLength = 512)
+        let BookSubtitle = GuardCriteria.Create("BookSubtitle", maxLength = 256)
         let ImageUrl = GuardCriteria.None

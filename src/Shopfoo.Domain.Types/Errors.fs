@@ -28,17 +28,19 @@ module Guards =
     type GuardClauseError = { EntityName: string; ErrorMessage: string }
 
     type GuardCriteria = {
+        PropertyName: string
         MaxLength: int option
         MinLength: int option
         Required: bool
     } with
-        static member Create(?maxLength, ?minLength, ?required) : GuardCriteria = {
+        static member Create(name, ?maxLength, ?minLength, ?required) : GuardCriteria = {
+            PropertyName = name
             MaxLength = maxLength
             MinLength = minLength
             Required = defaultArg required false
         }
 
-        static member None = GuardCriteria.Create()
+        static member None = GuardCriteria.Create("")
 
     type Guard(entityName: string) =
         member val EntityName = entityName
@@ -127,7 +129,7 @@ module Guards =
             | [] -> Ok value
             | _ ->
                 let issues = issuesWithRank |> List.sortBy fst |> List.map snd |> String.concat ", "
-                this.Error $"""'%s{value}' should be a string %s{issues}, trailing whitespaces excluded"""
+                this.Error $"""%s{criteria.PropertyName} '%s{value}' does not satisfy the criteria: %s{issues}, trailing whitespaces excluded"""
 
 [<AutoOpen>]
 module Http =

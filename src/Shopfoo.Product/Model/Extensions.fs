@@ -2,9 +2,9 @@
 
 open Shopfoo.Domain.Types.Errors
 
-type GuardCriteria with
-    member guard.Validate(value) =
+type Guard with
+    member guard.Validate(criteria: GuardCriteria, value: string) =
         validation {
-            let! _ = Guard(nameof guard).Satisfies(value, guard).ToValidation()
+            let! _ = guard.Satisfies(value, criteria).ToValidation()
             return ()
         }
