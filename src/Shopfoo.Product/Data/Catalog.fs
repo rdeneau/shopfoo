@@ -30,19 +30,19 @@ type internal CatalogPipeline
                 | Error _ -> return []
         }
 
-    member _.GetProduct(sku: SKU) =
+    member _.GetProduct(sku: SKU) : Async<Product option> =
         match sku.Type with
         | SKUType.FSID fsid -> fakeStorePipeline.GetProduct fsid
         | SKUType.ISBN isbn -> booksPipeline.GetProduct isbn
         | SKUType.OLID olid -> openLibraryPipeline.GetProductByOlid olid |> Async.map Result.toOption
         | SKUType.Unknown -> async { return None }
 
-    member _.SaveProduct(product: Product) =
+    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
         match product.Category with
         | Category.Bazaar _ -> fakeStorePipeline.SaveProduct product
         | Category.Books _ -> booksPipeline.SaveProduct product
 
-    member _.AddProduct(product: Product) =
+    member _.AddProduct(product: Product) : Async<Result<unit, Error>> =
         match product.Category with
         | Category.Books _ -> booksPipeline.AddProduct product
         | Category.Bazaar _ ->
