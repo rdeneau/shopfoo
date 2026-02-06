@@ -180,10 +180,34 @@ type IMarker = interface end
 
 ### F# Idioms
 
+#### Class Member "this" Identifier
+
+When a class member does not use the `this` identifier, discard it with an underscore (`_`):
+
+❌ **AVOID** - Unused `this` identifier:
+
+```fsharp
+type Counter() =
+    member this.Increment() =
+        // this is not used
+        42
+```
+
+✅ **CORRECT** - Discard with underscore:
+
+```fsharp
+type Counter() =
+    member _.Increment() =
+        // this identifier is not used
+        42
+```
+
 #### TryXxx Methods
+
 When using BCL `TryXxx` methods that return `(bool * 'T)`, prefer pattern matching over checking the boolean result:
 
 ❌ **AVOID**:
+
 ```fsharp
 let hasValue = dict.TryGetValue(key, &value)
 if hasValue then
@@ -191,6 +215,7 @@ if hasValue then
 ```
 
 ✅ **PREFER**:
+
 ```fsharp
 match dict.TryGetValue(key) with
 | true, value -> // use value
@@ -198,6 +223,7 @@ match dict.TryGetValue(key) with
 ```
 
 Or for multiple conditions:
+
 ```fsharp
 match obj.TryGetProperty("foo"), obj.TryGetProperty("bar") with
 | (true, _), (true, _) -> // both present
@@ -227,3 +253,104 @@ let message = $"User: {user.Name:s} (age {user.Age:i})"  // Clear, explicit form
 - The default serializer uses `JsonNamingPolicy.CamelCase`, not snake_case
 - Snake_case API responses need `[<JsonPropertyName("snake_case")>]` attributes
 - Custom `JsonConverter` can filter invalid entries during deserialization
+
+## Product.Tests Patterns
+
+### Test Structure and Naming
+
+All behavior tests in `Shopfoo.Product.Tests` follow a consistent pattern inspired by behavior-driven development (BDD):
+
+**Test Class Naming**: Follow the pattern `[Workflow]Should.fs` where workflow is the main operation being tested:
+
+- `AddProductShould.fs` - Tests for adding products
+- `DetermineStockShould.fs` - Tests for stock determination
+- `MarkAsSoldOutShould.fs` - Tests for marking products as sold out
+
+**Test Method Naming**: Use the backtick syntax to write test names as readable sentences starting with `[Workflow]Should.fs`:
+
+```fsharp
+member this.``do something given conditions`` () = ...
+```
+
+Examples for `MarkAsSoldOutShould`:
+
+- `member _.``be rejected given a stock quantity greater than zero`` (stock: int) = ...`
+- `member _.``update retail price to SoldOut given a product with no stock`` () = ...`
+
+### Parameterized Tests
+
+Use the `[<Arguments>]` attribute for simple input values to test multiple scenarios:
+
+```fsharp
+[<Test>]
+[<Arguments(1)>]
+[<Arguments(5)>]
+[<Arguments(100)>]
+member this.``test name`` (stock: int) =
+    async {
+        // Test implementation
+    }
+```
+
+This creates separate test cases for stock values 1, 5, and 100, useful for boundary testing.
+
+### Assertions with Unquote
+
+All assertions use Swensen.Unquote's `=!` operator for readable, expressive assertions.
+
+**Asserting on whole Result/Option types**: Always assert on the entire Result or Option, rather than pattern matching:
+
+```fsharp
+open Swensen.Unquote
+
+// ❌ Avoid: Pattern matching followed by assertions
+match result with
+| Ok value -> value =! expected  // Don't do this
+| _ -> ()
+
+// ✅ Correct: Assert on the whole Result
+result =! Ok expectedValue
+result =! Error(DataError(DataNotFound("SKU", "Prices")))
+
+// ✅ Correct: Assert on whole Option
+maybeValue =! Some expectedValue
+maybeValue =! None
+
+// ✅ Correct: Assert on the whole error object (F# record) for better clarity
+let expectedError = { EntityName = "Stock"; ErrorMessage = "Stock quantity must be zero to mark as sold out." }
+result =! Error(Error.Validation [ expectedError ])
+
+// ❌ Avoid: Checking only parts of the error (C#-like assertions)
+match result with
+| Error(Error.Validation errors) ->
+    errors
+    |> List.exists (fun err -> err.ErrorMessage.Contains("expected text"))  // Don't do this
+| _ -> false
+```
+
+The `=!` operator provides clear failure messages showing both expected and actual values, making test failures easy to debug.
+
+### Test Fixture Pattern
+
+Tests use `ApiTestFixture` to manage the dependency injection container lifecycle:
+
+```fsharp
+use fixture = new ApiTestFixture()
+let! result = fixture.Api.SomeMethod()
+```
+
+For data-driven tests, pass optional arguments to populate the repositories:
+
+```fsharp
+use fixture =
+    new ApiTestFixture(
+        stockEvents = isbn.Events [ 5 |> Units.Purchased (Euros 24.99m) (365 |> daysAgo) ]
+    )
+```
+
+The fixture ensures:
+
+- Clean service provider per test
+- Production-like DI configuration
+- Mock external clients (FakeStore, OpenLibrary)
+- Optional Sale and StockEvent repositories for test data

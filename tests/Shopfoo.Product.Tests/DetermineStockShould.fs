@@ -9,7 +9,7 @@ open TUnit.Core
 
 type DetermineStockShould() =
     [<Test>]
-    member this.``deduct sales from initial stock``() =
+    member _.``deduct sales from initial stock``() =
         async {
             let isbn = ISBN "1"
             let sku = isbn.AsSKU
@@ -33,7 +33,7 @@ type DetermineStockShould() =
         }
 
     [<Test>]
-    member this.``take into account stock arrivals after sales``() =
+    member _.``take into account stock arrivals after sales``() =
         async {
             let isbn = ISBN "2"
             let sku = isbn.AsSKU
@@ -56,7 +56,7 @@ type DetermineStockShould() =
         }
 
     [<Test>]
-    member this.``take into account stock adjustment, ignoring previous events``() =
+    member _.``take into account stock adjustment, ignoring previous events``() =
         async {
             let isbn = ISBN "3"
             let sku = isbn.AsSKU
@@ -83,7 +83,7 @@ type DetermineStockShould() =
         }
 
     [<Test>]
-    member this.``differentiate stock by SKU``() =
+    member _.``differentiate stock by SKU``() =
         async {
             let isbn1, isbn2 = ISBN "1", ISBN "2"
             let sku1, sku2 = isbn1.AsSKU, isbn2.AsSKU

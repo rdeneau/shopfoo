@@ -30,8 +30,8 @@ type internal AddProductWorkflow private () =
                 RetailPrice = RetailPrice.SoldOut
             }
 
-            // TODO RDE: handle addProduct and addPrices in an Unit of work
             // TODO RDE: handle addProduct and addPrices in Parallel
+            // TODO RDE: handle addProduct and addPrices in a "saga", with compensation actions in case of failure (e.g. if addPrices fails, remove the product that was just added)
             do! Program.addProduct product
             do! Program.addPrices initialPrices
 

@@ -104,7 +104,7 @@ module Extensions =
 
 type AddProductShould() =
     [<Test; ShopfooFsCheckProperty>]
-    member this.``reject invalid product``(FieldIssues issues) =
+    member _.``reject invalid product``(FieldIssues issues) =
         async {
             let invalidProduct, errors =
                 ((createValidBookProduct (), []), issues)
@@ -124,7 +124,7 @@ type AddProductShould() =
     [<Test>]
     [<Arguments(CurrencyEnum.EUR)>]
     [<Arguments(CurrencyEnum.USD)>]
-    member this.``add initial prices too, in the given currency`` currencyEnum =
+    member _.``add initial prices too, in the given currency`` currencyEnum =
         async {
             use fixture = new ApiTestFixture()
             let currency = CurrencyEnum.toCurrency currencyEnum
