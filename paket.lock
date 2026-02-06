@@ -2,6 +2,8 @@ STORAGE: NONE
 RESTRICTION: == net9.0
 NUGET
   remote: https://api.nuget.org/v3/index.json
+    Castle.Core (5.2.1)
+      System.Diagnostics.EventLog (>= 6.0)
     EnumerableAsyncProcessor (3.8.4)
     Fable.AST (4.6)
     Fable.Browser.Blob (1.4)
@@ -191,7 +193,10 @@ NUGET
     Microsoft.Testing.Platform.MSBuild (2.0.2)
       Microsoft.Testing.Platform (>= 2.0.2)
     Newtonsoft.Json (13.0.3)
+    NSubstitute (5.3)
+      Castle.Core (>= 5.1.1)
     System.Diagnostics.DiagnosticSource (10.0.1)
+    System.Diagnostics.EventLog (10.0.2)
     System.Text.Json (9.0.2)
     TUnit (1.11.28)
       Microsoft.Testing.Extensions.CodeCoverage (>= 18.3.2)

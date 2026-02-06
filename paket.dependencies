@@ -14,6 +14,7 @@ nuget Giraffe.GoodRead
 nuget Glutinum.Feliz.Iconify
 nuget Glutinum.IconifyIcons.Fa6Solid
 nuget Microsoft.Extensions.Http
+nuget NSubstitute
 nuget TUnit.Assertions.FSharp
 nuget TUnit.FsCheck
 nuget Unquote
