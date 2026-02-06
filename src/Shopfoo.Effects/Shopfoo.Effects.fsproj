@@ -11,10 +11,9 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="Prelude.fs" />
     <Compile Include="Program.fs" />
-    <Compile Include="Interpreter.fs" />
     <Compile Include="Metrics.fs" />
+    <Compile Include="Monitoring.fs" />
     <Compile Include="Dependencies.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

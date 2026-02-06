@@ -5,7 +5,7 @@ open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects.Dependencies
-open Shopfoo.Effects.Interpreter.Monitoring
+open Shopfoo.Effects.Monitoring
 open Shopfoo.Product
 open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.FakeStore
@@ -18,19 +18,18 @@ open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
 open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
 
 type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale list, ?stockEvents: StockEvent list) =
-    static let nullPipelineLoggerFactory =
-        { new IPipelineLoggerFactory with
-            member _.CreateLogger(categoryName) =
-                { new IPipelineLogger with
-                    member _.LogPipeline name pipeline arg = pipeline arg
-                }
+    static let nullWorkMonitor = WorkMonitor(fun _ work -> work)
+
+    static let nullWorkLogger =
+        { new IWorkLogger with
+            member _.Logger() = nullWorkMonitor
         }
 
-    static let nullPipelineTimer =
-        { new IPipelineTimer with
-            member _.TimeCommand name pipeline arg = pipeline arg
-            member _.TimeQuery name pipeline arg = pipeline arg
-            member _.TimeQueryOptional name pipeline arg = pipeline arg
+    static let nullWorkMonitors =
+        { new IWorkMonitors with
+            member _.LoggerFactory _ = nullWorkLogger
+            member _.CommandTimer() = nullWorkMonitor
+            member _.QueryTimer() = nullWorkMonitor
         }
 
     // Build the service collection based on production dependencies overriden with test ones
@@ -38,8 +37,7 @@ type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale 
         ServiceCollection()
             // Core/Effects
             .AddEffects() // Production dependencies
-            .AddSingleton<IPipelineLoggerFactory>(nullPipelineLoggerFactory)
-            .AddSingleton<IPipelineTimer>(nullPipelineTimer)
+            .AddSingleton<IWorkMonitors>(nullWorkMonitors)
             // Feat/Product
             .AddProductApi() // Production dependencies
             .AddSingleton<IFakeStoreClient, FakeStoreClientMock>()

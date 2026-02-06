@@ -3,16 +3,16 @@
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Effects
-open Shopfoo.Product.Workflows.Instructions
+open Shopfoo.Product.Workflows
 
 [<Sealed>]
 type internal RemoveListPriceWorkflow private () =
-    inherit ProductWorkflow<SKU, unit>()
     static member val Instance = RemoveListPriceWorkflow()
 
-    override _.Run sku =
-        program {
-            let! prices = Program.getPrices sku |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
-            do! Program.savePrices { prices with ListPrice = None }
-            return Ok()
-        }
+    interface IProductWorkflow<SKU, unit> with
+        override _.Run sku =
+            program {
+                let! prices = Program.getPrices sku |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
+                do! Program.savePrices { prices with ListPrice = None }
+                return Ok()
+            }

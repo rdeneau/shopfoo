@@ -13,6 +13,7 @@ open Microsoft.Extensions.Options
 open Shopfoo.Product.Data.Prices
 open Shopfoo.Product.Data.Sales
 open Shopfoo.Product.Data.Warehouse
+open Shopfoo.Product.Workflows
 
 module Sections =
     [<Literal>]

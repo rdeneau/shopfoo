@@ -2,31 +2,31 @@
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Effects
 open Shopfoo.Product.Model
-open Shopfoo.Product.Workflows.Instructions
+open Shopfoo.Product.Workflows
 
 [<Sealed>]
 type internal AddProductWorkflow private () =
-    inherit ProductWorkflow<Product * Currency, unit>()
     static member val Instance = AddProductWorkflow()
 
-    override _.Run((product, currency)) =
-        program {
-            let sku =
-                match product.SKU.Type, product.Category with
-                | SKUType.OLID _, Category.Books book -> book.ISBN.AsSKU
-                | _ -> product.SKU
+    interface IProductWorkflow<Product * Currency, unit> with
+        override _.Run((product, currency)) =
+            program {
+                let sku =
+                    match product.SKU.Type, product.Category with
+                    | SKUType.OLID _, Category.Books book -> book.ISBN.AsSKU
+                    | _ -> product.SKU
 
-            let product = { product with SKU = sku }
+                let product = { product with SKU = sku }
 
-            do! Product.validate product
+                do! Product.validate product |> liftValidation
 
-            // TODO RDE: handle addProduct and addPrices in Parallel
-            // TODO RDE: handle addProduct and addPrices in a "saga", with compensation actions in case of failure (e.g. if addPrices fails, remove the product that was just added)
-            do! Program.addProduct product
-            do! Program.addPrices (Prices.Initial(sku, currency))
+                // addProduct and addPrices can be run in Parallel
+                let! _ = Program.addProduct product
+                and! _ = Program.addPrices (Prices.Initial(sku, currency))
 
-            return Ok()
-        }
+                return Ok()
+            }

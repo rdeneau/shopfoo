@@ -4,24 +4,15 @@ open System.Diagnostics
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Shopfoo.Common
-open Shopfoo.Effects.Interpreter
-open Shopfoo.Effects.Interpreter.Monitoring
+open Shopfoo.Effects.Monitoring
 open Shopfoo.Effects.Metrics
 
 [<Interface>]
-type IInterpreterFactory =
-    abstract member Create<'dom when 'dom :> IDomain> : domain: 'dom -> Interpreter<'dom>
+type IDomainMonitorFactory =
+    abstract member Create<'ins when 'ins :> IProgramInstructions> : domainName: string -> DomainMonitor<'ins>
 
 [<AutoOpen>]
 module private Implementation =
-    let private logifyPlainAsync (logger: ILogger) funcName funcAsync x =
-        async {
-            logger.LogDebug $"start %s{funcName} with arg\n%A{x}"
-            let! result = funcAsync x
-            logger.LogDebug $"%s{funcName} finished with result\n%A{result}"
-            return result
-        }
-
     type MetricsLogger(logger: ILogger<MetricsLogger>) =
         interface IMetricsSender with
             member _.SendTimeAsync(funcName, status, stopwatch) =
@@ -36,21 +27,27 @@ module private Implementation =
                     logger.LogInformation($"""[Metrics] Sending '%s{String.concat "." metricSegments}'""")
                 }
 
-    type PipelineLogger(logger: ILogger) =
-        interface IPipelineLogger with
-            member _.LogPipeline name pipeline arg = logifyPlainAsync logger name pipeline arg
+    type WorkLogger(logger: ILogger, ?logLevel: LogLevel) =
+        let logLevel = defaultArg logLevel LogLevel.Debug
 
-    type PipelineLoggerFactory(loggerFactory: ILoggerFactory) =
-        interface IPipelineLoggerFactory with
-            member _.CreateLogger categoryName = PipelineLogger(logger = loggerFactory.CreateLogger categoryName)
+        interface IWorkLogger with
+            member _.Logger() =
+                WorkMonitor(fun name work arg ->
+                    async {
+                        logger.Log(logLevel, $"start %s{name}")
+                        let! result = work arg
+                        logger.Log(logLevel, $"%s{name} finished with result\n%A{result}")
+                        return result
+                    }
+                )
 
-    type PipelineTimer(metricsSender: IMetricsSender) =
-        member private this.timeAsync(funcName, funcAsync: _ -> Async<'response>, args, buildStatus: 'response -> MetricsStatus) =
+    type WorkMonitors(loggerFactory: ILoggerFactory, metricsSender: IMetricsSender) =
+        let timeAsync (buildStatus: 'response -> MetricsStatus) funcName (work: Work<'arg, 'response>) arg =
             async {
                 let stopwatch = Stopwatch.StartNew()
 
                 try
-                    let! response = funcAsync args
+                    let! response = work arg
                     do! metricsSender.SendTimeAsync(funcName, buildStatus response, stopwatch)
                     return response
                 with ex ->
@@ -58,20 +55,19 @@ module private Implementation =
                     return reraisePreserveStackTrace ex
             }
 
-        interface IPipelineTimer with
-            member this.TimeCommand name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofResult)
-            member this.TimeQuery name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofOptionExpected)
-            member this.TimeQueryOptional name pipeline args = this.timeAsync (name, pipeline, args, MetricsStatus.ofOption)
+        interface IWorkMonitors with
+            member _.LoggerFactory categoryName = WorkLogger(logger = loggerFactory.CreateLogger categoryName)
+            member _.CommandTimer() = WorkMonitor(timeAsync MetricsStatus.ofResult)
+            member _.QueryTimer() = WorkMonitor(timeAsync MetricsStatus.ofOptionExpected)
 
     [<Sealed>]
-    type InterpreterFactory(loggerFactory: IPipelineLoggerFactory, timer: IPipelineTimer) =
-        interface IInterpreterFactory with
-            member _.Create(domain) = Interpreter(domain, loggerFactory, timer)
+    type DomainMonitorFactory(monitors: IWorkMonitors) =
+        interface IDomainMonitorFactory with
+            member _.Create(domainName) = DomainMonitor(domainName, monitors)
 
 type IServiceCollection with
     member services.AddEffects() =
         services
             .AddSingleton<IMetricsSender, MetricsLogger>()
-            .AddSingleton<IPipelineLoggerFactory, PipelineLoggerFactory>()
-            .AddSingleton<IPipelineTimer, PipelineTimer>()
-            .AddSingleton<IInterpreterFactory, InterpreterFactory>()
+            .AddSingleton<IWorkMonitors, WorkMonitors>()
+            .AddSingleton<IDomainMonitorFactory, DomainMonitorFactory>()

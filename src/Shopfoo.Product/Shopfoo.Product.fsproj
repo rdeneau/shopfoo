@@ -10,8 +10,7 @@
     <Compile Include="Model\Prices.fs" />
     <Compile Include="Model\Product.fs" />
     <Compile Include="Model\Stock.fs" />
-    <Compile Include="Workflows\Types.fs" />
-    <Compile Include="Workflows\Instructions.fs" />
+    <Compile Include="Workflows\Prelude.fs" />
     <Compile Include="Workflows\AddProduct.fs" />
     <Compile Include="Workflows\DetermineStock.fs" />
     <Compile Include="Workflows\MarkAsSoldOut.fs" />
