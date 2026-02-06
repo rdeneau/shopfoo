@@ -3,30 +3,44 @@ namespace Shopfoo.Product.Tests
 open System
 open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Effects.Dependencies
+open Shopfoo.Effects.Interpreter.Monitoring
 open Shopfoo.Product
 open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Data.OpenLibrary
+open Shopfoo.Product.DependencyInjection
 open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
 open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
 
 type ApiTestFixture() =
-    let createMockProductApi (sp: IServiceProvider) : IProductApi =
-        let interpreterFactory = Shopfoo.Product.Tests.Workflows.MockInterpreterFactory()
-        let fakeStoreClient = sp.GetRequiredService<IFakeStoreClient>()
-        let openLibraryClient = sp.GetRequiredService<IOpenLibraryClient>()
-        Api(interpreterFactory, fakeStoreClient, openLibraryClient)
+    static let nullPipelineLoggerFactory =
+        { new IPipelineLoggerFactory with
+            member _.CreateLogger(categoryName) =
+                { new IPipelineLogger with
+                    member _.LogPipeline name pipeline arg = pipeline arg
+                }
+        }
 
-    let addMockProductApi (services: IServiceCollection) =
-        services
+    static let nullPipelineTimer =
+        { new IPipelineTimer with
+            member _.TimeCommand name pipeline arg = pipeline arg
+            member _.TimeQuery name pipeline arg = pipeline arg
+            member _.TimeQueryOptional name pipeline arg = pipeline arg
+        }
+
+    let services =
+        ServiceCollection()
+            // Core/Effects
+            .AddEffects() // Production dependencies
+            .AddSingleton<IPipelineLoggerFactory>(nullPipelineLoggerFactory)
+            .AddSingleton<IPipelineTimer>(nullPipelineTimer)
+            // Feat/Product
+            .AddProductApi() // Production dependencies
             .AddSingleton<IFakeStoreClient, FakeStoreClientMock>()
             .AddSingleton<IOpenLibraryClient, OpenLibraryClientMock>()
-            .AddSingleton<IProductApi>(Func<IServiceProvider, IProductApi>(createMockProductApi))
 
-    let serviceProvider =
-        let services = ServiceCollection()
-        (services |> addMockProductApi).AddEffects().BuildServiceProvider()
+    let serviceProvider = services.BuildServiceProvider()
 
-    member _.GetService<'T>() : 'T = serviceProvider.GetRequiredService<'T>()
+    member val Api = serviceProvider.GetRequiredService<IProductApi>()
 
     interface IDisposable with
         member _.Dispose() = serviceProvider.Dispose()

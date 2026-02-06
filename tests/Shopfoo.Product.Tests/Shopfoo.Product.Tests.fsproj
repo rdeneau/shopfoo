@@ -13,7 +13,6 @@
     <Compile Include="Fakes.fs" />
     <Compile Include="FakeStoreClientMock.fs" />
     <Compile Include="OpenLibraryClientMock.fs" />
-    <Compile Include="MockInterpreterFactory.fs" />
     <Compile Include="ApiTestFixture.fs" />
     <Compile Include="AddProductShould.fs" />
     <Compile Include="DetermineStockShould.fs" />
