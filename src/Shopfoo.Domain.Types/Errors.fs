@@ -208,6 +208,7 @@ module Http =
 type DataRelatedError =
     | DataException of exn
     | DataNotFound of Id: string * Type: string
+    | DuplicateKey of Id: string * Type: string
     | DeserializationIssue of ContentToDeserialize: string * TargetType: string * ExceptionThrown: exn
     | HttpApiError of apiName: HttpApiName * status: HttpStatus
 
@@ -293,6 +294,7 @@ module ErrorCategory =
         | DataError(DataException _) -> "Data Error: Query Issue"
         | DataError(DataNotFound _) -> "Data Error: Not Found"
         | DataError(DeserializationIssue _) -> "Data Error: Deserialization Issue"
+        | DataError(DuplicateKey _) -> "Data Error: Duplicate Key"
         | DataError(HttpApiError _) -> "Data Error: HTTP API Issue"
         | OperationNotAllowed _ -> "Operation Not Allowed"
         | GuardClause _ -> "Guard Clause"
@@ -346,6 +348,8 @@ module ErrorMessage =
         | DataException exn -> ofException exn
         | DataNotFound(id, (String.NotEmpty as typeName)) -> ErrorMessage.Create $"[%s{typeName}] %s{id} not found"
         | DataNotFound(id, _) -> ErrorMessage.Create $"%s{id} not found"
+        | DuplicateKey(id, (String.NotEmpty as typeName)) -> ErrorMessage.Create $"[%s{typeName}] %s{id} already exists"
+        | DuplicateKey(id, _) -> ErrorMessage.Create $"%s{id} already exists"
         | DeserializationIssue(content, targetType, exn) ->
             ErrorMessage.Create(
                 $"Failed to deserialize to %s{targetType}: %s{exn.Message}\nContent: %s{content}",

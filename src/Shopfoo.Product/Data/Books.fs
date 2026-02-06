@@ -85,8 +85,11 @@ type internal BooksPipeline(repository: BooksRepository) =
             let! book = tryGetBookWithIsbn product
             let dto = Mappers.ModelToDto.mapBook book product
 
-            repository.Add(dto.ISBN, dto)
-            return ()
+            if repository.ContainsKey dto.ISBN then
+                return! Error(Error.DataError(DuplicateKey(Id = $"ISBN %s{dto.ISBN.Value}", Type = nameof Book)))
+            else
+                repository.Add(dto.ISBN, dto)
+                return ()
         }
 
     member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
