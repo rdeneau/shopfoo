@@ -1,4 +1,5 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <IsPackable>false</IsPackable>
@@ -9,16 +10,14 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="FsCheckArbs\Common.fs" />
-    <Compile Include="FsCheckArbs\Domain.fs" />
-    <Compile Include="FsCheckArbs\UI.fs" />
-    <Compile Include="FsCheckArbs\Shopfoo.fs" />
+    <Compile Include="Types.fs" />
     <Compile Include="FiltersShould.fs" />
     <Compile Include="RoutingTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Client\Shopfoo.Client.fsproj" />
     <ProjectReference Include="..\..\src\Shopfoo.Home\Shopfoo.Home.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Tests.Common\Shopfoo.Tests.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>
