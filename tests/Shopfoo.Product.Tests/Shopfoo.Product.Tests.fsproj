@@ -10,6 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
+    <Compile Include="Types.fs" />
     <Compile Include="Fakes.fs" />
     <Compile Include="FakeStoreClientMock.fs" />
     <Compile Include="OpenLibraryClientMock.fs" />
@@ -19,6 +20,7 @@
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Tests.Common\Shopfoo.Tests.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

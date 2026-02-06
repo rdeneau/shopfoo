@@ -10,30 +10,30 @@ open Shopfoo.Product.Data
 
 [<AutoOpen>]
 module Dto =
-    type AuthorDto = { Id: OLID; Name: string }
+    type AuthorRaw = { Id: OLID; Name: string }
 
-    type BookDto = {
+    type BookRaw = {
         ISBN: ISBN
         Title: string
         Subtitle: string
         Description: string
-        Authors: AuthorDto list
+        Authors: AuthorRaw list
         Image: string
         Tags: string list
     }
 
-type BooksRepository = Dictionary<ISBN, BookDto>
+type BooksRepository = Dictionary<ISBN, BookRaw>
 
 module private Mappers =
     module DtoToModel =
-        let mapBookDetails (dto: BookDto) : Book = {
+        let mapBookDetails (dto: BookRaw) : Book = {
             ISBN = dto.ISBN
             Authors = Set [ for authorDto in dto.Authors -> { OLID = authorDto.Id; Name = authorDto.Name } ]
             Subtitle = dto.Subtitle
             Tags = dto.Tags |> Set.ofList
         }
 
-        let mapBook (dto: BookDto) : Product = {
+        let mapBook (dto: BookRaw) : Product = {
             SKU = dto.ISBN.AsSKU
             Title = dto.Title
             Description = dto.Description
@@ -42,7 +42,7 @@ module private Mappers =
         }
 
     module ModelToDto =
-        let mapBook (book: Book) (product: Product) : BookDto = {
+        let mapBook (book: Book) (product: Product) : BookRaw = {
             ISBN = book.ISBN
             Title = product.Title
             Description = product.Description
@@ -271,5 +271,6 @@ module private Fakes =
     ]
 
 [<RequireQualifiedAccess>]
-module internal BooksRepository =
-    let instance: BooksRepository = Fakes.allBooks |> Dictionary.ofListBy _.ISBN
+module BooksRepository =
+    let ofList (books: BookRaw list) : BooksRepository = books |> Dictionary.ofListBy _.ISBN
+    let internal instance = ofList Fakes.allBooks

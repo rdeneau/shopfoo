@@ -52,5 +52,5 @@ module private Fakes =
     ]
 
 [<RequireQualifiedAccess>]
-module internal SalesRepository =
-    let instance = SalesRepository Fakes.oneYear
+module SalesRepository =
+    let internal instance = SalesRepository Fakes.oneYear

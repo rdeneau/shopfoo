@@ -7,14 +7,17 @@ open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Effects.Interpreter.Monitoring
 open Shopfoo.Product
-open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Data.OpenLibrary
+open Shopfoo.Product.Data.Prices
+open Shopfoo.Product.Data.Sales
+open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.DependencyInjection
 open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
 open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
 
-type ApiTestFixture(?sales: Sale list, ?stockEvents: StockEvent list) =
+type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale list, ?stockEvents: StockEvent list) =
     static let nullPipelineLoggerFactory =
         { new IPipelineLoggerFactory with
             member _.CreateLogger(categoryName) =
@@ -30,18 +33,6 @@ type ApiTestFixture(?sales: Sale list, ?stockEvents: StockEvent list) =
             member _.TimeQueryOptional name pipeline arg = pipeline arg
         }
 
-    let addSaleRepository (services: IServiceCollection) =
-        match sales with
-        | None
-        | Some [] -> services
-        | Some sales -> services.AddSingleton(Sales.SaleRepository sales)
-
-    let addStockEventRepository (services: IServiceCollection) =
-        match stockEvents with
-        | None
-        | Some [] -> services
-        | Some stockEvents -> services.AddSingleton(Warehouse.StockEventRepository stockEvents)
-
     // Build the service collection based on production dependencies overriden with test ones
     let services =
         ServiceCollection()
@@ -53,8 +44,10 @@ type ApiTestFixture(?sales: Sale list, ?stockEvents: StockEvent list) =
             .AddProductApi() // Production dependencies
             .AddSingleton<IFakeStoreClient, FakeStoreClientMock>()
             .AddSingleton<IOpenLibraryClient, OpenLibraryClientMock>()
-        |> addSaleRepository
-        |> addStockEventRepository
+            .AddSingleton(BooksRepository.ofList (defaultArg books []))
+            .AddSingleton(PricesRepository.ofList (defaultArg pricesSet []))
+            .AddSingleton(SalesRepository(defaultArg sales []))
+            .AddSingleton(StockEventRepository(defaultArg stockEvents []))
 
     let serviceProvider = services.BuildServiceProvider()
 

@@ -63,5 +63,6 @@ module private Fakes =
     ]
 
 [<RequireQualifiedAccess>]
-module internal PricesRepository =
-    let instance: PricesRepository = Fakes.allPrices |> Dictionary.ofListBy _.SKU
+module PricesRepository =
+    let ofList (allPrices: Prices list) : PricesRepository = allPrices |> Dictionary.ofListBy _.SKU
+    let internal instance = ofList Fakes.allPrices
