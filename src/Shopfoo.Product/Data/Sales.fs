@@ -4,6 +4,7 @@ module Shopfoo.Product.Data.Sales
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Helpers
 
 type SaleRepository(sales: Sale seq) =
     let repository = FakeRepository(sales, _.SKU)
@@ -18,21 +19,8 @@ module internal Pipeline =
             return repository.GetSales sku
         }
 
-/// Helpers for constructing fake sales, used in both pseudo-production and tests.
-module Helpers =
-    let unitsSold price date quantity : Sale = {
-        SKU = SKUUnknown.SKUUnknown.AsSKU
-        Date = date
-        Price = price
-        Quantity = quantity
-    }
-
-    type ISBN with
-        member isbn.Sales(sales: Sale seq) = [ for sale in sales -> { sale with SKU = isbn.AsSKU } ]
-
+[<RequireQualifiedAccess>]
 module internal Fakes =
-    open Helpers
-
     let private oneYear = [
         yield!
             ISBN.CleanArchitecture.Sales [

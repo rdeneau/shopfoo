@@ -1,10 +1,11 @@
 ﻿[<RequireQualifiedAccess>]
-module internal Shopfoo.Product.Data.Warehouse
+module Shopfoo.Product.Data.Warehouse
 
 open System
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Product.Data
+open Shopfoo.Product.Data.Helpers
 
 type StockEventRepository(stockEvents: StockEvent seq) =
     let repository = FakeRepository(stockEvents, _.SKU)
@@ -33,25 +34,8 @@ module internal Pipeline =
             return repository.GetStockEvents sku
         }
 
-/// Helpers for constructing fake stock events, used in both pseudo-production and tests.
-module Helpers =
-    type Units =
-        static member private For eventType date quantity : StockEvent = {
-            SKU = SKUUnknown.SKUUnknown.AsSKU
-            Date = date
-            Quantity = quantity
-            Type = eventType
-        }
-
-        static member Purchased price = Units.For(EventType.ProductSupplyReceived price)
-        static member Remaining = Units.For EventType.StockAdjusted
-
-    type ISBN with
-        member isbn.Events stockEvents : StockEvent list = [ for stockEvent in stockEvents -> { stockEvent with SKU = isbn.AsSKU } ]
-
+[<RequireQualifiedAccess>]
 module internal Fakes =
-    open Helpers
-
     let private oneYear = [
         yield!
             ISBN.CleanArchitecture.Events [ // ↩

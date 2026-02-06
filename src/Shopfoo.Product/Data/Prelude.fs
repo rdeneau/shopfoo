@@ -1,7 +1,6 @@
 ﻿[<AutoOpen>]
-module Shopfoo.Product.Data.Common
+module Shopfoo.Product.Data.Prelude
 
-open System
 open System.Collections.Generic
 open System.Linq
 open Shopfoo.Common
@@ -10,6 +9,25 @@ open Shopfoo.Domain.Types
 [<RequireQualifiedAccess>]
 module internal Fake =
     let latencyInMilliseconds ms = Async.Sleep(millisecondsDueTime = ms)
+
+type internal FakeRepository<'k, 'v when 'k: comparison>(data: 'v seq, getKey: 'v -> 'k) =
+    let repository: Dictionary<'k, ResizeArray<'v>> =
+        data
+        |> Seq.groupBy getKey
+        |> Seq.map (fun (key, values) -> key, ResizeArray values)
+        |> _.ToDictionary(fst, snd)
+
+    member _.Add(value: 'v) : unit =
+        let key = getKey value
+
+        match repository.TryGetValue(key) with
+        | true, events -> events.Add(value)
+        | false, _ -> repository.Add(key, ResizeArray [ value ])
+
+    member _.Get(key: 'k) : 'v list option =
+        repository.TryGetValue(key) // ↩
+        |> Option.ofPair
+        |> Option.map List.ofSeq
 
 [<RequireQualifiedAccess>]
 module ISBN =
@@ -26,23 +44,3 @@ module ISBN =
     let Refactoring = ISBN "9780134757599"
     let ThePragmaticProgrammer = ISBN "9780135957059"
     let UnitTesting = ISBN "9781617296277"
-
-let daysAgo (days: int) = DateOnly.FromDateTime(DateTime.Now.AddDays(-days))
-
-type internal FakeRepository<'k, 'v when 'k: comparison>(data: 'v seq, getKey: 'v -> 'k) =
-    let repository: Dictionary<'k, ResizeArray<'v>> =
-        data
-        |> Seq.groupBy getKey
-        |> Seq.map (fun (key, values) -> key, ResizeArray values)
-        |> _.ToDictionary(fst, snd)
-
-    member _.Add(value: 'v) : unit =
-        let key = getKey value
-        match repository.TryGetValue(key) with
-        | true, events -> events.Add(value)
-        | false, _ -> repository.Add(key, ResizeArray [ value ])
-
-    member _.Get(key: 'k) : 'v list option =
-        repository.TryGetValue(key) // ↩
-        |> Option.ofPair
-        |> Option.map List.ofSeq
