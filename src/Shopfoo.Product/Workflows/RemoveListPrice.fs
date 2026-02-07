@@ -2,8 +2,8 @@
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
-open Shopfoo.Effects
 open Shopfoo.Product.Workflows
+open Shopfoo.Program
 
 [<Sealed>]
 type internal RemoveListPriceWorkflow private () =

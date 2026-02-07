@@ -1,9 +1,9 @@
 ﻿namespace Shopfoo.Product.Workflows
 
 open Shopfoo.Domain.Types.Catalog
-open Shopfoo.Effects
 open Shopfoo.Product.Model
 open Shopfoo.Product.Workflows
+open Shopfoo.Program
 
 [<Sealed>]
 type internal SaveProductWorkflow private () =

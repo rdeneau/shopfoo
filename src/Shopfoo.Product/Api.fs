@@ -5,13 +5,13 @@ open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
-open Shopfoo.Effects.Dependencies
 open Shopfoo.Product.Data.Catalog
 open Shopfoo.Product.Data.OpenLibrary
 open Shopfoo.Product.Data.Prices
 open Shopfoo.Product.Data.Sales
 open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.Workflows
+open Shopfoo.Program.Dependencies
 
 [<Interface>]
 type IProductApi =

@@ -4,8 +4,6 @@ open System
 open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
-open Shopfoo.Effects.Dependencies
-open Shopfoo.Effects.Monitoring
 open Shopfoo.Product
 open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.FakeStore
@@ -16,6 +14,8 @@ open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.DependencyInjection
 open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
 open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
+open Shopfoo.Program.Dependencies
+open Shopfoo.Program.Monitoring
 
 type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale list, ?stockEvents: StockEvent list) =
     static let nullWorkMonitor = WorkMonitor(fun _ work -> work)

@@ -34,7 +34,7 @@
     <ProjectReference Include="..\Shopfoo.Common\Shopfoo.Common.fsproj" />
     <ProjectReference Include="..\Shopfoo.Data\Shopfoo.Data.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Effects\Shopfoo.Effects.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Program\Shopfoo.Program.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
 </Project>

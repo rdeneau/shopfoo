@@ -3,9 +3,9 @@
 open Microsoft.Extensions.Configuration
 open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Data.DependencyInjection
-open Shopfoo.Effects.Dependencies
 open Shopfoo.Home.DependencyInjection
 open Shopfoo.Product.DependencyInjection
+open Shopfoo.Program.Dependencies
 
 type IServiceCollection with
     member services.AddRemotingApi(configuration: IConfiguration) =

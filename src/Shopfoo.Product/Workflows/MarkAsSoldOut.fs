@@ -3,9 +3,9 @@
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
-open Shopfoo.Effects
 open Shopfoo.Product.Model
 open Shopfoo.Product.Workflows
+open Shopfoo.Program
 
 [<Sealed>]
 type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineStockWorkflow) =

@@ -3,8 +3,8 @@
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
-open Shopfoo.Effects
 open Shopfoo.Product.Workflows
+open Shopfoo.Program
 
 [<RequireQualifiedAccess>]
 type private StockEventType =

@@ -1,4 +1,4 @@
-﻿module Shopfoo.Effects.Metrics
+﻿module Shopfoo.Program.Metrics
 
 open System.Diagnostics
 

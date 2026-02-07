@@ -5,7 +5,7 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
-open Shopfoo.Effects
+open Shopfoo.Program
 
 /// <summary>
 /// Set of instructions for the "Product" domain.

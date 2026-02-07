@@ -1,11 +1,11 @@
-﻿module Shopfoo.Effects.Dependencies
+﻿module Shopfoo.Program.Dependencies
 
 open System.Diagnostics
 open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Shopfoo.Common
-open Shopfoo.Effects.Monitoring
-open Shopfoo.Effects.Metrics
+open Shopfoo.Program.Metrics
+open Shopfoo.Program.Monitoring
 
 [<Interface>]
 type IDomainMonitorFactory =

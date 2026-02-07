@@ -1,4 +1,4 @@
-﻿namespace Shopfoo.Effects
+﻿namespace Shopfoo.Program
 
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors

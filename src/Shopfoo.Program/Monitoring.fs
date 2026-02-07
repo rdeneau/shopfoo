@@ -1,5 +1,4 @@
-﻿// TODO: rename namespace and project to Shopfoo.Program
-module Shopfoo.Effects.Monitoring
+﻿module Shopfoo.Program.Monitoring
 
 open Shopfoo.Domain.Types.Errors
 
