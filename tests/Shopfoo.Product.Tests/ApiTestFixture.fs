@@ -15,7 +15,7 @@ open Shopfoo.Product.DependencyInjection
 open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
 open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
 open Shopfoo.Program.Dependencies
-open Shopfoo.Program.Monitoring
+open Shopfoo.Program.Runner
 
 type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale list, ?stockEvents: StockEvent list) =
     static let nullWorkMonitor = WorkMonitor(fun _ work -> work)

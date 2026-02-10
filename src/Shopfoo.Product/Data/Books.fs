@@ -100,6 +100,17 @@ type internal BooksPipeline(repository: BooksRepository) =
             return! repository |> Dictionary.tryUpdateBy _.ISBN dto |> liftDataRelatedError
         }
 
+    member _.DeleteProduct(isbn: ISBN) : Async<Result<unit, Error>> =
+        async {
+            do! Fake.latencyInMilliseconds 150
+
+            return
+                if repository.Remove(isbn) then
+                    Ok()
+                else
+                    Error(DataError(DataNotFound(isbn.Value, "Product")))
+        }
+
 module private Fakes =
     let andyHunt = { Id = OLID "OL1391034A"; Name = "Andy Hunt" }
     let daveThomas = { Id = OLID "OL1439324A"; Name = "Dave Thomas" }

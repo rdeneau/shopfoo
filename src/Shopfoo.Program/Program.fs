@@ -6,7 +6,10 @@ open Shopfoo.Domain.Types.Errors
 /// Marker interface to identify the set of instructions for a program.
 type IProgramInstructions = interface end
 
-// TODO RDE: handle "saga", with compensation actions in case of failure (e.g. if addPrices fails, remove the product that was just added)
+/// Type alias to declare the constraint `'ins when 'ins :> IProgramInstructions`.
+/// This also allows us to change the constraint if needed without having to update all the code.
+type Instructions<'ins when 'ins :> IProgramInstructions> = 'ins
+
 /// <summary>
 /// A program that, given a set of instructions (<c>'ins</c>), produces an async result.
 /// </summary>
@@ -25,7 +28,7 @@ type IProgramInstructions = interface end
 /// Parallelism is expressed using <c>let! ... and! ...</c> syntax, which compiles into asynchronous tasks run in parallel (see <c>Program.map2</c>).
 /// </para>
 /// </remarks>
-type Program<'ins, 'ret when 'ins :> IProgramInstructions> = 'ins -> Async<'ret>
+type Program<'ins, 'ret when Instructions<'ins>> = 'ins -> Async<'ret>
 
 [<RequireQualifiedAccess>]
 module Program =
@@ -147,6 +150,25 @@ module ProgramBuilderExtensions =
         member inline x.Bind(progV: Program<'ins, Validation<_, GuardClauseError>>, f) = // ↩
             x.Bind(progR = (progV |> Program.map liftValidation), f = f)
 
-[<Interface>]
-type IProgramWorkflow<'ins, 'arg, 'ret when 'ins :> IProgramInstructions> =
-    abstract member Run: 'arg -> Program<'ins, Result<'ret, Error>>
+/// Static class to help defining a program for a single instruction.
+/// Then, for every instruction in the "algrebra" (interface that inherits <c>IProgramInstructions</c>), we can define a function
+/// using <c>DefineProgram.instruction</c> and use this function in the workflow written with the <c>program</c> computation expression.
+type DefineProgram<'ins when Instructions<'ins>> =
+    /// <summary>
+    /// This function is an identity function (like <c>id</c>) used for DevExp purposes to help defining a program from an instruction
+    /// picked up from the intellisense suggestions and using shorthand lambda syntax for the lambda parameter.
+    /// </summary>
+    /// <example>
+    /// <code lang="fsharp">
+    /// type private DefineProgram = DefineProgram&lt;IProductInstructions>
+    /// let getPrices sku = DefineProgram.instruction _.GetPrices(sku)
+    /// let getSales sku = DefineProgram.instruction _.GetSales(sku)
+    /// let savePrices prices = DefineProgram.instruction _.SavePrices(prices)
+    /// </code>
+    /// </example>
+    /// <remarks>
+    /// Don't forget to use parentheses around the instruction parameter for the shorthand lambda syntax to work:
+    /// <br /> - ✅ Correct: <c>DefineProgram.instruction _.GetPrices(sku)</c>
+    /// <br /> - ❌ Incorrect: <c>DefineProgram.instruction _.GetPrices sku</c> (does not compile)
+    /// </remarks>
+    static member inline instruction([<InlineIfLambda>] work: 'ins -> Async<'ret>) : Program<'ins, 'ret> = work

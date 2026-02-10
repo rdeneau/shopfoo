@@ -330,6 +330,116 @@ match result with
 
 The `=!` operator provides clear failure messages showing both expected and actual values, making test failures easy to debug.
 
+### Avoiding Useless Comments in Tests
+
+Test method names should be descriptive enough that comments are unnecessary. **Do not add comments that merely repeat what the test name already states.**
+
+❌ **WRONG** - Comment duplicates the test name:
+
+```fsharp
+[<Test>]
+member _.``succeed when RemoveListPrice is called with existing prices`` () =
+    async {
+        // Test: RemoveListPrice succeeds with valid prices
+        let isbn = ISBN "978-0-13-468599-6"
+        
+        // Verify result is OK
+        let! result = fixture.Api.RemoveListPrice sku
+        result =! Ok()
+    }
+```
+
+✅ **CORRECT** - Let the test name speak for itself:
+
+```fsharp
+[<Test>]
+member _.``succeed when RemoveListPrice is called with existing prices`` () =
+    async {
+        let isbn = ISBN "978-0-13-468599-6"
+        let sku = isbn.AsSKU
+        let prices = Sales.Prices.Create(isbn, EUR, 19.99m, 25.99m)
+
+        use fixture = new ApiTestFixture(pricesSet = [ prices ])
+        let! result = fixture.Api.RemoveListPrice sku
+        result =! Ok()
+    }
+```
+
+**Exception:** Comments are allowed only when explaining non-obvious logic or test setup:
+
+```fsharp
+[<Test>]
+member _.``fail when SavePrices fails after AddProduct`` () =
+    async {
+        let product = createValidBookProduct()
+        use fixture = new ApiTestFixture()
+
+        // First add the product successfully
+        let! addResult = fixture.Api.AddProduct(product, EUR)
+        addResult =! Ok()
+
+        // Then attempt to save invalid prices - should fail
+        let invalidPrices = { prices with RetailPrice = RetailPrice.Regular(Euros -1m) }
+        let! savePricesResult = fixture.Api.SavePrices invalidPrices
+        test <@ Result.isError savePricesResult @>
+    }
+```
+
+### Avoiding Test Duplication
+
+**Do not duplicate tests across test classes.** Each test class should test a specific aspect of the workflow:
+
+- `AddProductShould.fs` - Tests adding products (validation, field requirements, etc.)
+- `MarkAsSoldOutShould.fs` - Tests marking products as sold out (stock checks, price updates, etc.)
+- `SavePricesShould.fs` - Tests saving price changes (validation, price constraints, etc.)
+- `SagaUndoTests.fs` - Tests saga compensation behavior (undo when steps fail)
+
+❌ **WRONG** - Duplicating an existing test:
+
+```fsharp
+// This test already exists in MarkAsSoldOutShould.fs
+type SagaUndoTests() =
+    [<Test>]
+    member _.``succeed when MarkAsSoldOut is called with existing prices`` () =
+        async {
+            // ... same test as MarkAsSoldOutShould ...
+        }
+```
+
+✅ **CORRECT** - New test class focuses on unique scenarios:
+
+```fsharp
+// SagaUndoTests tests multi-step workflows where later steps fail
+type SagaUndoTests() =
+    [<Test>]
+    member _.``fail when SavePrices fails after AddProduct`` () =
+        async {
+            // Tests saga compensation: AddProduct succeeds, 
+            // then SavePrices fails, expecting AddProduct to be undone
+            let product = createValidBookProduct()
+            use fixture = new ApiTestFixture()
+            
+            let! addResult = fixture.Api.AddProduct(product, EUR)
+            addResult =! Ok()
+            
+            let invalidPrices = { prices with RetailPrice = RetailPrice.Regular(Euros -1m) }
+            let! savePricesResult = fixture.Api.SavePrices invalidPrices
+            test <@ Result.isError savePricesResult @>
+            
+            // Verify the product was undone
+            let! finalProduct = fixture.Api.GetProduct product.SKU
+            finalProduct =! None
+        }
+```
+
+**Guidelines for related test classes:**
+
+1. **Identify the unique aspect** - What does this test class focus on that others don't?
+2. **Skip obvious cases** - Don't re-test what existing classes already cover
+3. **Test complementary scenarios** - Add tests that demonstrate the unique behavior (e.g., saga undo)
+4. **Multi-step workflows** - Focus on interactions between operations that other classes test in isolation
+
+
 ### Test Fixture Pattern
 
 Tests use `ApiTestFixture` to manage the dependency injection container lifecycle:

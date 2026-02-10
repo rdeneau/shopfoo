@@ -50,3 +50,9 @@ type internal CatalogPipeline
                 let error = GuardClause { EntityName = nameof Product; ErrorMessage = "Adding Bazaar products is not supported" }
                 return Error error
             }
+
+    member _.DeleteProduct(sku: SKU) : Async<Result<unit, Error>> =
+        match sku.Type with
+        | SKUType.ISBN isbn -> booksPipeline.DeleteProduct isbn
+        | SKUType.FSID _ -> async { return Error(GuardClause { EntityName = "Product"; ErrorMessage = "Deleting FakeStore products not supported" }) }
+        | _ -> async { return Error(DataError(DataNotFound(sku.Value, "Product"))) }

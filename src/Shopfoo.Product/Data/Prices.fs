@@ -35,6 +35,17 @@ type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: Fa
             return Ok()
         }
 
+    member _.DeletePrices(sku: SKU) : Async<Result<unit, Error>> =
+        async {
+            do! Fake.latencyInMilliseconds 150
+
+            return
+                if repository.Remove(sku) then
+                    Ok()
+                else
+                    Error(DataError(DataNotFound(sku.Value, "Prices")))
+        }
+
 module private Fakes =
     let private cleanArchitecture = Prices.Create(ISBN.CleanArchitecture, USD, 39.90m)
     let private cleanCode = Prices.Create(ISBN.CleanCode, EUR, 46.46m, 54.20m)

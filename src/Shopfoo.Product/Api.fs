@@ -12,6 +12,7 @@ open Shopfoo.Product.Data.Sales
 open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.Workflows
 open Shopfoo.Program.Dependencies
+open Shopfoo.Program.Runner
 
 [<Interface>]
 type IProductApi =
@@ -35,28 +36,37 @@ type IProductApi =
 [<Sealed>]
 type internal Api
     (
-        monitorFactory: IDomainMonitorFactory,
+        workflowRunnerFactory: IWorkflowRunnerFactory,
         catalogPipeline: CatalogPipeline,
         openLibraryPipeline: OpenLibraryPipeline,
         pricesPipeline: PricesPipeline,
         salesPipeline: SalesPipeline,
         warehousePipeline: WarehousePipeline
     ) =
-    let monitor = monitorFactory.Create("Product")
-
-    let instructions =
+    let prepareInstructions (x: IWorkflowPreparer<'ins>) =
         { new IProductInstructions with
-            member _.GetPrices = monitor.Query "GetPrices" pricesPipeline.GetPrices
-            member _.GetSales = monitor.Query "GetSales" salesPipeline.GetSales
-            member _.GetStockEvents = monitor.Query "GetStockEvents" warehousePipeline.GetStockEvents
-            member _.SavePrices = monitor.Command "SavePrices" pricesPipeline.SavePrices
-            member _.SaveProduct = monitor.Command "SaveProduct" catalogPipeline.SaveProduct
-            member _.AddPrices = monitor.Command "AddPrices" pricesPipeline.AddPrices
-            member _.AddProduct = monitor.Command "AddProduct" catalogPipeline.AddProduct
+            member _.GetPrices = x.PrepareQuery("GetPrices", pricesPipeline.GetPrices)
+            member _.GetSales = x.PrepareQuery("GetSales", salesPipeline.GetSales)
+            member _.GetStockEvents = x.PrepareQuery("GetStockEvents", warehousePipeline.GetStockEvents)
+
+            // TODO RDE: add undo operations
+            member _.SavePrices = x.PrepareCommand("SavePrices", pricesPipeline.SavePrices)
+            member _.SaveProduct = x.PrepareCommand("SaveProduct", catalogPipeline.SaveProduct)
+            member _.AddPrices = x.PrepareCommand("AddPrices", pricesPipeline.AddPrices)
+            member _.AddProduct = x.PrepareCommand("AddProduct", catalogPipeline.AddProduct)
+
+            // TODO RDE: to remove once the pipeline functions are used in the undo operations above
+            member _.DeletePrices = x.PrepareCommand("DeletePrices", pricesPipeline.DeletePrices)
+            member _.DeleteProduct = x.PrepareCommand("DeleteProduct", catalogPipeline.DeleteProduct)
         }
 
-    let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> = // ↩
-        monitor.Workflow workflow arg instructions
+    let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =
+        async {
+            let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
+            let! result, _ = workflowRunner.RunInSaga workflow arg prepareInstructions
+            // Here we could inspect the saga state and history for debugging or reporting...
+            return result
+        }
 
     interface IProductApi with
         member val GetProducts = catalogPipeline.GetProducts

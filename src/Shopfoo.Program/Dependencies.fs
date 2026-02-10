@@ -5,11 +5,11 @@ open Microsoft.Extensions.DependencyInjection
 open Microsoft.Extensions.Logging
 open Shopfoo.Common
 open Shopfoo.Program.Metrics
-open Shopfoo.Program.Monitoring
+open Shopfoo.Program.Runner
 
 [<Interface>]
-type IDomainMonitorFactory =
-    abstract member Create<'ins when 'ins :> IProgramInstructions> : domainName: string -> DomainMonitor<'ins>
+type IWorkflowRunnerFactory =
+    abstract member Create<'ins when Instructions<'ins>> : domainName: string -> IWorkflowRunner<'ins>
 
 [<AutoOpen>]
 module private Implementation =
@@ -61,13 +61,19 @@ module private Implementation =
             member _.QueryTimer() = WorkMonitor(timeAsync MetricsStatus.ofOptionExpected)
 
     [<Sealed>]
-    type DomainMonitorFactory(monitors: IWorkMonitors) =
-        interface IDomainMonitorFactory with
-            member _.Create(domainName) = DomainMonitor(domainName, monitors)
+    type WorkflowRunnerFactory(monitors: IWorkMonitors) =
+        interface IWorkflowRunnerFactory with
+            member _.Create domainName =
+                let workflowPreparerFactory =
+                    { new IWorkflowPreparerFactory<'ins> with
+                        member _.Create sagaTracker = WorkflowPreparer(domainName, monitors, sagaTracker)
+                    }
+
+                WorkflowRunner workflowPreparerFactory
 
 type IServiceCollection with
     member services.AddEffects() =
         services
             .AddSingleton<IMetricsSender, MetricsLogger>()
             .AddSingleton<IWorkMonitors, WorkMonitors>()
-            .AddSingleton<IDomainMonitorFactory, DomainMonitorFactory>()
+            .AddSingleton<IWorkflowRunnerFactory, WorkflowRunnerFactory>()

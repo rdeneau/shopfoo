@@ -12,8 +12,9 @@
   <ItemGroup>
     <Content Include="paket.references" />
     <Compile Include="Program.fs" />
+    <Compile Include="Saga.fs" />
+    <Compile Include="Runner.fs" />
     <Compile Include="Metrics.fs" />
-    <Compile Include="Monitoring.fs" />
     <Compile Include="Dependencies.fs" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />
