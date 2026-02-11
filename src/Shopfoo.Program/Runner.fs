@@ -22,45 +22,58 @@ type IWorkMonitors =
 
 [<Interface>]
 type IInstructionOptions<'arg, 'ret> =
-    abstract member GetInstructionType: 'arg -> 'ret -> InstructionType
-    abstract member GetTimer: IWorkMonitors -> WorkMonitor<'arg, 'ret>
-    abstract member ToResult: 'ret -> Result<unit, Error>
+    abstract member GetInstructionName: ('arg -> string)
+    abstract member GetInstructionType: ('arg -> 'ret -> InstructionType)
+    abstract member GetTimer: (IWorkMonitors -> WorkMonitor<'arg, 'ret>)
+    abstract member ToResult: ('ret -> Result<unit, Error>)
 
 [<Sealed>]
-type QueryOptions<'arg, 'ret>() =
+type QueryOptions<'arg, 'ret>(instructionName) =
     interface IInstructionOptions<'arg, 'ret option> with
-        member _.GetInstructionType _ _ = InstructionType.Query
-        member _.GetTimer monitors = monitors.QueryTimer()
-        member _.ToResult _ = Ok()
+        member _.GetInstructionName = fun _ -> instructionName
+        member _.GetInstructionType = fun _ _ -> InstructionType.Query
+        member _.GetTimer = _.QueryTimer()
+        member _.ToResult = fun _ -> Ok()
 
 [<Sealed>]
-type CommandOptions<'arg, 'ret>(getType) =
+type CommandOptions<'arg, 'ret>(getInstructionName, getInstructionType) =
     interface IInstructionOptions<'arg, Result<'ret, Error>> with
-        member _.GetInstructionType arg result = getType arg result
-        member _.GetTimer monitors = monitors.CommandTimer()
-        member _.ToResult result = result |> Result.ignore
+        member _.GetInstructionName = getInstructionName
+        member _.GetInstructionType = getInstructionType
+        member _.GetTimer = _.CommandTimer()
+        member _.ToResult = Result.ignore
 
 [<Sealed>]
-type CommandOptionsBuilder() =
-    static member val Instance = CommandOptionsBuilder()
-    member _.NoUndo() : IInstructionOptions<_, _> = CommandOptions(fun _ _ -> InstructionType.Command(undo = None))
+type CommandOptionsBuilder<'arg>(getInstructionName: 'arg -> string) =
+    member _.NoUndo() : IInstructionOptions<_, _> =
+        CommandOptions( // ↩
+            getInstructionName,
+            fun _ _ -> InstructionType.Command(undo = None)
+        )
 
-    member _.Revert undoFun =
-        CommandOptions(fun arg result -> InstructionType.Command(undo = Some(UndoType.Revert, UndoFunc(fun () -> undoFun arg result))))
+    member _.Revert undoFun : IInstructionOptions<_, _> =
+        CommandOptions(
+            getInstructionName,
+            fun arg result -> InstructionType.Command(undo = Some(UndoType.Revert, UndoFunc(fun () -> undoFun arg result)))
+        )
 
-    member _.Compensate undoFun =
-        CommandOptions(fun arg result -> InstructionType.Command(undo = Some(UndoType.Compensate, UndoFunc(fun () -> undoFun arg result))))
+    member _.Compensate undoFun : IInstructionOptions<_, _> =
+        CommandOptions(
+            getInstructionName,
+            fun arg result -> InstructionType.Command(undo = Some(UndoType.Compensate, UndoFunc(fun () -> undoFun arg result)))
+        )
 
 [<Sealed>]
 type InstructionOptionsBuilder() =
     static member val Instance = InstructionOptionsBuilder()
-    member _.Query() : IInstructionOptions<_, _> = QueryOptions<'arg, 'ret>()
-    member _.Command = CommandOptionsBuilder.Instance
+    member _.Query(name) : IInstructionOptions<_, _> = QueryOptions<'arg, 'ret>(name)
+    member _.Command(name) = CommandOptionsBuilder(fun _ -> name)
+    member _.Command(getInstructionName) = CommandOptionsBuilder(getInstructionName)
 
 [<Interface>]
-type IWorkflowPreparer<'ins when Instructions<'ins>> =
-    abstract member PrepareInstruction:
-        name: string -> work: Work<'arg, 'ret> -> buildOptions: (InstructionOptionsBuilder -> IInstructionOptions<'arg, 'ret>) -> Work<'arg, 'ret>
+type IInstructionPreparer<'ins when Instructions<'ins>> =
+    abstract member Prepare:
+        work: Work<'arg, 'ret> -> buildOptions: (InstructionOptionsBuilder -> IInstructionOptions<'arg, 'ret>) -> Work<'arg, 'ret>
 
 [<Sealed>]
 type internal SagaTracker<'ins when Instructions<'ins>>() =
@@ -72,16 +85,17 @@ type internal SagaTracker<'ins when Instructions<'ins>>() =
     member _.EnqueueStep step = lock lockObj (fun () -> currentState <- { currentState with History = step :: currentState.History })
 
 [<Sealed>]
-type internal WorkflowPreparer<'ins when Instructions<'ins>>(domainName: string, monitors: IWorkMonitors, tracker: SagaTracker<'ins>) =
+type internal InstructionPreparer<'ins when Instructions<'ins>>(domainName: string, monitors: IWorkMonitors, tracker: SagaTracker<'ins>) =
     let loggerFactory = monitors.LoggerFactory(categoryName = $"Shopfoo.%s{domainName}.Workflow")
 
-    interface IWorkflowPreparer<'ins> with
-        member _.PrepareInstruction name work buildOptions =
-            let options = buildOptions InstructionOptionsBuilder.Instance
-            let loggedWork = loggerFactory.Logger().Invoke(name, work)
-            let timedWorks = options.GetTimer(monitors).Invoke(name, loggedWork)
-
+    interface IInstructionPreparer<'ins> with
+        member _.Prepare work buildOptions =
             fun args ->
+                let options = buildOptions InstructionOptionsBuilder.Instance
+                let instructionName = options.GetInstructionName args
+                let loggedWork = loggerFactory.Logger().Invoke(instructionName, work)
+                let timedWorks = options.GetTimer(monitors).Invoke(instructionName, loggedWork)
+
                 async {
                     let! ret = timedWorks args
 
@@ -90,44 +104,44 @@ type internal WorkflowPreparer<'ins when Instructions<'ins>>(domainName: string,
                         | Ok _ -> StepStatus.RunDone
                         | Error err -> (StepStatus.RunFailed err)
 
-                    let meta = { Name = name; Type = options.GetInstructionType args ret }
+                    let meta = { Name = instructionName; Type = options.GetInstructionType args ret }
                     tracker.EnqueueStep { Instruction = meta; Status = stepStatus }
 
                     return ret
                 }
 
 [<Interface>]
-type internal IWorkflowPreparerFactory<'ins when Instructions<'ins>> =
-    abstract member Create: SagaTracker<'ins> -> IWorkflowPreparer<'ins>
+type internal IInstructionPreparerFactory<'ins when Instructions<'ins>> =
+    abstract member Create: SagaTracker<'ins> -> IInstructionPreparer<'ins>
 
 [<Interface>]
 type IWorkflowRunner<'ins when Instructions<'ins>> =
     abstract member Run:
         workflow: #IProgramWorkflow<'ins, 'arg, 'ret> ->
         arg: 'arg ->
-        prepareInstructions: (IWorkflowPreparer<'ins> -> 'ins) ->
+        prepareInstructions: (IInstructionPreparer<'ins> -> 'ins) ->
             Async<Result<'ret, Error>>
 
     abstract member RunInSaga:
         workflow: #IProgramWorkflow<'ins, 'arg, 'ret> ->
         arg: 'arg ->
-        prepareInstructions: (IWorkflowPreparer<'ins> -> 'ins) ->
+        prepareInstructions: (IInstructionPreparer<'ins> -> 'ins) ->
             Async<Result<'ret, Error> * SagaState>
 
 [<Sealed>]
-type internal WorkflowRunner<'ins when Instructions<'ins>>(workflowPreparerFactory: IWorkflowPreparerFactory<'ins>) =
+type internal WorkflowRunner<'ins when Instructions<'ins>>(instructionPreparerFactory: IInstructionPreparerFactory<'ins>) =
     let runWithCanUndo
         (canUndo: bool)
         (workflow: #IProgramWorkflow<'ins, 'arg, 'ret>)
         (arg: 'arg)
-        (prepareInstructions: IWorkflowPreparer<'ins> -> 'ins)
+        (prepareInstructions: IInstructionPreparer<'ins> -> 'ins)
         : Async<Result<'ret, Error> * SagaState> =
         async {
             let tracker = SagaTracker<'ins>()
 
             try
-                let workflowPreparer = workflowPreparerFactory.Create tracker
-                let instructions = prepareInstructions workflowPreparer
+                let instructionPreparer = instructionPreparerFactory.Create tracker
+                let instructions = prepareInstructions instructionPreparer
 
                 let! result = workflow.Run arg instructions
                 let sagaStateAfterRun = tracker.CurrentState

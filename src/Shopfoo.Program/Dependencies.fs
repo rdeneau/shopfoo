@@ -64,12 +64,12 @@ module private Implementation =
     type WorkflowRunnerFactory(monitors: IWorkMonitors) =
         interface IWorkflowRunnerFactory with
             member _.Create domainName =
-                let workflowPreparerFactory =
-                    { new IWorkflowPreparerFactory<'ins> with
-                        member _.Create sagaTracker = WorkflowPreparer(domainName, monitors, sagaTracker)
+                let instructionPreparerFactory =
+                    { new IInstructionPreparerFactory<'ins> with
+                        member _.Create sagaTracker = InstructionPreparer(domainName, monitors, sagaTracker)
                     }
 
-                WorkflowRunner workflowPreparerFactory
+                WorkflowRunner instructionPreparerFactory
 
 type IServiceCollection with
     member services.AddProgram() =

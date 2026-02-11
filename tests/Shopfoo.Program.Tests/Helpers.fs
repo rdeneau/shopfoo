@@ -2,8 +2,9 @@
 
 open Shopfoo.Program
 
-type LightStep = { InstructionName: string; Status: StepStatus }
+type LightStep = string * StepStatus
 
-let lightHistory (saga: SagaState) =
-    saga.History
-    |> List.map (fun step -> { InstructionName = step.Instruction.Name; Status = step.Status })
+module LightStep =
+    let ofProgramStep (step: ProgramStep) = LightStep(step.Instruction.Name, step.Status)
+
+let lightHistory (saga: SagaState) = saga.History |> List.map LightStep.ofProgramStep

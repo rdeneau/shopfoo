@@ -20,6 +20,7 @@ module private WorkMonitorCall =
 type private WorkMonitorMock() =
     let mutable calls: WorkMonitorCall list = []
     member _.Calls = calls
+
     member _.Object() =
         WorkMonitor<'arg, 'ret>(fun name work ->
             fun (arg: 'arg) ->

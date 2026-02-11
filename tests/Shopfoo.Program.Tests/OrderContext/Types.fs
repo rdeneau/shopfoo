@@ -4,10 +4,14 @@ open System
 
 [<AutoOpen>]
 module Id =
-    type Id<'kind> = { Kind: 'kind; Value: Guid }
+    type Id<'kind> = {
+        Kind: 'kind
+        Value: string
+    } with
+        override this.ToString() = $"%A{this.Kind}-%s{this.Value}"
 
     module Id =
-        let New kind = { Kind = kind; Value = Guid.NewGuid() }
+        let New kind = { Kind = kind; Value = Guid.NewGuid().ToString()[0..7] }
 
     module InvoiceId =
         type Invoice = private | Invoice
@@ -75,18 +79,24 @@ type Payment = {
         UtcDate = DateTime.UtcNow
     }
 
-module Cmd =
-    type ChangeOrderStatus = {
-        OrderId: OrderId
-        CurrentStatus: OrderStatus
-        NewStatus: OrderStatus
-    } with
-        member this.Revert() = { this with CurrentStatus = this.NewStatus; NewStatus = this.CurrentStatus }
+type Transition = { From: OrderStatus; To: OrderStatus }
 
+module Cmd =
     type CreateOrder = { OrderId: OrderId; Price: decimal }
-    type IssueInvoice = { OrderId: OrderId; Amount: decimal }
-    type CompensateInvoice = { InvoiceId: InvoiceId }
     type NotifyOrderChanged = { OrderId: OrderId; NewStatus: OrderStatus }
+    type IssueInvoice = { OrderId: OrderId; Amount: decimal }
     type ProcessPayment = { OrderId: OrderId; Amount: decimal }
-    type RefundPayment = { PaymentId: PaymentId }
     type ShipOrder = { OrderId: OrderId }
+    type TransitionOrder = { OrderId: OrderId; Transition: Transition }
+
+    // Undo commands
+    type CompensateInvoice = { InvoiceId: InvoiceId }
+    type RefundPayment = { PaymentId: PaymentId }
+
+[<AutoOpen>]
+module Extensions =
+    type Transition with
+        member this.Revert() = { this with From = this.To; To = this.From }
+
+    type Cmd.TransitionOrder with
+        member this.Revert() = { this with Transition = this.Transition.Revert() }

@@ -23,98 +23,40 @@ type OrderWorkflowSagaShould() =
     let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
     let orderWorkflow = OrderWorkflow()
 
-    let invoiceRepository = InvoiceRepository()
-    let notificationClient = NotificationClient()
-    let orderRepository = OrderRepository()
-    let paymentRepository = PaymentRepository()
-    let warehouseClient = WarehouseClient()
+    let simulatedErrorProvider = SimulatedErrorProvider()
+    let invoiceRepository = InvoiceRepository(simulatedErrorProvider)
+    let notificationClient = NotificationClient(simulatedErrorProvider)
+    let orderRepository = OrderRepository(simulatedErrorProvider)
+    let paymentRepository = PaymentRepository(simulatedErrorProvider)
+    let warehouseClient = WarehouseClient(simulatedErrorProvider)
 
-    let uniqueString (prefix: string) = prefix + Guid.NewGuid().ToString()[0..7]
-    let errorMessage = uniqueString "simulated error #"
+    let orderId = OrderId.New()
+    let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
 
-    let expectedErrors = {|
-        createOrder = DataError(DuplicateKey(Id = errorMessage, Type = "Order"))
-        processPayment = DataError(DataNotFound(Id = errorMessage, Type = "Order"))
-        issueInvoice = OperationNotAllowed { Operation = "issueInvoice"; Reason = errorMessage }
-        shipOrder = HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable)
-    |}
-
-    let undoChangeOrderStatus (cmd: Cmd.ChangeOrderStatus) _res = orderRepository.ChangeOrderStatus(cmd.Revert())
     let undoCreateOrder (cmd: Cmd.CreateOrder) _res = orderRepository.DeleteOrder cmd.OrderId
+    let undoTransitionOrder (cmd: Cmd.TransitionOrder) _res = orderRepository.TransitionOrder(cmd.Revert())
     let undoInvoice _cmd (res: Result<InvoiceId, Error>) = invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force }
     let undoPayment _cmd (res: Result<PaymentId, Error>) = paymentRepository.RefundPayment { PaymentId = res |> Result.force }
 
     interface IDisposable with
         override _.Dispose() = serviceProvider.Dispose()
 
-    member private _.PrepareInstructions(?createOrderError, ?processPaymentError, ?issueInvoiceError, ?notificationError, ?shipOrderError) =
-        fun (x: IWorkflowPreparer<'ins>) ->
+    member private _.PrepareInstructions() =
+        fun (x: IInstructionPreparer<'ins>) ->
             { new IOrderInstructions with
-                member _.ChangeOrderStatus =
-                    x.PrepareInstruction // ↩
-                        "ChangeOrderStatus"
-                        orderRepository.ChangeOrderStatus
-                        _.Command.Revert(undoChangeOrderStatus)
-
-                member _.CreateOrder =
-                    x.PrepareInstruction
-                        "CreateOrder"
-                        (orderRepository.CreateOrder(?simulatedError = createOrderError))
-                        _.Command.Revert(undoCreateOrder)
-
-                member _.IssueInvoice =
-                    x.PrepareInstruction
-                        "IssueInvoice"
-                        (invoiceRepository.IssueInvoice(?simulatedError = issueInvoiceError))
-                        _.Command.Compensate(undoInvoice)
-
-                member _.ProcessPayment =
-                    x.PrepareInstruction
-                        "ProcessPayment"
-                        (paymentRepository.ProcessPayment(?simulatedError = processPaymentError))
-                        _.Command.Compensate(undoPayment)
-
-                member _.SendNotification =
-                    x.PrepareInstruction
-                        "SendNotification"
-                        (notificationClient.SendNotification(?simulatedError = notificationError))
-                        _.Command.NoUndo()
-
-                member _.ShipOrder =
-                    x.PrepareInstruction // ↩
-                        "ShipOrder"
-                        (warehouseClient.ShipOrder(?simulatedError = shipOrderError))
-                        _.Command.NoUndo()
+                member _.CreateOrder = x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder) // Include the Do in the build step ?
+                member _.IssueInvoice = x.Prepare invoiceRepository.IssueInvoice _.Command("IssueInvoice").Compensate(undoInvoice)
+                member _.ProcessPayment = x.Prepare paymentRepository.ProcessPayment _.Command("ProcessPayment").Compensate(undoPayment)
+                member _.SendNotification = x.Prepare notificationClient.SendNotification _.Command("SendNotification").NoUndo()
+                member _.ShipOrder = x.Prepare warehouseClient.ShipOrder _.Command("ShipOrder").NoUndo()
+                member _.TransitionOrder = x.Prepare orderRepository.TransitionOrder _.Command("TransitionOrder").Revert(undoTransitionOrder)
             }
 
-    [<Test>]
-    member this.``undo no steps given the first step—createOrder—failed``() =
+    member private this.VerifyUndo(expectedError, errorAt, expectedHistory) =
         async {
-            let orderId = OrderId.New()
-            let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
-            let expectedError = expectedErrors.createOrder
+            do simulatedErrorProvider.Define expectedError errorAt
 
-            let! result, sagaState = workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions(createOrderError = expectedError))
-
-            let! orderCreated = orderRepository.GetOrderById orderId
-
-            test
-                <@
-                    result = Error expectedError
-                    && orderCreated = None
-                    && sagaState = { Status = SagaStatus.Failed(originalError = expectedError, undoErrors = []); History = [] }
-                @>
-        }
-
-    [<Test>]
-    member this.``first step—createOrder—undone (reverted) given the second step—processPayment—failed``() =
-        async {
-            let orderId = OrderId.New()
-            let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
-            let expectedError = expectedErrors.processPayment
-
-            let! result, sagaState =
-                workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions(processPaymentError = expectedError))
+            let! result, sagaState = workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions())
 
             let! orderCreated = orderRepository.GetOrderById orderId
 
@@ -123,9 +65,53 @@ type OrderWorkflowSagaShould() =
                     result = Error expectedError
                     && orderCreated = None
                     && sagaState.Status = SagaStatus.Failed(originalError = expectedError, undoErrors = [])
-                    && lightHistory sagaState = [ { InstructionName = "CreateOrder"; Status = StepStatus.UndoDone } ]
+                    && lightHistory sagaState = expectedHistory
                 @>
         }
 
-// TODO: add additional tests for other failure scenarios, e.g. ProcessPayment fails and CreateOrder is undone successfully, etc.
+    [<Test>]
+    member this.``1_ undo no steps given createOrder failed``() =
+        this.VerifyUndo(
+            expectedError = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")),
+            errorAt = OrderAction.CreateOrder,
+            expectedHistory = []
+        )
+
+    [<Test>]
+    member this.``2_ undo createOrder given processPayment failed``() =
+        this.VerifyUndo(
+            expectedError = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")),
+            errorAt = OrderAction.ProcessPayment,
+            expectedHistory = [ "CreateOrder", StepStatus.UndoDone ]
+        )
+
+    [<Test>]
+    member this.``3_ undo createOrder and processPayment given issueInvoice failed``() =
+        this.VerifyUndo(
+            expectedError = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" },
+            errorAt = OrderAction.IssueInvoice,
+            expectedHistory = [
+                "SendNotification", StepStatus.RunDone
+                "TransitionOrder", StepStatus.UndoDone
+                "ProcessPayment", StepStatus.UndoDone
+                "CreateOrder", StepStatus.UndoDone
+            ]
+        )
+
+    [<Test>]
+    member this.``4_ undo createOrder, processPayment, and issueInvoice given shipOrder failed``() =
+        this.VerifyUndo(
+            expectedError = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable)),
+            errorAt = OrderAction.ShipOrder,
+            expectedHistory = [
+                "SendNotification", StepStatus.RunDone
+                "TransitionOrder", StepStatus.UndoDone
+                "IssueInvoice", StepStatus.UndoDone
+                "SendNotification", StepStatus.RunDone
+                "TransitionOrder", StepStatus.UndoDone
+                "ProcessPayment", StepStatus.UndoDone
+                "CreateOrder", StepStatus.UndoDone
+            ]
+        )
+
 // TODO: test cancel order after each step...
