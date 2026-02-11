@@ -103,3 +103,27 @@ type OrderWorkflowSagaShould() =
                     && sagaState = { Status = SagaStatus.Failed(originalError = expectedError, undoErrors = []); History = [] }
                 @>
         }
+
+    [<Test>]
+    member this.``first step—createOrder—undone (reverted) given the second step—processPayment—failed``() =
+        async {
+            let orderId = OrderId.New()
+            let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
+            let expectedError = expectedErrors.processPayment
+
+            let! result, sagaState =
+                workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions(processPaymentError = expectedError))
+
+            let! orderCreated = orderRepository.GetOrderById orderId
+
+            test
+                <@
+                    result = Error expectedError
+                    && orderCreated = None
+                    && sagaState.Status = SagaStatus.Failed(originalError = expectedError, undoErrors = [])
+                    && lightHistory sagaState = [ { InstructionName = "CreateOrder"; Status = StepStatus.UndoDone } ]
+                @>
+        }
+
+// TODO: add additional tests for other failure scenarios, e.g. ProcessPayment fails and CreateOrder is undone successfully, etc.
+// TODO: test cancel order after each step...
