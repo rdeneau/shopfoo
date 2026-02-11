@@ -12,7 +12,9 @@
     <Content Include="paket.references" />
     <Compile Include="Helpers.fs" />
     <Compile Include="Mocks.fs" />
-    <Compile Include="OrderContext.fs" />
+    <Compile Include="OrderContext\Types.fs" />
+    <Compile Include="OrderContext\Workflows.fs" />
+    <Compile Include="OrderContext\Data.fs" />
     <Compile Include="OrderWorkflowSagaShould.fs" />
   </ItemGroup>
   <ItemGroup>

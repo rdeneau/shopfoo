@@ -6,6 +6,8 @@ open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Tests.OrderContext
+open Shopfoo.Product.Tests.OrderContext.Data
+open Shopfoo.Product.Tests.OrderContext.Workflows
 open Shopfoo.Program
 open Shopfoo.Program.Dependencies
 open Shopfoo.Program.Runner
@@ -21,11 +23,11 @@ type OrderWorkflowSagaShould() =
     let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
     let orderWorkflow = OrderWorkflow()
 
-    let invoiceRepository = Data.InvoiceRepository()
-    let notificationClient = Data.NotificationClient()
-    let orderRepository = Data.OrderRepository()
-    let paymentRepository = Data.PaymentRepository()
-    let warehouseClient = Data.WarehouseClient()
+    let invoiceRepository = InvoiceRepository()
+    let notificationClient = NotificationClient()
+    let orderRepository = OrderRepository()
+    let paymentRepository = PaymentRepository()
+    let warehouseClient = WarehouseClient()
 
     let uniqueString (prefix: string) = prefix + Guid.NewGuid().ToString()[0..7]
     let errorMessage = uniqueString "simulated error #"
