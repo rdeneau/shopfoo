@@ -47,13 +47,12 @@ type Invoice = {
         UtcDate = DateTime.UtcNow
     }
 
-[<RequireQualifiedAccess>]
 type OrderStatus =
-    | Created
-    | Cancelled
-    | PaymentProcessed of PaymentId
-    | InvoiceIssued of InvoiceId
-    | Shipped of ParcelId
+    | OrderCreated
+    | OrderCancelled
+    | OrderPaid of PaymentId
+    | OrderInvoiced of InvoiceId
+    | OrderShipped of ParcelId
 
 type Order = {
     Id: OrderId
@@ -63,7 +62,7 @@ type Order = {
     static member Create(price, ?id) = {
         Id = defaultArg id (OrderId.New())
         Price = price
-        Status = OrderStatus.Created
+        Status = OrderCreated
     }
 
 type Payment = {

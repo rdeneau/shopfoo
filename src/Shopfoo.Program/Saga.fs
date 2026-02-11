@@ -30,7 +30,6 @@ type InstructionType =
 
 type InstructionMeta = { Name: string; Type: InstructionType }
 
-[<RequireQualifiedAccess>]
 type StepStatus =
     | RunDone
     | RunFailed of runError: Error
@@ -61,7 +60,7 @@ module Saga =
     let performUndo (state: SagaState) : Async<SagaState> =
         async {
             match state.History with
-            | { Status = StepStatus.RunFailed originalError } :: stepsToUndo ->
+            | { Status = RunFailed originalError } :: stepsToUndo ->
                 let undoErrors = ResizeArray<Error>()
                 let updatedSteps = ResizeArray<ProgramStep>()
 
@@ -70,21 +69,21 @@ module Saga =
                     let! updatedStep =
                         async {
                             match step.Status, step.Instruction.Type with
-                            | StepStatus.RunDone, InstructionType.Command(Some(_, undoFunc)) ->
+                            | RunDone, InstructionType.Command(Some(_, undoFunc)) ->
                                 // Execute undo function
                                 let! undoResult = undoFunc.Invoke()
 
                                 return
                                     match undoResult with
-                                    | Ok() -> { step with Status = StepStatus.UndoDone }
+                                    | Ok() -> { step with Status = UndoDone }
                                     | Error err ->
                                         undoErrors.Add(err)
-                                        { step with Status = StepStatus.UndoFailed err }
+                                        { step with Status = UndoFailed err }
 
-                            | StepStatus.RunDone, (InstructionType.Query | InstructionType.Command(undo = None))
-                            | StepStatus.RunFailed _, _
-                            | StepStatus.UndoDone, _
-                            | StepStatus.UndoFailed _, _ -> return step
+                            | RunDone, (InstructionType.Query | InstructionType.Command(undo = None))
+                            | RunFailed _, _
+                            | UndoDone, _
+                            | UndoFailed _, _ -> return step
                         }
 
                     updatedSteps.Add updatedStep

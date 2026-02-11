@@ -101,8 +101,8 @@ type internal InstructionPreparer<'ins when Instructions<'ins>>(domainName: stri
 
                     let stepStatus =
                         match options.ToResult ret with
-                        | Ok _ -> StepStatus.RunDone
-                        | Error err -> (StepStatus.RunFailed err)
+                        | Ok _ -> RunDone
+                        | Error err -> (RunFailed err)
 
                     let meta = { Name = instructionName; Type = options.GetInstructionType args ret }
                     tracker.EnqueueStep { Instruction = meta; Status = stepStatus }

@@ -33,6 +33,14 @@ type OrderWorkflowSagaShould() =
     let orderId = OrderId.New()
     let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
 
+    let formatOrderStatus =
+        function
+        | OrderCreated -> "Created"
+        | OrderCancelled -> "Cancelled"
+        | OrderPaid _ -> "Paid"
+        | OrderInvoiced _ -> "Invoiced"
+        | OrderShipped _ -> "Shipped"
+
     let undoCreateOrder (cmd: Cmd.CreateOrder) _res = orderRepository.DeleteOrder cmd.OrderId
     let undoTransitionOrder (cmd: Cmd.TransitionOrder) _res = orderRepository.TransitionOrder(cmd.Revert())
     let undoInvoice _cmd (res: Result<InvoiceId, Error>) = invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force }
@@ -44,12 +52,27 @@ type OrderWorkflowSagaShould() =
     member private _.PrepareInstructions() =
         fun (x: IInstructionPreparer<'ins>) ->
             { new IOrderInstructions with
-                member _.CreateOrder = x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder) // Include the Do in the build step ?
+                // TODO: improve syntax and intellisense
+                //       actual: x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder)
+                //       target: x.Prepare(orderRepository.CreateOrder).Command("CreateOrder").Revert(fun cmd _res = orderRepository.DeleteOrder cmd.OrderId)
+                member _.CreateOrder = x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder)
                 member _.IssueInvoice = x.Prepare invoiceRepository.IssueInvoice _.Command("IssueInvoice").Compensate(undoInvoice)
                 member _.ProcessPayment = x.Prepare paymentRepository.ProcessPayment _.Command("ProcessPayment").Compensate(undoPayment)
-                member _.SendNotification = x.Prepare notificationClient.SendNotification _.Command("SendNotification").NoUndo()
+
+                member _.SendNotification =
+                    x.Prepare
+                        notificationClient.SendNotification
+                        _.Command(fun (cmd: Cmd.NotifyOrderChanged) -> $"SendNotificationOrder%s{formatOrderStatus cmd.NewStatus}").NoUndo()
+
                 member _.ShipOrder = x.Prepare warehouseClient.ShipOrder _.Command("ShipOrder").NoUndo()
-                member _.TransitionOrder = x.Prepare orderRepository.TransitionOrder _.Command("TransitionOrder").Revert(undoTransitionOrder)
+
+                member _.TransitionOrder =
+                    x.Prepare
+                        orderRepository.TransitionOrder
+                        _.Command(fun (cmd: Cmd.TransitionOrder) ->
+                            $"TransitionOrderFrom%s{formatOrderStatus cmd.Transition.From}To%s{formatOrderStatus cmd.Transition.To}"
+                        )
+                            .Revert(undoTransitionOrder)
             }
 
     member private this.VerifyUndo(expectedError, errorAt, expectedHistory) =
@@ -82,7 +105,7 @@ type OrderWorkflowSagaShould() =
         this.VerifyUndo(
             expectedError = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")),
             errorAt = OrderAction.ProcessPayment,
-            expectedHistory = [ "CreateOrder", StepStatus.UndoDone ]
+            expectedHistory = [ "CreateOrder", UndoDone ]
         )
 
     [<Test>]
@@ -91,10 +114,10 @@ type OrderWorkflowSagaShould() =
             expectedError = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" },
             errorAt = OrderAction.IssueInvoice,
             expectedHistory = [
-                "SendNotification", StepStatus.RunDone
-                "TransitionOrder", StepStatus.UndoDone
-                "ProcessPayment", StepStatus.UndoDone
-                "CreateOrder", StepStatus.UndoDone
+                "SendNotificationOrderPaid", RunDone
+                "TransitionOrderFromCreatedToPaid", UndoDone
+                "ProcessPayment", UndoDone
+                "CreateOrder", UndoDone
             ]
         )
 
@@ -104,13 +127,13 @@ type OrderWorkflowSagaShould() =
             expectedError = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable)),
             errorAt = OrderAction.ShipOrder,
             expectedHistory = [
-                "SendNotification", StepStatus.RunDone
-                "TransitionOrder", StepStatus.UndoDone
-                "IssueInvoice", StepStatus.UndoDone
-                "SendNotification", StepStatus.RunDone
-                "TransitionOrder", StepStatus.UndoDone
-                "ProcessPayment", StepStatus.UndoDone
-                "CreateOrder", StepStatus.UndoDone
+                "SendNotificationOrderInvoiced", RunDone
+                "TransitionOrderFromPaidToInvoiced", UndoDone
+                "IssueInvoice", UndoDone
+                "SendNotificationOrderPaid", RunDone
+                "TransitionOrderFromCreatedToPaid", UndoDone
+                "ProcessPayment", UndoDone
+                "CreateOrder", UndoDone
             ]
         )
 

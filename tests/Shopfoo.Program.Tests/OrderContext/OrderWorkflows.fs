@@ -49,7 +49,7 @@ type OrderWorkflow(?cancelAfterStep: OrderAction) =
             let cancelAfter step actualStatus =
                 program {
                     if cancelAfterStep = Some step then
-                        return! Program.transitionOrder (cmder.TransitionOrder { From = actualStatus; To = OrderStatus.Cancelled })
+                        return! Program.transitionOrder (cmder.TransitionOrder { From = actualStatus; To = OrderCancelled })
                     else
                         return Ok()
                 }
@@ -57,26 +57,26 @@ type OrderWorkflow(?cancelAfterStep: OrderAction) =
             program {
                 // CreateOrder
                 do! Program.createOrder cmd
-                let currentStatus = OrderStatus.Created
+                let currentStatus = OrderCreated
                 do! cancelAfter OrderAction.CreateOrder currentStatus
 
                 // ProcessPayment
                 let! (paymentId: PaymentId) = Program.processPayment { OrderId = orderId; Amount = orderPrice }
-                let currentStatus, previousStatus = OrderStatus.PaymentProcessed paymentId, currentStatus
+                let currentStatus, previousStatus = OrderPaid paymentId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
                 do! cancelAfter OrderAction.ProcessPayment currentStatus
 
                 // IssueInvoice
                 let! (invoiceId: InvoiceId) = Program.issueInvoice { OrderId = orderId; Amount = orderPrice }
-                let currentStatus, previousStatus = OrderStatus.InvoiceIssued invoiceId, currentStatus
+                let currentStatus, previousStatus = OrderInvoiced invoiceId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
                 do! cancelAfter OrderAction.IssueInvoice currentStatus
 
                 // ShipOrder
                 let! (parcelId: ParcelId) = Program.shipOrder { Cmd.ShipOrder.OrderId = orderId }
-                let currentStatus, previousStatus = OrderStatus.Shipped parcelId, currentStatus
+                let currentStatus, previousStatus = OrderShipped parcelId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
                 do! cancelAfter OrderAction.ShipOrder currentStatus
