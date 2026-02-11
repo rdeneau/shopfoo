@@ -81,6 +81,11 @@ module Result =
         | Ok x -> Ok x
         | Error err -> fError err
 
+    let force (xR: Result<'x, 'e>) =
+        match xR with
+        | Ok x -> x
+        | Error _ -> failwith "Result was expected to be Ok, but was Error."
+
     let inline ignore xR = Result.map ignore xR
 
     let mapOption (f: 'a -> Result<'b, 'e>) (opt: 'a option) : Result<'b option, 'e> =

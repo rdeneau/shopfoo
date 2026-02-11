@@ -1,5 +1,8 @@
 # AGENTS.md
 
+**TODO:** voir ce qu'il y a de bon à prendre ici (fait par Clément) :
+https://avp-gitlab.availpro.com/GDS/gdsconnectivity/-/blob/master/AGENTS.md
+
 ## Agent Implementation Guardrails
 
 - **Plan-First Protocol:** Whenever you are in Plan Mode, in a `/plan` prompt, or asked to "plan", you are strictly forbidden from using `write_file`, `patch_file`, or any tools that modify the repository.
@@ -342,7 +345,7 @@ member _.``succeed when RemoveListPrice is called with existing prices`` () =
     async {
         // Test: RemoveListPrice succeeds with valid prices
         let isbn = ISBN "978-0-13-468599-6"
-        
+
         // Verify result is OK
         let! result = fixture.Api.RemoveListPrice sku
         result =! Ok()
@@ -414,18 +417,18 @@ type SagaUndoTests() =
     [<Test>]
     member _.``fail when SavePrices fails after AddProduct`` () =
         async {
-            // Tests saga compensation: AddProduct succeeds, 
+            // Tests saga compensation: AddProduct succeeds,
             // then SavePrices fails, expecting AddProduct to be undone
             let product = createValidBookProduct()
             use fixture = new ApiTestFixture()
-            
+
             let! addResult = fixture.Api.AddProduct(product, EUR)
             addResult =! Ok()
-            
+
             let invalidPrices = { prices with RetailPrice = RetailPrice.Regular(Euros -1m) }
             let! savePricesResult = fixture.Api.SavePrices invalidPrices
             test <@ Result.isError savePricesResult @>
-            
+
             // Verify the product was undone
             let! finalProduct = fixture.Api.GetProduct product.SKU
             finalProduct =! None

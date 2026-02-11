@@ -3,7 +3,6 @@
 open System
 open System.Net.Http
 open Shopfoo.Data.DependencyInjection
-open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.Catalog
 open Shopfoo.Product.Data.FakeStore
@@ -16,10 +15,10 @@ open Shopfoo.Product.Data.Warehouse
 
 module Sections =
     [<Literal>]
-    let rec FakeStore = nameof FakeStore
+    let FakeStore = "FakeStore"
 
     [<Literal>]
-    let rec OpenLibrary = nameof OpenLibrary
+    let OpenLibrary = "OpenLibrary"
 
 [<CLIMutable>]
 type FakeStoreSettings = { BaseUrl: string }

@@ -149,7 +149,6 @@ module Http =
         Verb: HttpVerb
         Uri: Uri option
     } with
-
         member this.Explain() =
             let verb = this.Verb.ToString() |> String.toUpper
 
@@ -197,13 +196,13 @@ module Http =
 #endif
 
     type HttpApiName =
-        | FakeStore
-        | OpenLibrary
+        | HttpApiName of string
+        member this.Code = let (HttpApiName code) = this in code
 
-        member this.Code =
-            match this with
-            | FakeStore -> "fakestore"
-            | OpenLibrary -> "openlibrary"
+    [<RequireQualifiedAccess>]
+    module HttpApiName =
+        let FakeStore = HttpApiName "FakeStore"
+        let OpenLibrary = HttpApiName "OpenLibrary"
 
 type DataRelatedError =
     | DataException of exn

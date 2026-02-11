@@ -2,6 +2,7 @@ namespace Shopfoo.Product.Tests
 
 open System
 open Microsoft.Extensions.DependencyInjection
+open NSubstitute
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Product
@@ -12,36 +13,21 @@ open Shopfoo.Product.Data.Prices
 open Shopfoo.Product.Data.Sales
 open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.DependencyInjection
-open Shopfoo.Product.Tests.Mocks.FakeStoreClientMock
-open Shopfoo.Product.Tests.Mocks.OpenLibraryClientMock
-open Shopfoo.Program.Dependencies
-open Shopfoo.Program.Runner
+open Shopfoo.Program.Tests.Mocks
 
 type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale list, ?stockEvents: StockEvent list) =
-    static let nullWorkMonitor = WorkMonitor(fun _ work -> work)
-
-    static let nullWorkLogger =
-        { new IWorkLogger with
-            member _.Logger() = nullWorkMonitor
-        }
-
-    static let nullWorkMonitors =
-        { new IWorkMonitors with
-            member _.LoggerFactory _ = nullWorkLogger
-            member _.CommandTimer() = nullWorkMonitor
-            member _.QueryTimer() = nullWorkMonitor
-        }
+    let fakeStoreClientMock = Substitute.For<IFakeStoreClient>()
+    let openLibraryClientMock = Substitute.For<IOpenLibraryClient>()
 
     // Build the service collection based on production dependencies overriden with test ones
     let services =
         ServiceCollection()
-            // Core/Effects
-            .AddEffects() // Production dependencies
-            .AddSingleton<IWorkMonitors>(nullWorkMonitors)
+            // Core/Program
+            .AddProgramMocks()
             // Feat/Product
             .AddProductApi() // Production dependencies
-            .AddSingleton<IFakeStoreClient, FakeStoreClientMock>()
-            .AddSingleton<IOpenLibraryClient, OpenLibraryClientMock>()
+            .AddSingleton<IFakeStoreClient>(fakeStoreClientMock)
+            .AddSingleton<IOpenLibraryClient>(openLibraryClientMock)
             .AddSingleton(BooksRepository.ofList (defaultArg books []))
             .AddSingleton(PricesRepository.ofList (defaultArg pricesSet []))
             .AddSingleton(SalesRepository(defaultArg sales []))

@@ -45,19 +45,19 @@ type internal Api
     ) =
     let prepareInstructions (x: IWorkflowPreparer<'ins>) =
         { new IProductInstructions with
-            member _.GetPrices = x.PrepareQuery("GetPrices", pricesPipeline.GetPrices)
-            member _.GetSales = x.PrepareQuery("GetSales", salesPipeline.GetSales)
-            member _.GetStockEvents = x.PrepareQuery("GetStockEvents", warehousePipeline.GetStockEvents)
+            member _.GetPrices = x.PrepareInstruction "GetPrices" pricesPipeline.GetPrices _.Query()
+            member _.GetSales = x.PrepareInstruction "GetSales" salesPipeline.GetSales _.Query()
+            member _.GetStockEvents = x.PrepareInstruction "GetStockEvents" warehousePipeline.GetStockEvents _.Query()
 
             // TODO RDE: add undo operations
-            member _.SavePrices = x.PrepareCommand("SavePrices", pricesPipeline.SavePrices)
-            member _.SaveProduct = x.PrepareCommand("SaveProduct", catalogPipeline.SaveProduct)
-            member _.AddPrices = x.PrepareCommand("AddPrices", pricesPipeline.AddPrices)
-            member _.AddProduct = x.PrepareCommand("AddProduct", catalogPipeline.AddProduct)
+            member _.SavePrices = x.PrepareInstruction "SavePrices" pricesPipeline.SavePrices _.Command.NoUndo()
+            member _.SaveProduct = x.PrepareInstruction "SaveProduct" catalogPipeline.SaveProduct _.Command.NoUndo()
+            member _.AddPrices = x.PrepareInstruction "AddPrices" pricesPipeline.AddPrices _.Command.NoUndo()
+            member _.AddProduct = x.PrepareInstruction "AddProduct" catalogPipeline.AddProduct _.Command.NoUndo()
 
             // TODO RDE: to remove once the pipeline functions are used in the undo operations above
-            member _.DeletePrices = x.PrepareCommand("DeletePrices", pricesPipeline.DeletePrices)
-            member _.DeleteProduct = x.PrepareCommand("DeleteProduct", catalogPipeline.DeleteProduct)
+            member _.DeletePrices = x.PrepareInstruction "DeletePrices" pricesPipeline.DeletePrices _.Command.NoUndo()
+            member _.DeleteProduct = x.PrepareInstruction "DeleteProduct" catalogPipeline.DeleteProduct _.Command.NoUndo()
         }
 
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =

@@ -8,7 +8,7 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Tests
-open Shopfoo.Product.Tests.Fakes
+open Shopfoo.Product.Tests.Helpers
 open Shopfoo.Product.Tests.Types
 open Swensen.Unquote
 open TUnit.Core

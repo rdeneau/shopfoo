@@ -1,4 +1,4 @@
-﻿module Shopfoo.Product.Tests.Fakes
+﻿module Shopfoo.Product.Tests.Helpers
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog

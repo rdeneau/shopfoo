@@ -9,7 +9,7 @@ open Shopfoo.Program.Dependencies
 
 type IServiceCollection with
     member services.AddRemotingApi(configuration: IConfiguration) =
-        services.AddEffects() |> ignore
+        services.AddProgram() |> ignore
 
         services
             .Configure<FakeStoreSettings>(configuration.GetSection(Sections.FakeStore))

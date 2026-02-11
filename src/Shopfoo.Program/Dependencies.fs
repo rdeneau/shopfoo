@@ -72,7 +72,7 @@ module private Implementation =
                 WorkflowRunner workflowPreparerFactory
 
 type IServiceCollection with
-    member services.AddEffects() =
+    member services.AddProgram() =
         services
             .AddSingleton<IMetricsSender, MetricsLogger>()
             .AddSingleton<IWorkMonitors, WorkMonitors>()

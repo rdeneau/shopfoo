@@ -7,7 +7,7 @@ type UndoType =
     /// <summary>
     /// Strict undo: should revert to the initial state—e.g., Database <c>DELETE</c> to undo an <c>INSERT</c>.
     /// </summary>
-    | Rollback
+    | Revert
 
     /// <summary>
     /// Loose undo:
@@ -15,9 +15,13 @@ type UndoType =
     /// <br /> - revert with no guarantee—e.g., `CancelEmail` Message.
     /// <br /> - mitigate the effect—e.g., send a "Sorry" email.
     /// </summary>
-    | Compensation
+    | Compensate
 
-type UndoFunc = unit -> Async<Result<unit, Error>>
+type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
+    static let hashCode = hash "UndoFunc"
+    member _.Invoke() = func ()
+    override _.Equals(other) = (hash other = hashCode)
+    override _.GetHashCode() = hashCode
 
 [<RequireQualifiedAccess>]
 type InstructionType =
@@ -66,9 +70,9 @@ module Saga =
                     let! updatedStep =
                         async {
                             match step.Status, step.Instruction.Type with
-                            | StepStatus.RunDone, InstructionType.Command(Some(_, undoFn)) ->
+                            | StepStatus.RunDone, InstructionType.Command(Some(_, undoFunc)) ->
                                 // Execute undo function
-                                let! undoResult = undoFn ()
+                                let! undoResult = undoFunc.Invoke()
 
                                 return
                                     match undoResult with
