@@ -46,13 +46,12 @@ type IInstructionPreparer<'ins when Instructions<'ins>> with
     member this.Query(work: Work<'arg, 'ret option>, name) = this.Query(work, fun _ -> name)
     member this.Command(work: Work<'arg, Res<'ret>>, name) = this.Command(work, fun _ -> name)
 
-// getUndo: ('a -> Res<'b> -> (UndoType * UndoFunc) option
 [<Sealed>]
-type internal WorkCommandBuilder<'arg, 'res>(build: ('arg -> 'res -> (UndoType * UndoFunc) option) -> Work<'arg, 'res>) =
+type internal WorkCommandBuilder<'arg, 'res>(build: ('arg -> 'res -> Undo option) -> Work<'arg, 'res>) =
     interface IWorkCommandBuilder<'arg, 'res> with
         member _.NoUndo() = build (fun _ _ -> None)
-        member _.Revert undoFun = build (fun arg res -> Some(UndoType.Revert, UndoFunc(fun () -> undoFun arg res)))
-        member _.Compensate undoFun = build (fun arg res -> Some(UndoType.Compensate, UndoFunc(fun () -> undoFun arg res)))
+        member _.Revert undoFun = build (fun arg res -> Some(Undo.Revert(fun () -> undoFun arg res)))
+        member _.Compensate undoFun = build (fun arg res -> Some(Undo.Compensate(fun () -> undoFun arg res)))
 
 [<Interface>]
 type private IInstructionOptions<'arg, 'ret> =

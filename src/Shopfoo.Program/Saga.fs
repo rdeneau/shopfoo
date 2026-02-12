@@ -17,16 +17,24 @@ type UndoType =
     /// </summary>
     | Compensate
 
+/// Wraps an undo function. Can be placed in structural types (records, DU) without causing equality issues.
 type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
-    static let hashCode = hash "UndoFunc"
+    static let hashCode = hash (nameof UndoFunc)
     member _.Invoke() = func ()
     override _.Equals(other) = (hash other = hashCode)
     override _.GetHashCode() = hashCode
 
+type Undo = {
+    Type: UndoType
+    Func: UndoFunc
+} with
+    static member Revert undoFunc = { Type = UndoType.Revert; Func = UndoFunc undoFunc }
+    static member Compensate undoFunc = { Type = UndoType.Compensate; Func = UndoFunc undoFunc }
+
 [<RequireQualifiedAccess>]
 type InstructionType =
     | Query
-    | Command of undo: (UndoType * UndoFunc) option
+    | Command of undo: Undo option
 
 type InstructionMeta = { Name: string; Type: InstructionType }
 
@@ -69,9 +77,9 @@ module Saga =
                     let! updatedStep =
                         async {
                             match step.Status, step.Instruction.Type with
-                            | RunDone, InstructionType.Command(Some(_, undoFunc)) ->
+                            | RunDone, InstructionType.Command(Some undo) ->
                                 // Execute undo function
-                                let! undoResult = undoFunc.Invoke()
+                                let! undoResult = undo.Func.Invoke()
 
                                 return
                                     match undoResult with
