@@ -139,7 +139,7 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 
 - [x] Deploy to Azure
 - [x] Install Iconify and FontAwesome 6 Solid icons via Glutinum
-- [ ] Use FontAwesome icons
+- [x] Use FontAwesome icons
+- [x] Workflow tests
 - [ ] Architecture tests
-- [ ] Workflow tests
 - [ ] UI tests
