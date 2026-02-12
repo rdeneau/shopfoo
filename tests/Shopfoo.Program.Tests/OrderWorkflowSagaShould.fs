@@ -6,6 +6,7 @@ open Microsoft.Extensions.DependencyInjection
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Tests.OrderContext
+open Shopfoo.Product.Tests.OrderContext.Cmd
 open Shopfoo.Product.Tests.OrderContext.Data
 open Shopfoo.Product.Tests.OrderContext.Workflows
 open Shopfoo.Program
@@ -31,9 +32,9 @@ type OrderWorkflowSagaShould() =
     let warehouseClient = WarehouseClient(simulatedErrorProvider)
 
     let orderId = OrderId.New()
-    let orderToCreate: Cmd.CreateOrder = { OrderId = orderId; Price = 100m }
+    let orderToCreate: CreateOrder = { OrderId = orderId; Price = 100m }
 
-    let formatOrderStatus =
+    let formatStatus =
         function
         | OrderCreated -> "Created"
         | OrderCancelled -> "Cancelled"
@@ -41,38 +42,43 @@ type OrderWorkflowSagaShould() =
         | OrderInvoiced _ -> "Invoiced"
         | OrderShipped _ -> "Shipped"
 
-    let undoCreateOrder (cmd: Cmd.CreateOrder) _res = orderRepository.DeleteOrder cmd.OrderId
-    let undoTransitionOrder (cmd: Cmd.TransitionOrder) _res = orderRepository.TransitionOrder(cmd.Revert())
-    let undoInvoice _cmd (res: Result<InvoiceId, Error>) = invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force }
-    let undoPayment _cmd (res: Result<PaymentId, Error>) = paymentRepository.RefundPayment { PaymentId = res |> Result.force }
+    let (|FromTo|) (cmd: TransitionOrder) = formatStatus cmd.Transition.From, formatStatus cmd.Transition.To
 
     interface IDisposable with
         override _.Dispose() = serviceProvider.Dispose()
 
     member private _.PrepareInstructions() =
-        fun (x: IInstructionPreparer<'ins>) ->
+        fun (preparer: IInstructionPreparer<'ins>) ->
             { new IOrderInstructions with
-                // TODO: improve syntax and intellisense
-                //       actual: x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder)
-                //       target: x.Prepare(orderRepository.CreateOrder).Command("CreateOrder").Revert(fun cmd _res = orderRepository.DeleteOrder cmd.OrderId)
-                member _.CreateOrder = x.Prepare orderRepository.CreateOrder _.Command("CreateOrder").Revert(undoCreateOrder)
-                member _.IssueInvoice = x.Prepare invoiceRepository.IssueInvoice _.Command("IssueInvoice").Compensate(undoInvoice)
-                member _.ProcessPayment = x.Prepare paymentRepository.ProcessPayment _.Command("ProcessPayment").Compensate(undoPayment)
+                member _.CreateOrder =
+                    preparer // ↩
+                        .Command(orderRepository.CreateOrder, "CreateOrder")
+                        .Revert(fun cmd _ -> orderRepository.DeleteOrder cmd.OrderId)
+
+                member _.IssueInvoice =
+                    preparer
+                        .Command(invoiceRepository.IssueInvoice, "IssueInvoice")
+                        .Compensate(fun _ res -> invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force })
+
+                member _.ProcessPayment =
+                    preparer
+                        .Command(paymentRepository.ProcessPayment, "ProcessPayment")
+                        .Compensate(fun _ res -> paymentRepository.RefundPayment { PaymentId = res |> Result.force })
 
                 member _.SendNotification =
-                    x.Prepare
-                        notificationClient.SendNotification
-                        _.Command(fun (cmd: Cmd.NotifyOrderChanged) -> $"SendNotificationOrder%s{formatOrderStatus cmd.NewStatus}").NoUndo()
+                    preparer // ↩
+                        .Command(notificationClient.SendNotification, fun cmd -> $"SendNotificationOrder%s{formatStatus cmd.NewStatus}")
+                        .NoUndo()
 
-                member _.ShipOrder = x.Prepare warehouseClient.ShipOrder _.Command("ShipOrder").NoUndo()
+                member _.ShipOrder =
+                    preparer // ↩
+                        .Command(warehouseClient.ShipOrder, "ShipOrder")
+                        .NoUndo()
 
                 member _.TransitionOrder =
-                    x.Prepare
-                        orderRepository.TransitionOrder
-                        _.Command(fun (cmd: Cmd.TransitionOrder) ->
-                            $"TransitionOrderFrom%s{formatOrderStatus cmd.Transition.From}To%s{formatOrderStatus cmd.Transition.To}"
-                        )
-                            .Revert(undoTransitionOrder)
+                    preparer
+                        .Command(orderRepository.TransitionOrder, fun (FromTo(from, to')) -> $"TransitionOrderFrom%s{from}To%s{to'}")
+                        .Revert(fun cmd _ -> orderRepository.TransitionOrder(cmd.Revert()))
             }
 
     member private this.VerifyUndo(expectedError, errorAt, expectedHistory) =
