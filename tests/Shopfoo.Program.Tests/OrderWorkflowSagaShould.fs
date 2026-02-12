@@ -81,9 +81,10 @@ type OrderWorkflowSagaShould() =
                         .Revert(fun cmd _ -> orderRepository.TransitionOrder(cmd.Revert()))
             }
 
-    member private this.VerifyUndo(expectedError, errorAt, expectedHistory) =
+    member private this.VerifyUndo(simulate, expectedHistory) =
         async {
-            do simulatedErrorProvider.Define expectedError errorAt
+            do simulatedErrorProvider.Define simulate
+            let expectedError = simulate.Error
 
             let! result, sagaState = workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions())
 
@@ -99,26 +100,23 @@ type OrderWorkflowSagaShould() =
         }
 
     [<Test>]
-    member this.``1_ undo no steps given createOrder failed``() =
+    member this.``undo: 1_ no steps given createOrder failed``() =
         this.VerifyUndo(
-            expectedError = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")),
-            errorAt = OrderAction.CreateOrder,
+            simulate = { Error = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")); When = OrderAction.CreateOrder },
             expectedHistory = []
         )
 
     [<Test>]
-    member this.``2_ undo createOrder given processPayment failed``() =
+    member this.``undo: 2_ createOrder given processPayment failed``() =
         this.VerifyUndo(
-            expectedError = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")),
-            errorAt = OrderAction.ProcessPayment,
+            simulate = { Error = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")); When = OrderAction.ProcessPayment },
             expectedHistory = [ "CreateOrder", UndoDone ]
         )
 
     [<Test>]
-    member this.``3_ undo createOrder and processPayment given issueInvoice failed``() =
+    member this.``undo: 3_ createOrder and processPayment given issueInvoice failed``() =
         this.VerifyUndo(
-            expectedError = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" },
-            errorAt = OrderAction.IssueInvoice,
+            simulate = { Error = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" }; When = OrderAction.IssueInvoice },
             expectedHistory = [
                 "SendNotificationOrderPaid", RunDone
                 "TransitionOrderFromCreatedToPaid", UndoDone
@@ -128,10 +126,12 @@ type OrderWorkflowSagaShould() =
         )
 
     [<Test>]
-    member this.``4_ undo createOrder, processPayment, and issueInvoice given shipOrder failed``() =
+    member this.``undo: 4_ createOrder, processPayment, and issueInvoice given shipOrder failed``() =
         this.VerifyUndo(
-            expectedError = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable)),
-            errorAt = OrderAction.ShipOrder,
+            simulate = {
+                Error = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable))
+                When = OrderAction.ShipOrder
+            },
             expectedHistory = [
                 "SendNotificationOrderInvoiced", RunDone
                 "TransitionOrderFromPaidToInvoiced", UndoDone

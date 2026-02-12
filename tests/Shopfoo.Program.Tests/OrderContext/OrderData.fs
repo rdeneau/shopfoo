@@ -5,7 +5,7 @@ open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Tests.OrderContext
 open Shopfoo.Product.Tests.OrderContext.Workflows
 
-type SimulatedError = { Action: OrderAction; Error: Error }
+type SimulatedError = { Error: Error; When: OrderAction }
 
 [<Interface>]
 type ISimulatedErrorProvider =
@@ -14,10 +14,11 @@ type ISimulatedErrorProvider =
 type SimulatedErrorProvider() =
     let mutable value: SimulatedError option = None
 
-    member _.Define error action = value <- Some { Action = action; Error = error }
+    member _.Define error = value <- Some error
+    member _.Reset() = value <- None
 
     interface ISimulatedErrorProvider with
-        member _.Find step = value |> Option.filter (fun e -> e.Action = step) |> Option.map _.Error
+        member _.Find step = value |> Option.filter (fun e -> e.When = step) |> Option.map _.Error
 
 /// Helpers to ease creating errors from commands
 [<AutoOpen>]
