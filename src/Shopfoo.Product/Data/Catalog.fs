@@ -34,7 +34,12 @@ type internal CatalogPipeline
         match sku.Type with
         | SKUType.FSID fsid -> fakeStorePipeline.GetProduct fsid
         | SKUType.ISBN isbn -> booksPipeline.GetProduct isbn
-        | SKUType.OLID olid -> openLibraryPipeline.GetProductByOlid olid |> Async.map Result.toOption
+        | SKUType.OLID olid ->
+            openLibraryPipeline.GetProductByOlid olid
+            |> Async.map (fun x ->
+                printfn "[RDE] OpenLibrary result for OLID #%s{olid.Value}: %A" olid.Value x // TODO RDE
+                x |> Result.toOption
+            )
         | SKUType.Unknown -> async { return None }
 
     member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =

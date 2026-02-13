@@ -9,14 +9,16 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="OpenLibrary\KeySanitizingShould.fs" />
+    <Compile Include="Workflows\Types.fs" />
+    <Compile Include="Workflows\Helpers.fs" />
+    <Compile Include="Workflows\ApiTestFixture.fs" />
+    <Compile Include="Workflows\AddProductShould.fs" />
+    <Compile Include="Workflows\DetermineStockShould.fs" />
+    <Compile Include="Workflows\GetProductShould.fs" />
+    <Compile Include="Workflows\MarkAsSoldOutShould.fs" />
+    <Compile Include="Workflows\SavePricesShould.fs" />
     <Content Include="paket.references" />
-    <Compile Include="Types.fs" />
-    <Compile Include="Helpers.fs" />
-    <Compile Include="ApiTestFixture.fs" />
-    <Compile Include="AddProductShould.fs" />
-    <Compile Include="DetermineStockShould.fs" />
-    <Compile Include="MarkAsSoldOutShould.fs" />
-    <Compile Include="SavePricesShould.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />

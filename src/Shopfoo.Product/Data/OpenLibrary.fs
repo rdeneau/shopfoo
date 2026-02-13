@@ -15,6 +15,43 @@ open Shopfoo.Domain.Types.Errors
 
 [<AutoOpen>]
 module Dto =
+    type Key<'kind> =
+        private
+        | Key of string
+
+        member this.Value =
+            let (Key value) = this
+            value
+
+    module Key =
+        let private ensureStartsWithSlash (key: string) : string = if key.StartsWith("/") then key else $"/%s{key}"
+        let private (</>) left right = left + (ensureStartsWithSlash right)
+
+        let sanitize (parent: string) (key: string) =
+            let value = "" </> parent </> key.Replace($"%s{parent}/", "")
+            Key value
+
+    type Author = private | Author
+    type AuthorKey = Key<Author>
+
+    module AuthorKey =
+        let sanitize k : AuthorKey = Key.sanitize "authors" k
+        let ofOlid (OLID olid) = sanitize olid
+
+    type Book = private | Book
+    type BookKey = Key<Book>
+
+    module BookKey =
+        let sanitize k : BookKey = Key.sanitize "books" k
+        let ofOlid (OLID olid) = sanitize olid
+
+    type Work = private | Work
+    type WorkKey = Key<Work>
+
+    module WorkKey =
+        let sanitize k : WorkKey = Key.sanitize "works" k
+        let ofOlid (OLID olid) = sanitize olid
+
     [<CLIMutable>]
     type AuthorDto = {
         /// Example: "/authors/OL2653686A"
@@ -120,10 +157,10 @@ module Dto =
 
 [<Interface>]
 type IOpenLibraryClient =
-    abstract member GetAuthorAsync: string -> Task<Result<AuthorDto, DataRelatedError>>
+    abstract member GetAuthorAsync: AuthorKey -> Task<Result<AuthorDto, DataRelatedError>>
+    abstract member GetBookAsync: BookKey -> Task<Result<BookDto, DataRelatedError>>
     abstract member GetBookByIsbnAsync: ISBN -> Task<Result<BookDto, DataRelatedError>>
-    abstract member GetBookByOlidAsync: OLID -> Task<Result<BookDto, DataRelatedError>>
-    abstract member GetWorkAsync: string -> Task<Result<WorkDto, DataRelatedError>>
+    abstract member GetWorkAsync: WorkKey -> Task<Result<WorkDto, DataRelatedError>>
     abstract member SearchAuthorsAsync: string -> Task<Result<SearchAuthorsResponseDto, DataRelatedError>>
     abstract member SearchBooksAsync: string -> Task<Result<SearchBooksResponseDto, DataRelatedError>>
     abstract member GetCoverUrl: CoverKey * CoverSize -> string
@@ -208,7 +245,7 @@ module private Mappers =
 type internal OpenLibraryPipeline(openLibraryClient: IOpenLibraryClient) =
     member _.GetProductByOlid(olid: OLID) : Async<Result<Product, DataRelatedError>> =
         taskResult {
-            let! bookDto = openLibraryClient.GetBookByOlidAsync olid
+            let! bookDto = openLibraryClient.GetBookAsync(BookKey.ofOlid olid)
 
             let isbn =
                 match bookDto.Isbn13, bookDto.Isbn10 with
@@ -216,8 +253,11 @@ type internal OpenLibraryPipeline(openLibraryClient: IOpenLibraryClient) =
                 | _, Some(isbn10 :: _) -> ISBN isbn10
                 | _ -> ISBN ""
 
-            let! workDto = openLibraryClient.GetWorkAsync bookDto.Works[0].Key
-            let! authorDtos = workDto.Authors |> List.traverseTaskResultM (fun x -> openLibraryClient.GetAuthorAsync x.Author.Key)
+            let! workDto = openLibraryClient.GetWorkAsync(WorkKey.sanitize bookDto.Works[0].Key)
+
+            let! authorDtos =
+                workDto.Authors
+                |> List.traverseTaskResultM (fun x -> openLibraryClient.GetAuthorAsync(AuthorKey.sanitize x.Author.Key))
 
             let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
             let coverKey = Mappers.DtoToModel.mapCoverKey isbn bookDto.Covers
@@ -253,17 +293,10 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings: OpenLibraryCli
         }
 
     interface IOpenLibraryClient with
-        member this.GetAuthorAsync(authorKey) = this.GetByKeyAsync<AuthorDto>($"%s{authorKey}.json")
-        member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto>($"/isbn/%s{isbn}")
-        member this.GetBookByOlidAsync(OLID olid) = this.GetByKeyAsync<BookDto>($"/books/%s{olid}.json")
-
-        member this.GetWorkAsync(workKey: string) =
-            let key =
-                if workKey.StartsWith("/works/") then workKey
-                elif workKey.StartsWith("works/") then $"/%s{workKey}"
-                else $"/works/%s{workKey}"
-
-            this.GetByKeyAsync<WorkDto>(key)
+        member this.GetAuthorAsync authorKey = this.GetByKeyAsync<AuthorDto> $"%s{authorKey.Value}.json"
+        member this.GetBookAsync bookKey = this.GetByKeyAsync<BookDto> $"%s{bookKey.Value}.json"
+        member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto> $"/isbn/%s{isbn}"
+        member this.GetWorkAsync workKey = this.GetByKeyAsync<WorkDto> workKey.Value
 
         member _.SearchAuthorsAsync(searchTerm: string) =
             task {
