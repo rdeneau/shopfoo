@@ -202,3 +202,26 @@ type OrderWorkflowSagaShould() =
                 "CreateOrder", UndoDone
             ]
         )
+
+    // TODO: test 4b
+    [<Test; Skip("TODO RDE")>]
+    member this.``4b: fail to cancel and still not undo after shipOrder``() =
+        this.VerifyCancel(
+            cancelAfterStep = OrderAction.ShipOrder,
+            expectedStatus = LightOrderShipped, // Not LightOrderCancelled LightOrderShipped
+            expectedError = BusinessError OrderCannotBeCancelledAfterShipping,
+            expectedHistory = [ // ↩
+                "SendNotificationOrderShipped", RunDone
+                "TransitionOrderFromInvoicedToShipped", RunDone
+                "ShipOrder", RunDone
+
+                "SendNotificationOrderInvoiced", RunDone
+                "TransitionOrderFromPaidToInvoiced", RunDone
+                "IssueInvoice", RunDone
+
+                "SendNotificationOrderPaid", RunDone
+                "TransitionOrderFromCreatedToPaid", RunDone
+                "ProcessPayment", RunDone
+                "CreateOrder", RunDone
+            ]
+        )
