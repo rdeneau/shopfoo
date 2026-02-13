@@ -5,12 +5,11 @@ open Shopfoo.Domain.Types.Errors
 
 [<Sealed>]
 type internal SagaTracker<'ins when Instructions<'ins>>() =
-    let mutable currentState = { Status = SagaStatus.Running; History = [] }
+    let mutable history = []
     let lockObj = obj ()
 
-    member _.CurrentState = currentState
-    member _.SetStatus status = lock lockObj (fun () -> currentState <- { currentState with Status = status })
-    member _.EnqueueStep step = lock lockObj (fun () -> currentState <- { currentState with History = step :: currentState.History })
+    member _.History = history
+    member _.EnqueueStep step = lock lockObj (fun () -> history <- step :: history)
 
 type Res<'ret> = Result<'ret, Error>
 
@@ -125,10 +124,12 @@ type IWorkflowRunner<'ins when Instructions<'ins>> =
         prepareInstructions: (IInstructionPreparer<'ins> -> 'ins) ->
             Async<Result<'ret, Error> * SagaState>
 
+type private CanUndo = CanUndo of bool
+
 [<Sealed>]
 type internal WorkflowRunner<'ins when Instructions<'ins>>(instructionPreparerFactory: IInstructionPreparerFactory<'ins>) =
-    let runWithCanUndo
-        (canUndo: bool)
+    let runWorkflowWith
+        (canUndo: CanUndo)
         (workflow: #IProgramWorkflow<'ins, 'arg, 'ret>)
         (arg: 'arg)
         (prepareInstructions: IInstructionPreparer<'ins> -> 'ins)
@@ -141,31 +142,38 @@ type internal WorkflowRunner<'ins when Instructions<'ins>>(instructionPreparerFa
                 let instructions = prepareInstructions instructionPreparer
 
                 let! result = workflow.Run arg instructions
-                let sagaStateAfterRun = tracker.CurrentState
+
+                let sagaStatus =
+                    match result, canUndo with
+                    | Ok _, _ -> Some SagaStatus.Done
+                    | Error(WorkflowError(WorkflowCancelled _)), _ -> Some SagaStatus.Cancelled
+                    | Error err, CanUndo false -> Some(SagaStatus.Failed(err, undoErrors = []))
+                    | Error _, CanUndo true -> None
 
                 let! sagaFinalState =
-                    match result with
-                    | Error _ when canUndo -> Saga.performUndo sagaStateAfterRun
-                    | _ -> async { return sagaStateAfterRun }
+                    match sagaStatus with
+                    | Some status -> async { return { History = tracker.History; Status = status } }
+                    | None -> Saga.performUndo tracker.History
 
                 return result, sagaFinalState
 
             with FirstException exn ->
-                let! sagaStateAfterUndo =
-                    if canUndo then
-                        Saga.performUndo tracker.CurrentState
-                    else
-                        async { return tracker.CurrentState }
+                let error = Bug exn
 
-                return bug exn, sagaStateAfterUndo
+                let! sagaStateAfterUndo =
+                    match canUndo with
+                    | CanUndo false -> async { return { History = tracker.History; Status = SagaStatus.Failed(error, undoErrors = []) } }
+                    | CanUndo true -> Saga.performUndo tracker.History
+
+                return Error error, sagaStateAfterUndo
         }
 
     interface IWorkflowRunner<'ins> with
         member _.Run workflow arg prepareInstructions =
             async {
-                let! result, _ = runWithCanUndo false workflow arg prepareInstructions
+                let! result, _ = runWorkflowWith (CanUndo false) workflow arg prepareInstructions
                 return result
             }
 
         member _.RunInSaga workflow arg prepareInstructions = // ↩
-            runWithCanUndo true workflow arg prepareInstructions
+            runWorkflowWith (CanUndo true) workflow arg prepareInstructions

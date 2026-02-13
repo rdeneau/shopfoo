@@ -4,6 +4,30 @@ open System
 open System.Runtime.CompilerServices
 open Shopfoo.Common
 
+type ErrorMessage = {
+    Message: string
+    InnerMessage: string option
+} with
+    static member Create(message: string, ?innerMessage) = { Message = message; InnerMessage = innerMessage }
+
+    static member Combine(errorMessages) = {
+        Message = errorMessages |> List.map _.Message |> String.concat "\n"
+        InnerMessage =
+            match errorMessages |> List.choose _.InnerMessage with
+            | [] -> None
+            | xs -> Some(xs |> String.concat "\n")
+    }
+
+    member this.FullMessage =
+        match this.InnerMessage with
+        | Some innerMessage -> $"{this.Message} ({innerMessage})"
+        | None -> this.Message
+
+[<Interface>]
+type IBusinessError =
+    abstract member Code: string
+    abstract member Message: string
+
 [<AutoOpen>]
 module Validation =
     type Validation<'t, 'e> = Result<'t, 'e list>
@@ -213,12 +237,18 @@ type DataRelatedError =
 
 type OperationNotAllowedError = { Operation: string; Reason: string }
 
+type WorkflowError =
+    | WorkflowCancelled of step: string
+    | WorkflowUndoError of reason: string
+
 type Error =
+    | BusinessError of IBusinessError
     | Bug of exn
     | DataError of DataRelatedError
     | OperationNotAllowed of OperationNotAllowedError
     | GuardClause of GuardClauseError
     | Validation of GuardClauseError list
+    | WorkflowError of WorkflowError
 
 [<AutoOpen>]
 module Helpers =
@@ -289,6 +319,7 @@ module Result =
 module ErrorCategory =
     let inline ofError error =
         match error with
+        | BusinessError err -> $"Business Error: %s{err.Code}"
         | Bug _ -> "Bug: Exception"
         | DataError(DataException _) -> "Data Error: Query Issue"
         | DataError(DataNotFound _) -> "Data Error: Not Found"
@@ -298,30 +329,8 @@ module ErrorCategory =
         | OperationNotAllowed _ -> "Operation Not Allowed"
         | GuardClause _ -> "Guard Clause"
         | Validation _ -> "Validation"
-
-[<RequireQualifiedAccess>]
-type ErrorDetailLevel =
-    | NoDetail
-    | Admin
-
-type ErrorMessage = {
-    Message: string
-    InnerMessage: string option
-} with
-    static member Create(message: string, ?innerMessage) = { Message = message; InnerMessage = innerMessage }
-
-    static member Combine(errorMessages) = {
-        Message = errorMessages |> List.map _.Message |> String.concat "\n"
-        InnerMessage =
-            match errorMessages |> List.choose _.InnerMessage with
-            | [] -> None
-            | xs -> Some(xs |> String.concat "\n")
-    }
-
-    member this.FullMessage =
-        match this.InnerMessage with
-        | Some innerMessage -> $"{this.Message} ({innerMessage})"
-        | None -> this.Message
+        | WorkflowError(WorkflowCancelled _) -> "Workflow Cancelled"
+        | WorkflowError(WorkflowUndoError _) -> "Workflow Undo Error"
 
 [<RequireQualifiedAccess>]
 module ErrorMessage =
@@ -360,14 +369,17 @@ module ErrorMessage =
                 ?innerMessage = status.Content
             )
 
+    let ofWorkflowError =
+        function
+        | WorkflowUndoError reason -> ErrorMessage.Create $"Workflow undo failed: %s{reason}"
+        | WorkflowCancelled stepName -> ErrorMessage.Create $"Workflow cancelled at step %s{stepName}"
+
     let ofError =
         function
+        | BusinessError err -> ErrorMessage.Create $"Business Error %s{err.Code}: %s{err.Message}"
         | Bug(FirstException exn) -> ofBug exn
         | DataError err -> ofDataError err
         | OperationNotAllowed err -> ofOperationNotAllowed err
         | GuardClause err -> ofGuardClause err
         | Validation errors -> errors |> List.map ofGuardClause |> ErrorMessage.Combine
-
-type ErrorType =
-    | Business
-    | Technical
+        | WorkflowError err -> ofWorkflowError err

@@ -24,6 +24,8 @@ type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
     override _.Equals(other) = (hash other = hashCode)
     override _.GetHashCode() = hashCode
 
+// TODO: UndoTrigger
+
 type Undo = {
     Type: UndoType
     Func: UndoFunc
@@ -50,6 +52,7 @@ type ProgramStep = { Instruction: InstructionMeta; Status: StepStatus }
 type SagaStatus =
     | Running
     | Done
+    | Cancelled
     | Failed of originalError: Error * undoErrors: Error list
 
 /// <summary>
@@ -65,9 +68,9 @@ module Saga =
 
     /// Performs undo for all successfully completed commands in reverse order (LIFO)
     /// Returns the updated saga state with undo results
-    let performUndo (state: SagaState) : Async<SagaState> =
+    let performUndo (history: ProgramStep list) : Async<SagaState> =
         async {
-            match state.History with
+            match history with
             | { Status = RunFailed originalError } :: stepsToUndo ->
                 let undoErrors = ResizeArray<Error>()
                 let updatedSteps = ResizeArray<ProgramStep>()
@@ -96,9 +99,9 @@ module Saga =
 
                     updatedSteps.Add updatedStep
 
-                return { state with Status = SagaStatus.Failed(originalError, undoErrors |> List.ofSeq); History = updatedSteps |> List.ofSeq }
+                return { Status = SagaStatus.Failed(originalError, undoErrors |> List.ofSeq); History = updatedSteps |> List.ofSeq }
 
             | _ ->
-                let error = Bug(exn "performUndo called but no failed step found in the head of the history")
-                return { state with Status = SagaStatus.Failed(error, []) }
+                let error = WorkflowError(WorkflowUndoError $"No failed step found in the head of the history:\n%A{history}")
+                return { Status = SagaStatus.Failed(error, undoErrors = []); History = history }
         }

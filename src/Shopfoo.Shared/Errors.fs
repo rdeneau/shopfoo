@@ -5,13 +5,22 @@ open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 
+type ErrorType =
+    | Business
+    | Technical
+
+[<RequireQualifiedAccess>]
+type ErrorDetailLevel =
+    | NoDetail
+    | Admin
+
+type ErrorDetail = { Exception: string }
+
 module internal User =
     let errorDetailLevel user =
         match user with
         | User.LoggedIn(_, claims) when claims |> Map.containsKey Feat.Admin -> ErrorDetailLevel.Admin
         | _ -> ErrorDetailLevel.NoDetail
-
-type ErrorDetail = { Exception: string }
 
 type System.Exception with
     member this.AsErrorDetail(?level) =
@@ -56,11 +65,13 @@ type ApiError = {
             | ErrorDetailLevel.Admin -> ErrorCategory.ofError error
 
         match error with
+        | BusinessError _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | Bug exn -> ApiError.Technical(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
         | DataError _
-        | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | OperationNotAllowed _
         | GuardClause _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | Validation _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | WorkflowError _ -> ApiError.Technical(errorMessage, errorCategory, ?key = key, ?translations = translations)
 
     static member FromException(FirstException exn, user: User) =
         ApiError.Technical(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))

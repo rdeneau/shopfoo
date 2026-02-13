@@ -48,10 +48,13 @@ type OrderWorkflow(?cancelAfterStep: OrderAction) =
 
             let cancelAfter step actualStatus =
                 program {
-                    if cancelAfterStep = Some step then
-                        return! Program.transitionOrder (cmder.TransitionOrder { From = actualStatus; To = OrderCancelled })
-                    else
+                    if cancelAfterStep <> Some step then
                         return Ok()
+                    elif step = OrderAction.ShipOrder then
+                        return Error(BusinessError OrderCannotBeCancelledAfterShipping)
+                    else
+                        do! Program.transitionOrder (cmder.TransitionOrder { From = actualStatus; To = OrderCancelled actualStatus })
+                        return Error(WorkflowError(WorkflowCancelled(step = $"%A{step}")))
                 }
 
             program {

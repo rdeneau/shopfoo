@@ -12,7 +12,7 @@ open Shopfoo.Product.Tests.OrderContext.Workflows
 open Shopfoo.Program
 open Shopfoo.Program.Dependencies
 open Shopfoo.Program.Runner
-open Shopfoo.Program.Tests.Helpers
+open Shopfoo.Program.Tests.Light
 open Shopfoo.Program.Tests.Mocks
 open Swensen.Unquote
 open TUnit.Core
@@ -22,27 +22,17 @@ type OrderWorkflowSagaShould() =
     let serviceProvider = services.BuildServiceProvider()
     let workflowRunnerFactory = serviceProvider.GetRequiredService<IWorkflowRunnerFactory>()
     let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
-    let orderWorkflow = OrderWorkflow()
-
     let simulatedErrorProvider = SimulatedErrorProvider()
-    let invoiceRepository = InvoiceRepository(simulatedErrorProvider)
-    let notificationClient = NotificationClient(simulatedErrorProvider)
-    let orderRepository = OrderRepository(simulatedErrorProvider)
-    let paymentRepository = PaymentRepository(simulatedErrorProvider)
-    let warehouseClient = WarehouseClient(simulatedErrorProvider)
+    let invoiceRepository = InvoiceRepository simulatedErrorProvider
+    let notificationClient = NotificationClient simulatedErrorProvider
+    let orderRepository = OrderRepository simulatedErrorProvider
+    let paymentRepository = PaymentRepository simulatedErrorProvider
+    let warehouseClient = WarehouseClient simulatedErrorProvider
 
     let orderId = OrderId.New()
-    let orderToCreate: CreateOrder = { OrderId = orderId; Price = 100m }
+    let cmdCreateOrder: CreateOrder = { OrderId = orderId; Price = 100m }
 
-    let formatStatus =
-        function
-        | OrderCreated -> "Created"
-        | OrderCancelled -> "Cancelled"
-        | OrderPaid _ -> "Paid"
-        | OrderInvoiced _ -> "Invoiced"
-        | OrderShipped _ -> "Shipped"
-
-    let (|FromTo|) (cmd: TransitionOrder) = formatStatus cmd.Transition.From, formatStatus cmd.Transition.To
+    let (|FromTo|) (cmd: TransitionOrder) = cmd.Transition.From.Name, cmd.Transition.To.Name
 
     interface IDisposable with
         override _.Dispose() = serviceProvider.Dispose()
@@ -67,7 +57,7 @@ type OrderWorkflowSagaShould() =
 
                 member _.SendNotification =
                     preparer // ↩
-                        .Command(notificationClient.SendNotification, fun cmd -> $"SendNotificationOrder%s{formatStatus cmd.NewStatus}")
+                        .Command(notificationClient.SendNotification, fun cmd -> $"SendNotificationOrder%s{cmd.NewStatus.Name}")
                         .NoUndo()
 
                 member _.ShipOrder =
@@ -86,7 +76,7 @@ type OrderWorkflowSagaShould() =
             do simulatedErrorProvider.Define simulate
             let expectedError = simulate.Error
 
-            let! result, sagaState = workflowRunner.RunInSaga orderWorkflow orderToCreate (this.PrepareInstructions())
+            let! result, sagaState = workflowRunner.RunInSaga (OrderWorkflow()) cmdCreateOrder (this.PrepareInstructions())
 
             let! orderCreated = orderRepository.GetOrderById orderId
 
@@ -99,22 +89,73 @@ type OrderWorkflowSagaShould() =
                 @>
         }
 
+    member private this.VerifyCancel(cancelAfterStep, expectedStatus, expectedHistory, ?expectedError) =
+        async {
+            let! result, sagaState = workflowRunner.RunInSaga (OrderWorkflow(cancelAfterStep)) cmdCreateOrder (this.PrepareInstructions())
+
+            let! orderCreated = orderRepository.GetOrderById orderId
+
+            let expectedOrder = {
+                Id = orderId
+                Price = cmdCreateOrder.Price
+                LightStatus = expectedStatus
+            }
+
+            let expectedError, expectedStatus =
+                match expectedError with
+                | None -> WorkflowError(WorkflowCancelled(string cancelAfterStep)), SagaStatus.Cancelled
+                | Some err -> err, SagaStatus.Failed(err, undoErrors = [])
+
+            test
+                <@
+                    result = Error expectedError
+                    && orderCreated |> Option.map lightOrder |> Option.contains expectedOrder
+                    && sagaState.Status = expectedStatus
+                    && lightHistory sagaState = expectedHistory
+                @>
+        }
+
     [<Test>]
-    member this.``undo: 1_ no steps given createOrder failed``() =
+    member this.``1a: undo no steps given createOrder failed``() =
         this.VerifyUndo(
             simulate = { Error = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")); When = OrderAction.CreateOrder },
             expectedHistory = []
         )
 
     [<Test>]
-    member this.``undo: 2_ createOrder given processPayment failed``() =
+    member this.``1b: cancel without undo after createOrder``() =
+        this.VerifyCancel(
+            cancelAfterStep = OrderAction.CreateOrder,
+            expectedStatus = LightOrderCancelled LightOrderCreated,
+            expectedHistory = [ // ↩
+                "TransitionOrderFromCreatedToCancelled", RunDone
+                "CreateOrder", RunDone
+            ]
+        )
+
+    [<Test>]
+    member this.``2a: undo createOrder given processPayment failed``() =
         this.VerifyUndo(
             simulate = { Error = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")); When = OrderAction.ProcessPayment },
             expectedHistory = [ "CreateOrder", UndoDone ]
         )
 
     [<Test>]
-    member this.``undo: 3_ createOrder and processPayment given issueInvoice failed``() =
+    member this.``2b: cancel without undo after processPayment``() =
+        this.VerifyCancel(
+            cancelAfterStep = OrderAction.ProcessPayment,
+            expectedStatus = LightOrderCancelled LightOrderPaid,
+            expectedHistory = [ // ↩
+                "TransitionOrderFromPaidToCancelled", RunDone
+                "SendNotificationOrderPaid", RunDone
+                "TransitionOrderFromCreatedToPaid", RunDone
+                "ProcessPayment", RunDone
+                "CreateOrder", RunDone
+            ]
+        )
+
+    [<Test>]
+    member this.``3a: undo createOrder and processPayment given issueInvoice failed``() =
         this.VerifyUndo(
             simulate = { Error = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" }; When = OrderAction.IssueInvoice },
             expectedHistory = [
@@ -126,7 +167,25 @@ type OrderWorkflowSagaShould() =
         )
 
     [<Test>]
-    member this.``undo: 4_ createOrder, processPayment, and issueInvoice given shipOrder failed``() =
+    member this.``3b: cancel without undo after issueInvoice``() =
+        this.VerifyCancel(
+            cancelAfterStep = OrderAction.IssueInvoice,
+            expectedStatus = LightOrderCancelled LightOrderInvoiced,
+            expectedHistory = [ // ↩
+                "TransitionOrderFromInvoicedToCancelled", RunDone
+                "SendNotificationOrderInvoiced", RunDone
+                "TransitionOrderFromPaidToInvoiced", RunDone
+                "IssueInvoice", RunDone
+
+                "SendNotificationOrderPaid", RunDone
+                "TransitionOrderFromCreatedToPaid", RunDone
+                "ProcessPayment", RunDone
+                "CreateOrder", RunDone
+            ]
+        )
+
+    [<Test>]
+    member this.``4a: undo createOrder, processPayment, and issueInvoice given shipOrder failed``() =
         this.VerifyUndo(
             simulate = {
                 Error = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable))
@@ -136,11 +195,10 @@ type OrderWorkflowSagaShould() =
                 "SendNotificationOrderInvoiced", RunDone
                 "TransitionOrderFromPaidToInvoiced", UndoDone
                 "IssueInvoice", UndoDone
+
                 "SendNotificationOrderPaid", RunDone
                 "TransitionOrderFromCreatedToPaid", UndoDone
                 "ProcessPayment", UndoDone
                 "CreateOrder", UndoDone
             ]
         )
-
-// TODO: test cancel order after each step...

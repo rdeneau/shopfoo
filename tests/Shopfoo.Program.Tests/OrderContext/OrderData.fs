@@ -25,8 +25,8 @@ type SimulatedErrorProvider() =
 module private CmdErrorExtensions =
     type Id<'kind> with
         member this.ToError() = {|
-            DuplicateKey = fun () -> Result.Error(Error.DataError(DuplicateKey(Id = this.ToString(), Type = $"%A{this.Kind}")))
-            NotFound = fun () -> Result.Error(Error.DataError(DataNotFound(Id = this.ToString(), Type = $"%A{this.Kind}")))
+            DuplicateKey = fun () -> Error(DataError(DuplicateKey(Id = this.ToString(), Type = $"%A{this.Kind}")))
+            NotFound = fun () -> Error(DataError(DataNotFound(Id = this.ToString(), Type = $"%A{this.Kind}")))
         |}
 
     type CompensateInvoiceError(cmd: Cmd.CompensateInvoice) =
@@ -41,10 +41,10 @@ module private CmdErrorExtensions =
     type TransitionOrderError(cmd: Cmd.TransitionOrder) =
         member _.NotAllowedFrom(actualStatus: OrderStatus) =
             let reason =
-                $"Cannot change order %A{cmd.OrderId} to %A{cmd.Transition.To}: "
-                + $"unexpected current status (expected: %A{cmd.Transition.From}, actual: %A{actualStatus})"
+                $"Cannot change order %s{string cmd.OrderId} to %s{cmd.Transition.To.Name}: "
+                + $"unexpected current status (expected: %s{cmd.Transition.From.Name}, actual: %s{actualStatus.Name})"
 
-            Result.Error(Error.OperationNotAllowed { Operation = "TransitionOrder"; Reason = reason })
+            Error(OperationNotAllowed { Operation = "TransitionOrder"; Reason = reason })
 
         member _.OrderNotFound() = cmd.OrderId.ToError().NotFound()
 

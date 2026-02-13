@@ -1,6 +1,7 @@
 namespace Shopfoo.Product.Tests.OrderContext
 
 open System
+open Shopfoo.Domain.Types.Errors
 
 [<AutoOpen>]
 module Id =
@@ -48,11 +49,19 @@ type Invoice = {
     }
 
 type OrderStatus =
+    | OrderCancelled of previous: OrderStatus
     | OrderCreated
-    | OrderCancelled
-    | OrderPaid of PaymentId
     | OrderInvoiced of InvoiceId
+    | OrderPaid of PaymentId
     | OrderShipped of ParcelId
+
+    member this.Name =
+        match this with
+        | OrderCancelled _ -> "Cancelled"
+        | OrderCreated -> "Created"
+        | OrderInvoiced _ -> "Invoiced"
+        | OrderPaid _ -> "Paid"
+        | OrderShipped _ -> "Shipped"
 
 type Order = {
     Id: OrderId
@@ -64,6 +73,21 @@ type Order = {
         Price = price
         Status = OrderCreated
     }
+
+type OrderError =
+    | OrderCannotBeCancelledAfterShipping
+    | OrderTransitionForbidden of current: OrderStatus * attempted: OrderStatus
+
+    interface IBusinessError with
+        override this.Code =
+            match this with
+            | OrderCannotBeCancelledAfterShipping -> "OrderCannotBeCancelledAfterShipping"
+            | OrderTransitionForbidden _ -> "OrderTransitionForbidden"
+
+        override this.Message =
+            match this with
+            | OrderCannotBeCancelledAfterShipping -> "Order cannot be cancelled after it has been shipped."
+            | OrderTransitionForbidden(current, attempted) -> $"Transition from %s{current.Name} to %s{attempted.Name} is not allowed."
 
 type Payment = {
     Id: PaymentId
