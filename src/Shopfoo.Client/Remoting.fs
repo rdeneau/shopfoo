@@ -56,7 +56,7 @@ type Cmder = {
         let onException (exn: exn) =
             let apiError =
                 match exn with
-                | :? ProxyRequestException as exn -> ApiErrorBuilder.Technical.Build(exn.Message, detail = { Exception = exn.ResponseText })
+                | :? ProxyRequestException as exn -> ApiError.Technical(exn.Message, detail = { Exception = exn.ResponseText })
                 | _ -> ApiError.FromException(exn, this.User)
 
             args.Error(apiError)

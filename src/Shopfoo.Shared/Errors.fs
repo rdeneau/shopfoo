@@ -24,11 +24,15 @@ type System.Exception with
 #endif
         | _ -> None
 
-type ApiErrorBuilder private (errorType) =
-    static member Business = ApiErrorBuilder(ErrorType.Business)
-    static member Technical = ApiErrorBuilder(ErrorType.Technical)
-
-    member this.Build(message, ?category, ?key, ?detail, ?translations) : ApiError = {
+type ApiError = {
+    ErrorCategory: string
+    ErrorMessage: string
+    ErrorType: ErrorType
+    ErrorKey: TranslationKey option
+    ErrorDetail: ErrorDetail option
+    Translations: Translations
+} with
+    static member private create category message errorType key detail translations : ApiError = {
         ErrorCategory = defaultArg category String.empty
         ErrorMessage = message
         ErrorType = errorType
@@ -37,14 +41,12 @@ type ApiErrorBuilder private (errorType) =
         Translations = defaultArg translations Translations.Empty
     }
 
-and ApiError = {
-    ErrorCategory: string
-    ErrorMessage: string
-    ErrorType: ErrorType
-    ErrorKey: TranslationKey option
-    ErrorDetail: ErrorDetail option
-    Translations: Translations
-} with
+    static member Business(message, ?category, ?key, ?detail, ?translations) =
+        ApiError.create category message ErrorType.Business key detail translations
+
+    static member Technical(message, ?category, ?key, ?detail, ?translations) =
+        ApiError.create category message ErrorType.Technical key detail translations
+
     static member FromError(error, level, ?key, ?translations) =
         let errorMessage = ErrorMessage.ofError(error).FullMessage
 
@@ -54,20 +56,16 @@ and ApiError = {
             | ErrorDetailLevel.Admin -> ErrorCategory.ofError error
 
         match error with
-        | Bug exn ->
-            ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
+        | Bug exn -> ApiError.Technical(errorMessage, errorCategory, ?key = key, ?detail = exn.AsErrorDetail(level), ?translations = translations)
         | DataError _
         | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
-        | GuardClause _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
-        | Validation _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | GuardClause _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | Validation _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
 
     static member FromException(FirstException exn, user: User) =
-        ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))
+        ApiError.Technical(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))
 
-    static member ForAuthenticationError(authError) =
-        let errorMessage =
-            match authError with
-            | TokenInvalid -> "TokenInvalid"
-            | UserUnauthorized -> "UserUnauthorized"
-
-        ApiErrorBuilder.Technical.Build(errorMessage)
+    static member ForAuthenticationError authError =
+        match authError with
+        | TokenInvalid -> ApiError.Technical "TokenInvalid"
+        | UserUnauthorized -> ApiError.Technical "UserUnauthorized"

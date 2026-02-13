@@ -72,7 +72,7 @@ module private Cmd =
                         // TODO: handle unexpected state properly: modal "Oops, something went wrong" + cmd to log the error
                         async {
                             // This action should not happen here. It's handled as an error from the server side for simplicity’s sake.
-                            return Error(ServerError.ApiError(ApiErrorBuilder.Technical.Build($"Unexpected action: %A{action}")))
+                            return Error(ServerError.ApiError(ApiError.Technical($"Unexpected action: %A{action}")))
                         }
             Error = fun apiError -> PerformAction(action, request.Body.SKU, Done(Error apiError))
             Success = fun data -> PerformAction(action, request.Body.SKU, Done(Ok data))

@@ -25,7 +25,7 @@ let private errorHandler (logger: ILogger<WebApp>) (FirstException exn) (routeIn
     | :? ArgumentException
     | :? ArgumentNullException
     | :? InvalidOperationException -> // ↩
-        Propagate(ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail()))
+        Propagate(ApiError.Technical(exn.Message, ?detail = exn.AsErrorDetail()))
     | _ -> Ignore
 
 let private apiHttpHandler (api: #Remoting.IApi) logger : HttpHandler =
