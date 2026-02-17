@@ -14,44 +14,54 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 
 [<AutoOpen>]
+module Keys =
+    [<Interface>]
+    type IKind =
+        abstract member Value: string
+
+    type Key<'kind when 'kind :> IKind>(kind: 'kind, key: string) =
+        member val Kind = kind
+        member val Key = key
+        member this.Path = $"/%s{this.Kind.Value}/%s{this.Key}"
+
+        override this.Equals(obj) =
+            match obj with
+            | :? Key<'kind> as other -> this.Kind.Value = other.Kind.Value && this.Key = other.Key
+            | _ -> false
+
+        override this.GetHashCode() = hash this.Path
+        override this.ToString() = this.Path
+
+    type KeyMaker<'kind, 'key when 'kind :> IKind and 'key :> Key<'kind>>(kind: 'kind, makeKey: 'kind * string -> 'key) =
+        member _.Make(keyOrPath: string) : 'key = makeKey (kind, keyOrPath.TrimStart('/').Split('/') |> Array.last)
+        member this.FromOlid(OLID olid) = this.Make olid
+
+    type Authors =
+        | Authors
+        interface IKind with
+            member _.Value = "authors"
+
+    type AuthorKey = Key<Authors>
+    let AuthorKey = KeyMaker(Authors, AuthorKey)
+
+    type Books =
+        | Books
+        interface IKind with
+            member _.Value = "books"
+
+    type BookKey = Key<Books>
+    let BookKey = KeyMaker(Books, BookKey)
+
+    type Works =
+        | Works
+        interface IKind with
+            member _.Value = "works"
+
+    type WorkKey = Key<Works>
+    let WorkKey = KeyMaker(Works, WorkKey)
+
+[<AutoOpen>]
 module Dto =
-    type Key<'kind> =
-        private
-        | Key of string
-
-        member this.Value =
-            let (Key value) = this
-            value
-
-    module Key =
-        let private ensureStartsWithSlash (key: string) : string = if key.StartsWith("/") then key else $"/%s{key}"
-        let private (</>) left right = left + (ensureStartsWithSlash right)
-
-        let sanitize (parent: string) (key: string) =
-            let value = "" </> parent </> key.Replace($"%s{parent}/", "")
-            Key value
-
-    type Author = private | Author
-    type AuthorKey = Key<Author>
-
-    module AuthorKey =
-        let sanitize k : AuthorKey = Key.sanitize "authors" k
-        let ofOlid (OLID olid) = sanitize olid
-
-    type Book = private | Book
-    type BookKey = Key<Book>
-
-    module BookKey =
-        let sanitize k : BookKey = Key.sanitize "books" k
-        let ofOlid (OLID olid) = sanitize olid
-
-    type Work = private | Work
-    type WorkKey = Key<Work>
-
-    module WorkKey =
-        let sanitize k : WorkKey = Key.sanitize "works" k
-        let ofOlid (OLID olid) = sanitize olid
-
     [<CLIMutable>]
     type AuthorDto = {
         /// Example: "/authors/OL2653686A"
@@ -245,7 +255,7 @@ module private Mappers =
 type internal OpenLibraryPipeline(openLibraryClient: IOpenLibraryClient) =
     member _.GetProductByOlid(olid: OLID) : Async<Result<Product, DataRelatedError>> =
         taskResult {
-            let! bookDto = openLibraryClient.GetBookAsync(BookKey.ofOlid olid)
+            let! bookDto = openLibraryClient.GetBookAsync(BookKey.FromOlid olid)
 
             let isbn =
                 match bookDto.Isbn13, bookDto.Isbn10 with
@@ -253,11 +263,11 @@ type internal OpenLibraryPipeline(openLibraryClient: IOpenLibraryClient) =
                 | _, Some(isbn10 :: _) -> ISBN isbn10
                 | _ -> ISBN ""
 
-            let! workDto = openLibraryClient.GetWorkAsync(WorkKey.sanitize bookDto.Works[0].Key)
+            let! workDto = openLibraryClient.GetWorkAsync(WorkKey.Make bookDto.Works[0].Key)
 
             let! authorDtos =
                 workDto.Authors
-                |> List.traverseTaskResultM (fun x -> openLibraryClient.GetAuthorAsync(AuthorKey.sanitize x.Author.Key))
+                |> List.traverseTaskResultM (fun x -> openLibraryClient.GetAuthorAsync(AuthorKey.Make x.Author.Key))
 
             let category = Mappers.DtoToModel.mapBookCategory authorDtos bookDto isbn
             let coverKey = Mappers.DtoToModel.mapCoverKey isbn bookDto.Covers
@@ -293,10 +303,10 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings: OpenLibraryCli
         }
 
     interface IOpenLibraryClient with
-        member this.GetAuthorAsync authorKey = this.GetByKeyAsync<AuthorDto> $"%s{authorKey.Value}.json"
-        member this.GetBookAsync bookKey = this.GetByKeyAsync<BookDto> $"%s{bookKey.Value}.json"
+        member this.GetAuthorAsync authorKey = this.GetByKeyAsync<AuthorDto> $"%s{authorKey.Path}.json"
+        member this.GetBookAsync bookKey = this.GetByKeyAsync<BookDto> $"%s{bookKey.Path}.json"
         member this.GetBookByIsbnAsync(ISBN isbn) = this.GetByKeyAsync<BookDto> $"/isbn/%s{isbn}"
-        member this.GetWorkAsync workKey = this.GetByKeyAsync<WorkDto> workKey.Value
+        member this.GetWorkAsync workKey = this.GetByKeyAsync<WorkDto> workKey.Path
 
         member _.SearchAuthorsAsync(searchTerm: string) =
             task {

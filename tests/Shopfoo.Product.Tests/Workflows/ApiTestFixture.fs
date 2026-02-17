@@ -52,13 +52,13 @@ type ApiTestFixture(?books: BookRaw list, ?pricesSet: Prices list, ?sales: Sale 
 
         // Specific cases: found with the given data
         for author in defaultArg authors [] do
-            openLibraryClientMock.GetAuthorAsync(AuthorKey.sanitize author.Key) |> returnsAsync (Ok author)
+            openLibraryClientMock.GetAuthorAsync(AuthorKey.Make author.Key) |> returnsAsync (Ok author)
 
         for book in defaultArg books [] do
-            openLibraryClientMock.GetBookAsync(BookKey.sanitize book.Key) |> returnsAsync (Ok book)
+            openLibraryClientMock.GetBookAsync(BookKey.Make book.Key) |> returnsAsync (Ok book)
 
         for work in defaultArg works [] do
-            openLibraryClientMock.GetWorkAsync(WorkKey.sanitize work.Key) |> returnsAsync (Ok work)
+            openLibraryClientMock.GetWorkAsync(WorkKey.Make work.Key) |> returnsAsync (Ok work)
 
     interface IDisposable with
         member _.Dispose() = serviceProvider.Dispose()

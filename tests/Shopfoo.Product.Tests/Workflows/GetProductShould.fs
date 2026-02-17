@@ -4,7 +4,7 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.FakeStore
-open Shopfoo.Product.Data.OpenLibrary.Dto
+open Shopfoo.Product.Data.OpenLibrary
 open Swensen.Unquote
 open TUnit.Core
 
@@ -22,30 +22,30 @@ module private Data =
 
     module OpenLibrary =
         let bookId = OLID "OL31838215M"
-        let bookKey = BookKey.ofOlid bookId
-        let workKey = WorkKey.ofOlid (OLID "OL19809141W")
-        let authorKey = AuthorKey.ofOlid (OLID "OL2653686A")
+        let bookKey = BookKey.FromOlid bookId
+        let workKey = WorkKey.Make "OL19809141W"
+        let authorKey = AuthorKey.Make "OL2653686A"
 
         let bookDto = {
-            Key = bookKey.Value
+            Key = bookKey.Path
             Title = "Clean Architecture"
             Subtitle = "A Craftsman's Guide to Software Structure and Design"
             Description = Some "Book about clean architecture"
             Covers = [ 8936088 ]
-            Works = [ {| Key = workKey.Value |} ]
+            Works = [ {| Key = workKey.Path |} ]
             Isbn10 = Some [ "0134494164" ]
             Isbn13 = Some [ "9780134494166" ]
         }
 
         let workDto = {
-            Key = workKey.Value
+            Key = workKey.Path
             Title = "Clean Architecture"
             Subtitle = "A Craftsman's Guide to Software Structure and Design"
-            Authors = [ {| Author = {| Key = authorKey.Value |} |} ]
+            Authors = [ {| Author = {| Key = authorKey.Path |} |} ]
         }
 
         let authorDto = {
-            Key = authorKey.Value
+            Key = authorKey.Path
             Name = "Robert C. Martin"
             Photos = [ 10721801 ]
         }
