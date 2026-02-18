@@ -2,21 +2,6 @@ namespace Shopfoo.Program
 
 open Shopfoo.Domain.Types.Errors
 
-[<RequireQualifiedAccess>]
-type UndoType =
-    /// <summary>
-    /// Strict undo: should revert to the initial state—e.g., Database <c>DELETE</c> to undo an <c>INSERT</c>.
-    /// </summary>
-    | Revert
-
-    /// <summary>
-    /// Loose undo:
-    /// <br /> - attempt to revert the effect but keep a trace—e.g., `RefundPayment` to compensate for a `ChargePayment` Command.
-    /// <br /> - revert with no guarantee—e.g., `CancelEmail` Message.
-    /// <br /> - mitigate the effect—e.g., send a "Sorry" email.
-    /// </summary>
-    | Compensate
-
 /// Wraps an undo function. Can be placed in structural types (records, DU) without causing equality issues.
 type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
     static let hashCode = hash (nameof UndoFunc)
@@ -24,17 +9,27 @@ type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
     override _.Equals(other) = (hash other = hashCode)
     override _.GetHashCode() = hashCode
 
-type Undo = {
-    Type: UndoType
-    Func: UndoFunc
-} with
-    static member Revert undoFunc = { Type = UndoType.Revert; Func = UndoFunc undoFunc }
-    static member Compensate undoFunc = { Type = UndoType.Compensate; Func = UndoFunc undoFunc }
+[<RequireQualifiedAccess>]
+type Undo =
+    | None
+
+    /// <summary>
+    /// Strict undo: should revert to the initial state—e.g., Database <c>DELETE</c> to undo an <c>INSERT</c>.
+    /// </summary>
+    | Revert of UndoFunc
+
+    /// <summary>
+    /// Loose undo:
+    /// <br /> - attempt to revert the effect but keep a trace—e.g., `RefundPayment` to compensate for a `ChargePayment` Command.
+    /// <br /> - revert with no guarantee—e.g., `CancelEmail` Message.
+    /// <br /> - mitigate the effect—e.g., send a "Sorry" email.
+    /// </summary>
+    | Compensate of UndoFunc
 
 [<RequireQualifiedAccess>]
 type InstructionType =
     | Query
-    | Command of undo: Undo option
+    | Command of undo: Undo
 
 type InstructionMeta = { Name: string; Type: InstructionType }
 
@@ -89,18 +84,14 @@ module Saga =
                 let! updatedStep =
                     async {
                         match step.Status, step.Instruction.Type with
-                        | RunDone, InstructionType.Command(Some undo) ->
-                            // Execute undo function
-                            let! undoResult = undo.Func.Invoke()
+                        | RunDone, InstructionType.Command(Undo.Revert undoFunc | Undo.Compensate undoFunc) ->
+                            match! undoFunc.Invoke() with
+                            | Ok() -> return { step with Status = UndoDone }
+                            | Error err ->
+                                undoErrors.Add(err)
+                                return { step with Status = UndoFailed err }
 
-                            return
-                                match undoResult with
-                                | Ok() -> { step with Status = UndoDone }
-                                | Error err ->
-                                    undoErrors.Add(err)
-                                    { step with Status = UndoFailed err }
-
-                        | RunDone, (InstructionType.Query | InstructionType.Command(undo = None))
+                        | RunDone, (InstructionType.Query | InstructionType.Command Undo.None)
                         | RunFailed _, _
                         | UndoDone, _
                         | UndoFailed _, _ -> return step

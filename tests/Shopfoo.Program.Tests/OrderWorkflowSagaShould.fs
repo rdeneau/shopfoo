@@ -43,32 +43,32 @@ type OrderWorkflowSagaShould() =
                 member _.CreateOrder =
                     preparer // ↩
                         .Command(orderRepository.CreateOrder, "CreateOrder")
-                        .Revert(fun cmd _ -> orderRepository.DeleteOrder cmd.OrderId)
+                        .Reversible(fun cmd _ -> orderRepository.DeleteOrder cmd.OrderId)
 
                 member _.IssueInvoice =
                     preparer
                         .Command(invoiceRepository.IssueInvoice, "IssueInvoice")
-                        .Compensate(fun _ res -> invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force })
+                        .Compensatable(fun _ res -> invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force })
 
                 member _.ProcessPayment =
                     preparer
                         .Command(paymentRepository.ProcessPayment, "ProcessPayment")
-                        .Compensate(fun _ res -> paymentRepository.RefundPayment { PaymentId = res |> Result.force })
+                        .Compensatable(fun _ res -> paymentRepository.RefundPayment { PaymentId = res |> Result.force })
 
                 member _.SendNotification =
-                    preparer // ↩
-                        .Command(notificationClient.SendNotification, fun cmd -> $"SendNotificationOrder%s{cmd.NewStatus.Name}")
-                        .NoUndo()
+                    preparer
+                        .Command(notificationClient.SendNotification, getName = (fun cmd -> $"SendNotificationOrder%s{cmd.NewStatus.Name}"))
+                        .NotUndoable()
 
                 member _.ShipOrder =
                     preparer // ↩
                         .Command(warehouseClient.ShipOrder, "ShipOrder")
-                        .NoUndo()
+                        .NotUndoable()
 
                 member _.TransitionOrder =
                     preparer
                         .Command(orderRepository.TransitionOrder, fun (FromTo(from, to')) -> $"TransitionOrderFrom%s{from}To%s{to'}")
-                        .Revert(fun cmd _ -> orderRepository.TransitionOrder(cmd.Revert()))
+                        .Reversible(fun cmd _ -> orderRepository.TransitionOrder(cmd.Revert()))
             }
 
     member private this.VerifyUndo(simulate, expectedHistory) =

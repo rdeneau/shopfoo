@@ -51,14 +51,14 @@ type internal Api
             member _.GetStockEvents = x.Query(warehousePipeline.GetStockEvents, "GetStockEvents")
 
             // TODO RDE: add undo operations
-            member _.SavePrices = x.Command(pricesPipeline.SavePrices, "SavePrices").NoUndo()
-            member _.SaveProduct = x.Command(catalogPipeline.SaveProduct, "SaveProduct").NoUndo()
-            member _.AddPrices = x.Command(pricesPipeline.AddPrices, "AddPrices").NoUndo()
-            member _.AddProduct = x.Command(catalogPipeline.AddProduct, "AddProduct").NoUndo()
+            member _.SavePrices = x.Command(pricesPipeline.SavePrices, "SavePrices").NotUndoable()
+            member _.SaveProduct = x.Command(catalogPipeline.SaveProduct, "SaveProduct").NotUndoable()
+            member _.AddPrices = x.Command(pricesPipeline.AddPrices, "AddPrices").NotUndoable()
+            member _.AddProduct = x.Command(catalogPipeline.AddProduct, "AddProduct").NotUndoable()
 
             // TODO RDE: to remove once the pipeline functions are used in the undo operations above
-            member _.DeletePrices = x.Command(pricesPipeline.DeletePrices, "DeletePrices").NoUndo()
-            member _.DeleteProduct = x.Command(catalogPipeline.DeleteProduct, "DeleteProduct").NoUndo()
+            member _.DeletePrices = x.Command(pricesPipeline.DeletePrices, "DeletePrices").NotUndoable()
+            member _.DeleteProduct = x.Command(catalogPipeline.DeleteProduct, "DeleteProduct").NotUndoable()
         }
 
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =

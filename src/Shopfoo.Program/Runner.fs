@@ -22,9 +22,9 @@ type IWorkMonitors =
 
 [<Interface>]
 type IWorkCommandBuilder<'arg, 'res> =
-    abstract member NoUndo: unit -> Work<'arg, 'res>
-    abstract member Revert: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
-    abstract member Compensate: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
+    abstract member NotUndoable: unit -> Work<'arg, 'res>
+    abstract member Reversible: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
+    abstract member Compensatable: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
 
 [<Interface>]
 type IInstructionPreparer<'ins when Instructions<'ins>> =
@@ -68,11 +68,11 @@ module Implementation =
         member _.EnqueueStep step = lock lockObj (fun () -> history <- step :: history)
 
     [<Sealed>]
-    type private WorkCommandBuilder<'arg, 'res>(build: ('arg -> 'res -> Undo option) -> Work<'arg, 'res>) =
+    type private WorkCommandBuilder<'arg, 'res>(build: ('arg -> 'res -> Undo) -> Work<'arg, 'res>) =
         interface IWorkCommandBuilder<'arg, 'res> with
-            member _.NoUndo() = build (fun _ _ -> None)
-            member _.Revert undoFun = build (fun arg res -> Some(Undo.Revert(fun () -> undoFun arg res)))
-            member _.Compensate undoFun = build (fun arg res -> Some(Undo.Compensate(fun () -> undoFun arg res)))
+            member _.NotUndoable() = build (fun _ _ -> Undo.None)
+            member _.Reversible undoFun = build (fun arg res -> Undo.Revert(UndoFunc(fun () -> undoFun arg res)))
+            member _.Compensatable undoFun = build (fun arg res -> Undo.Compensate(UndoFunc(fun () -> undoFun arg res)))
 
     [<Sealed>]
     type internal InstructionPreparer<'ins when Instructions<'ins>>(domainName: string, monitors: IWorkMonitors, tracker: SagaTracker<'ins>) =
