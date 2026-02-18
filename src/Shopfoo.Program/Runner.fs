@@ -11,8 +11,6 @@ type internal SagaTracker<'ins when Instructions<'ins>>() =
     member _.History = history
     member _.EnqueueStep step = lock lockObj (fun () -> history <- step :: history)
 
-type Res<'ret> = Result<'ret, Error>
-
 [<Interface>]
 type IProgramWorkflow<'ins, 'arg, 'ret when 'ins :> IProgramInstructions> =
     abstract member Run: 'arg -> Program<'ins, Res<'ret>>

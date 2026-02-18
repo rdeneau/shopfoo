@@ -30,6 +30,8 @@ type Instructions<'ins when 'ins :> IProgramInstructions> = 'ins
 /// </remarks>
 type Program<'ins, 'ret when Instructions<'ins>> = 'ins -> Async<'ret>
 
+type Res<'ret> = Result<'ret, Error>
+
 [<RequireQualifiedAccess>]
 module Program =
     let retn (a: 'a) : Program<'ins, 'a> = // ↩
@@ -63,7 +65,7 @@ module Program =
                 return f a b
             }
 
-    let mapError (f: 'error -> Error) (prog: Program<'ins, Result<'a, 'error>>) : Program<'ins, Result<'a, Error>> =
+    let mapError (f: 'error -> Error) (prog: Program<'ins, Result<'a, 'error>>) : Program<'ins, Res<'a>> =
         fun ins ->
             async {
                 let! result = prog ins
@@ -76,14 +78,14 @@ module Program =
 
     let ignore (prog: Program<'ins, Result<_, 'error>>) : Program<'ins, Result<unit, 'error>> = prog |> map Result.ignore
 
-    let requireSome (info: string) (prog: Program<'ins, 'a option>) : Program<'ins, Result<'a, Error>> =
+    let requireSome (info: string) (prog: Program<'ins, 'a option>) : Program<'ins, Res<'a>> =
         fun ins ->
             async {
                 let! value = prog ins
                 return Result.requireSome info value |> liftDataRelatedError
             }
 
-    let requireSomeData (info: string, typeName: TypeName<'a>) (prog: Program<'ins, 'a option>) : Program<'ins, Result<'a, Error>> =
+    let requireSomeData (info: string, typeName: TypeName<'a>) (prog: Program<'ins, 'a option>) : Program<'ins, Res<'a>> =
         fun ins ->
             async {
                 let! value = prog ins
@@ -91,7 +93,7 @@ module Program =
             }
 
     /// Run the given command and return the eventual error without blocking the program
-    let runCommandWithNonBlockingError (prog: Program<'ins, Result<unit, Error>>) : Program<'ins, Error option> =
+    let runCommandWithNonBlockingError (prog: Program<'ins, Res<unit>>) : Program<'ins, Error option> =
         fun ins ->
             async {
                 let! result = prog ins
@@ -129,7 +131,7 @@ module ProgramBuilder =
 [<AutoOpen>]
 module ProgramBuilderExtensions =
     type ProgramBuilder with
-        // Overloads to bind `Result<'a, XxxError>` and lift the error part to `Error`
+        // Overloads to bind `Result<'a, XxxError>` and lift the error part to `Error` to get Res<'a> values uniformly
 
         member inline x.Bind(result: Result<_, DataRelatedError>, f) = x.Bind(liftDataRelatedError result, f)
         member inline x.Bind(result: Result<_, OperationNotAllowedError>, f) = x.Bind(liftOperationNotAllowed result, f)
