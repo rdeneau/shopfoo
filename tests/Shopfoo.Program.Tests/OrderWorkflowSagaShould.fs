@@ -118,14 +118,14 @@ type OrderWorkflowSagaShould() =
     [<Test>]
     member this.``1a: undo no steps given createOrder failed``() =
         this.VerifyUndo(
-            simulate = { Error = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")); When = OrderAction.CreateOrder },
+            simulate = { Error = DataError(DuplicateKey(Id = orderId.ToString(), Type = "Order")); Step = OrderStep.CreateOrder },
             expectedHistory = []
         )
 
     [<Test>]
     member this.``1b: cancel without undo after createOrder``() =
         this.VerifyCancel(
-            cancelAfterStep = OrderAction.CreateOrder,
+            cancelAfterStep = OrderStep.CreateOrder,
             expectedStatus = LightOrderCancelled LightOrderCreated,
             expectedHistory = [ // ↩
                 "TransitionOrderFromCreatedToCancelled", RunDone
@@ -136,14 +136,14 @@ type OrderWorkflowSagaShould() =
     [<Test>]
     member this.``2a: undo createOrder given processPayment failed``() =
         this.VerifyUndo(
-            simulate = { Error = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")); When = OrderAction.ProcessPayment },
+            simulate = { Error = DataError(DataNotFound(Id = orderId.ToString(), Type = "Order")); Step = OrderStep.ProcessPayment },
             expectedHistory = [ "CreateOrder", UndoDone ]
         )
 
     [<Test>]
     member this.``2b: cancel without undo after processPayment``() =
         this.VerifyCancel(
-            cancelAfterStep = OrderAction.ProcessPayment,
+            cancelAfterStep = OrderStep.ProcessPayment,
             expectedStatus = LightOrderCancelled LightOrderPaid,
             expectedHistory = [ // ↩
                 "TransitionOrderFromPaidToCancelled", RunDone
@@ -157,7 +157,7 @@ type OrderWorkflowSagaShould() =
     [<Test>]
     member this.``3a: undo createOrder and processPayment given issueInvoice failed``() =
         this.VerifyUndo(
-            simulate = { Error = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" }; When = OrderAction.IssueInvoice },
+            simulate = { Error = OperationNotAllowed { Operation = "IssueInvoice"; Reason = "Simulated" }; Step = OrderStep.IssueInvoice },
             expectedHistory = [
                 "SendNotificationOrderPaid", RunDone
                 "TransitionOrderFromCreatedToPaid", UndoDone
@@ -169,7 +169,7 @@ type OrderWorkflowSagaShould() =
     [<Test>]
     member this.``3b: cancel without undo after issueInvoice``() =
         this.VerifyCancel(
-            cancelAfterStep = OrderAction.IssueInvoice,
+            cancelAfterStep = OrderStep.IssueInvoice,
             expectedStatus = LightOrderCancelled LightOrderInvoiced,
             expectedHistory = [ // ↩
                 "TransitionOrderFromInvoicedToCancelled", RunDone
@@ -189,7 +189,7 @@ type OrderWorkflowSagaShould() =
         this.VerifyUndo(
             simulate = {
                 Error = DataError(HttpApiError(HttpApiName "Warehouse", HttpStatus.FromHttpStatusCode HttpStatusCode.ServiceUnavailable))
-                When = OrderAction.ShipOrder
+                Step = OrderStep.ShipOrder
             },
             expectedHistory = [
                 "SendNotificationOrderInvoiced", RunDone
@@ -207,7 +207,7 @@ type OrderWorkflowSagaShould() =
     [<Test; Skip("TODO RDE")>]
     member this.``4b: fail to cancel and still not undo after shipOrder``() =
         this.VerifyCancel(
-            cancelAfterStep = OrderAction.ShipOrder,
+            cancelAfterStep = OrderStep.ShipOrder,
             expectedStatus = LightOrderShipped, // Not LightOrderCancelled LightOrderShipped
             expectedError = BusinessError OrderCannotBeCancelledAfterShipping,
             expectedHistory = [ // ↩

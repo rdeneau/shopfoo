@@ -34,14 +34,19 @@ module Program =
     let transitionOrder cmd = DefineProgram.instruction _.TransitionOrder(cmd)
 
 [<RequireQualifiedAccess>]
-type OrderAction =
+type OrderStep =
     | CreateOrder
     | ProcessPayment
     | IssueInvoice
-    | SendNotification
+    | SendNotificationAfter of OrderStep
     | ShipOrder
 
-type OrderWorkflow(?cancelAfterStep: OrderAction) =
+    member this.IsSendNotification =
+        match this with
+        | SendNotificationAfter _ -> true
+        | _ -> false
+
+type OrderWorkflow(?cancelAfterStep: OrderStep) =
     interface IProgramWorkflow<IOrderInstructions, Cmd.CreateOrder, unit> with
         override _.Run({ OrderId = orderId; Price = orderPrice } as cmd) =
             let cmder = Cmder orderId
@@ -50,7 +55,7 @@ type OrderWorkflow(?cancelAfterStep: OrderAction) =
                 program {
                     if cancelAfterStep <> Some step then
                         return Ok()
-                    elif step = OrderAction.ShipOrder then
+                    elif step = OrderStep.ShipOrder then
                         return Error(BusinessError OrderCannotBeCancelledAfterShipping)
                     else
                         do! Program.transitionOrder (cmder.TransitionOrder { From = actualStatus; To = OrderCancelled actualStatus })
@@ -61,28 +66,28 @@ type OrderWorkflow(?cancelAfterStep: OrderAction) =
                 // CreateOrder
                 do! Program.createOrder cmd
                 let currentStatus = OrderCreated
-                do! cancelAfter OrderAction.CreateOrder currentStatus
+                do! cancelAfter OrderStep.CreateOrder currentStatus
 
                 // ProcessPayment
                 let! (paymentId: PaymentId) = Program.processPayment { OrderId = orderId; Amount = orderPrice }
                 let currentStatus, previousStatus = OrderPaid paymentId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
-                do! cancelAfter OrderAction.ProcessPayment currentStatus
+                do! cancelAfter OrderStep.ProcessPayment currentStatus
 
                 // IssueInvoice
                 let! (invoiceId: InvoiceId) = Program.issueInvoice { OrderId = orderId; Amount = orderPrice }
                 let currentStatus, previousStatus = OrderInvoiced invoiceId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
-                do! cancelAfter OrderAction.IssueInvoice currentStatus
+                do! cancelAfter OrderStep.IssueInvoice currentStatus
 
                 // ShipOrder
                 let! (parcelId: ParcelId) = Program.shipOrder { Cmd.ShipOrder.OrderId = orderId }
                 let currentStatus, previousStatus = OrderShipped parcelId, currentStatus
                 do! Program.transitionOrder (cmder.TransitionOrder { From = previousStatus; To = currentStatus })
                 do! Program.sendNotification (cmder.NotifyOrderChanged currentStatus)
-                do! cancelAfter OrderAction.ShipOrder currentStatus
+                do! cancelAfter OrderStep.ShipOrder currentStatus
 
                 return Ok()
             }

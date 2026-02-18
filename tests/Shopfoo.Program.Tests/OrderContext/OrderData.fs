@@ -5,11 +5,14 @@ open Shopfoo.Domain.Types.Errors
 open Shopfoo.Product.Tests.OrderContext
 open Shopfoo.Product.Tests.OrderContext.Workflows
 
-type SimulatedError = { Error: Error; When: OrderAction }
+type SimulatedError = { Error: Error; Step: OrderStep }
 
 [<Interface>]
 type ISimulatedErrorProvider =
-    abstract member Find: step: OrderAction -> Error option
+    abstract member Find: predicate: (OrderStep -> bool) -> Error option
+
+type ISimulatedErrorProvider with
+    member this.Find(step: OrderStep) = this.Find((=) step)
 
 type SimulatedErrorProvider() =
     let mutable value: SimulatedError option = None
@@ -18,7 +21,7 @@ type SimulatedErrorProvider() =
     member _.Reset() = value <- None
 
     interface ISimulatedErrorProvider with
-        member _.Find step = value |> Option.filter (fun e -> e.When = step) |> Option.map _.Error
+        member _.Find predicate = value |> Option.filter (fun e -> predicate e.Step) |> Option.map _.Error
 
 /// Helpers to ease creating errors from commands
 [<AutoOpen>]
@@ -84,7 +87,7 @@ type InvoiceRepository(simulatedErrorProvider: ISimulatedErrorProvider) =
 
     member _.IssueInvoice(cmd: Cmd.IssueInvoice) =
         async {
-            match simulatedErrorProvider.Find OrderAction.IssueInvoice with
+            match simulatedErrorProvider.Find OrderStep.IssueInvoice with
             | Some err -> return Error err
             | None ->
                 let invoice = Invoice.Create(cmd.OrderId, cmd.Amount)
@@ -102,7 +105,7 @@ type InvoiceRepository(simulatedErrorProvider: ISimulatedErrorProvider) =
 type NotificationClient(simulatedErrorProvider: ISimulatedErrorProvider) =
     member _.SendNotification(cmd: Cmd.NotifyOrderChanged) =
         async {
-            match simulatedErrorProvider.Find OrderAction.SendNotification with
+            match simulatedErrorProvider.Find _.IsSendNotification with
             | Some err -> return Error err
             | None ->
                 printfn $"Sending notification for order %A{cmd.OrderId} changed to %A{cmd.NewStatus}"
@@ -117,7 +120,7 @@ type OrderRepository(simulatedErrorProvider: ISimulatedErrorProvider) =
 
     member _.CreateOrder(cmd: Cmd.CreateOrder) =
         async {
-            match simulatedErrorProvider.Find OrderAction.CreateOrder with
+            match simulatedErrorProvider.Find OrderStep.CreateOrder with
             | Some err -> return Error err
             | None ->
                 match! orders.Get cmd.OrderId with
@@ -138,7 +141,7 @@ type PaymentRepository(simulatedErrorProvider: ISimulatedErrorProvider) =
 
     member _.ProcessPayment(cmd: Cmd.ProcessPayment) =
         async {
-            match simulatedErrorProvider.Find OrderAction.ProcessPayment with
+            match simulatedErrorProvider.Find OrderStep.ProcessPayment with
             | Some err -> return Error err
             | None ->
                 let payment = Payment.Create(cmd.OrderId, cmd.Amount)
@@ -156,7 +159,7 @@ type PaymentRepository(simulatedErrorProvider: ISimulatedErrorProvider) =
 type WarehouseClient(simulatedErrorProvider: ISimulatedErrorProvider) =
     member _.ShipOrder(cmd: Cmd.ShipOrder) =
         async {
-            match simulatedErrorProvider.Find OrderAction.ShipOrder with
+            match simulatedErrorProvider.Find OrderStep.ShipOrder with
             | Some err -> return Error err
             | None ->
                 let parcelId = ParcelId.New()
