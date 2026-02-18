@@ -76,7 +76,7 @@ type OrderWorkflowSagaShould() =
             do simulatedErrorProvider.Define simulate
             let expectedError = simulate.Error
 
-            let! result, sagaState = workflowRunner.RunInSaga (OrderWorkflow()) cmdCreateOrder (this.PrepareInstructions())
+            let! result, sagaState = workflowRunner.RunInSaga (OrderWorkflow()) cmdCreateOrder (this.PrepareInstructions()) CanUndo.always
 
             let! orderCreated = orderRepository.GetOrderById orderId
 
@@ -91,7 +91,13 @@ type OrderWorkflowSagaShould() =
 
     member private this.VerifyCancel(cancelAfterStep, expectedStatus, expectedHistory, ?expectedError) =
         async {
-            let! result, sagaState = workflowRunner.RunInSaga (OrderWorkflow(cancelAfterStep)) cmdCreateOrder (this.PrepareInstructions())
+            let canUndoExceptAfterShipOrder undoCriteria =
+                match undoCriteria with
+                | { WorkflowError = BusinessError(As OrderCannotBeCancelledAfterShipping) } -> false
+                | _ -> true
+
+            let! result, sagaState =
+                workflowRunner.RunInSaga (OrderWorkflow(cancelAfterStep)) cmdCreateOrder (this.PrepareInstructions()) canUndoExceptAfterShipOrder
 
             let! orderCreated = orderRepository.GetOrderById orderId
 
@@ -203,8 +209,7 @@ type OrderWorkflowSagaShould() =
             ]
         )
 
-    // TODO: test 4b
-    [<Test; Skip("TODO RDE")>]
+    [<Test>]
     member this.``4b: fail to cancel and still not undo after shipOrder``() =
         this.VerifyCancel(
             cancelAfterStep = OrderStep.ShipOrder,

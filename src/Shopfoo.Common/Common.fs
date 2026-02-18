@@ -115,6 +115,18 @@ module Set =
 
 [<AutoOpen>]
 module ActivePatterns =
+    /// <summary>
+    /// Active pattern to use instead of the type test pattern (<c>:?</c>), to be combined with
+    /// other patterns without needing a guard followed by another <c>match</c> expression.
+    /// </summary>
+    /// <remarks>
+    /// The name <c>As</c> is inspired by C# <c>as</c> operator, which performs a similar type test and cast.
+    /// </remarks>
+    let (|As|_|) (input: obj) : 't option =
+        match input with
+        | :? 't as value -> Some value
+        | _ -> None
+
     let (|Between|_|) min max value = Option.ofBool (value >= min && value <= max)
     let (|In|_|) values value = Option.ofBool (Seq.contains value values)
     let (|Is|_|) otherValue value = Option.ofBool (value = otherValue)

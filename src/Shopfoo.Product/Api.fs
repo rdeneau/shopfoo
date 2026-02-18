@@ -11,6 +11,7 @@ open Shopfoo.Product.Data.Prices
 open Shopfoo.Product.Data.Sales
 open Shopfoo.Product.Data.Warehouse
 open Shopfoo.Product.Workflows
+open Shopfoo.Program
 open Shopfoo.Program.Dependencies
 open Shopfoo.Program.Runner
 
@@ -63,7 +64,7 @@ type internal Api
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =
         async {
             let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
-            let! result, _ = workflowRunner.RunInSaga workflow arg prepareInstructions
+            let! result, _ = workflowRunner.RunInSaga workflow arg prepareInstructions CanUndo.never // TODO RDE: support undo
             // Here we could inspect the saga state and history for debugging or reporting...
             return result
         }

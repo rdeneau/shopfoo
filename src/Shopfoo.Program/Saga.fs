@@ -24,8 +24,6 @@ type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
     override _.Equals(other) = (hash other = hashCode)
     override _.GetHashCode() = hashCode
 
-// TODO: UndoTrigger
-
 type Undo = {
     Type: UndoType
     Func: UndoFunc
@@ -62,46 +60,78 @@ type SagaStatus =
 /// </summary>
 type SagaState = { Status: SagaStatus; History: ProgramStep list }
 
+type UndoCriteria = { WorkflowError: Error; History: ProgramStep list }
+type CanUndo = UndoCriteria -> bool
+
+[<RequireQualifiedAccess>]
+module CanUndo =
+    let never: CanUndo = fun _ -> false
+    let always: CanUndo = fun _ -> true
+
 [<RequireQualifiedAccess>]
 module Saga =
-    let start<'ret> () : SagaState = { Status = SagaStatus.Running; History = [] }
+    type private UndoParameters = { WorkflowError: Error; StepsToUndo: ProgramStep list }
+
+    [<RequireQualifiedAccess>]
+    type private SagaIntermediateStatus =
+        | PendingUndo of UndoParameters
+        | Finalized of finalStatus: SagaStatus
 
     /// Performs undo for all successfully completed commands in reverse order (LIFO)
     /// Returns the updated saga state with undo results
-    let performUndo (history: ProgramStep list) : Async<SagaState> =
+    let private performUndo (undoParameters: UndoParameters) : Async<SagaState> =
         async {
-            match history with
-            | { Status = RunFailed originalError } :: stepsToUndo ->
-                let undoErrors = ResizeArray<Error>()
-                let updatedSteps = ResizeArray<ProgramStep>()
+            let undoErrors = ResizeArray<Error>()
+            let updatedSteps = ResizeArray<ProgramStep>()
 
-                // Process history in order (already prepended, so oldest last)
-                for step in stepsToUndo do
-                    let! updatedStep =
-                        async {
-                            match step.Status, step.Instruction.Type with
-                            | RunDone, InstructionType.Command(Some undo) ->
-                                // Execute undo function
-                                let! undoResult = undo.Func.Invoke()
+            // Process history in order (already prepended, so oldest last)
+            for step in undoParameters.StepsToUndo do
+                let! updatedStep =
+                    async {
+                        match step.Status, step.Instruction.Type with
+                        | RunDone, InstructionType.Command(Some undo) ->
+                            // Execute undo function
+                            let! undoResult = undo.Func.Invoke()
 
-                                return
-                                    match undoResult with
-                                    | Ok() -> { step with Status = UndoDone }
-                                    | Error err ->
-                                        undoErrors.Add(err)
-                                        { step with Status = UndoFailed err }
+                            return
+                                match undoResult with
+                                | Ok() -> { step with Status = UndoDone }
+                                | Error err ->
+                                    undoErrors.Add(err)
+                                    { step with Status = UndoFailed err }
 
-                            | RunDone, (InstructionType.Query | InstructionType.Command(undo = None))
-                            | RunFailed _, _
-                            | UndoDone, _
-                            | UndoFailed _, _ -> return step
-                        }
+                        | RunDone, (InstructionType.Query | InstructionType.Command(undo = None))
+                        | RunFailed _, _
+                        | UndoDone, _
+                        | UndoFailed _, _ -> return step
+                    }
 
-                    updatedSteps.Add updatedStep
+                updatedSteps.Add updatedStep
 
-                return { Status = SagaStatus.Failed(originalError, undoErrors |> List.ofSeq); History = updatedSteps |> List.ofSeq }
+            return { Status = SagaStatus.Failed(undoParameters.WorkflowError, undoErrors |> List.ofSeq); History = updatedSteps |> List.ofSeq }
+        }
 
-            | _ ->
-                let error = WorkflowError(WorkflowUndoError $"No failed step found in the head of the history:\n%A{history}")
-                return { Status = SagaStatus.Failed(error, undoErrors = []); History = history }
+    /// <summary>
+    /// Determine the Saga finalized status, including an optional undo phase performed if the workflow has not been cancelled
+    /// and if it has failed with an error that meets the undo criteria defined by the provided predicate.
+    /// </summary>
+    /// <remarks>
+    /// Depending on whether the error occurs at the last step—the last instruction—or after it—at the end of the program,
+    /// the steps that can potentially be undone vary, respectively the previous instructions or all instructions.
+    /// </remarks>
+    let finalize (canUndo: CanUndo) (result: Res<'t>) (history: ProgramStep list) : Async<SagaState> =
+        async {
+            let intermediateStatus =
+                match result, history with
+                | Ok _, _ -> SagaIntermediateStatus.Finalized SagaStatus.Done
+                | Error(WorkflowError(WorkflowCancelled _)), _ -> SagaIntermediateStatus.Finalized SagaStatus.Cancelled
+                | Error err, _ when not (canUndo { WorkflowError = err; History = history }) ->
+                    SagaIntermediateStatus.Finalized(SagaStatus.Failed(err, undoErrors = []))
+                | Error err, { Status = RunFailed lastStepError } :: previousSteps when err = lastStepError ->
+                    SagaIntermediateStatus.PendingUndo { WorkflowError = err; StepsToUndo = previousSteps }
+                | Error err, _ -> SagaIntermediateStatus.PendingUndo { WorkflowError = err; StepsToUndo = history }
+
+            match intermediateStatus with
+            | SagaIntermediateStatus.PendingUndo undoParameters -> return! performUndo undoParameters
+            | SagaIntermediateStatus.Finalized finalStatus -> return { History = history; Status = finalStatus }
         }
