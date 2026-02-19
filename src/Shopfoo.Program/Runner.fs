@@ -1,6 +1,5 @@
 ﻿module Shopfoo.Program.Runner
 
-open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
 
 [<Interface>]
@@ -21,15 +20,15 @@ type IWorkMonitors =
     abstract member QueryTimer: unit -> WorkMonitor<'arg, 'ret option>
 
 [<Interface>]
-type IWorkCommandBuilder<'arg, 'res> =
-    abstract member NotUndoable: unit -> Work<'arg, 'res>
-    abstract member Reversible: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
-    abstract member Compensatable: undoFun: ('arg -> 'res -> Async<Result<unit, Error>>) -> Work<'arg, 'res>
+type IWorkCommandBuilder<'arg, 'ret> =
+    abstract member NotUndoable: unit -> Work<'arg, Res<'ret>>
+    abstract member Reversible: undoFun: ('arg -> 'ret -> Async<Res<unit>>) -> Work<'arg, Res<'ret>>
+    abstract member Compensatable: undoFun: ('arg -> 'ret -> Async<Res<unit>>) -> Work<'arg, Res<'ret>>
 
 [<Interface>]
 type IInstructionPreparer<'ins when Instructions<'ins>> =
     abstract member Query: work: Work<'arg, 'ret option> * getName: ('arg -> string) -> Work<'arg, 'ret option>
-    abstract member Command: work: Work<'arg, Res<'ret>> * getName: ('arg -> string) -> IWorkCommandBuilder<'arg, Res<'ret>>
+    abstract member Command: work: Work<'arg, Res<'ret>> * getName: ('arg -> string) -> IWorkCommandBuilder<'arg, 'ret>
 
 type IInstructionPreparer<'ins when Instructions<'ins>> with
     member this.Query(work: Work<'arg, 'ret option>, name) = this.Query(work, fun _ -> name)
@@ -52,72 +51,62 @@ type IWorkflowRunner<'ins when Instructions<'ins>> =
 
 [<AutoOpen>]
 module Implementation =
-    [<Interface>]
-    type private IInstructionOptions<'arg, 'ret> =
-        abstract member GetInstructionName: ('arg -> string)
-        abstract member GetInstructionType: ('arg -> 'ret -> InstructionType)
-        abstract member GetTimer: (IWorkMonitors -> WorkMonitor<'arg, 'ret>)
-        abstract member ToResult: ('ret -> Result<unit, Error>)
-
     [<Sealed>]
     type internal SagaTracker<'ins when Instructions<'ins>>() =
         let mutable history = []
         let lockObj = obj ()
 
+        let enqueueStep name type' status =
+            lock lockObj
+            <| fun () ->
+                let step = { Instruction = { Name = name; Type = type' }; Status = status }
+                history <- step :: history
+
         member _.History = history
-        member _.EnqueueStep step = lock lockObj (fun () -> history <- step :: history)
+        member _.EnqueueQuery name = enqueueStep name InstructionType.Query RunDone
+        member _.EnqueueCommand name status undo = enqueueStep name (InstructionType.Command undo) status
 
     [<Sealed>]
-    type private WorkCommandBuilder<'arg, 'res>(build: ('arg -> 'res -> Undo) -> Work<'arg, 'res>) =
-        interface IWorkCommandBuilder<'arg, 'res> with
+    type private WorkCommandBuilder<'arg, 'ret>(build: ('arg -> 'ret -> Undo) -> 'arg -> Async<Res<'ret>>) =
+        interface IWorkCommandBuilder<'arg, 'ret> with
             member _.NotUndoable() = build (fun _ _ -> Undo.None)
-            member _.Reversible undoFun = build (fun arg res -> Undo.Revert(UndoFunc(fun () -> undoFun arg res)))
-            member _.Compensatable undoFun = build (fun arg res -> Undo.Compensate(UndoFunc(fun () -> undoFun arg res)))
+            member _.Reversible undoFun = build (fun arg ret -> Undo.Revert(UndoFunc(fun () -> undoFun arg ret)))
+            member _.Compensatable undoFun = build (fun arg ret -> Undo.Compensate(UndoFunc(fun () -> undoFun arg ret)))
 
     [<Sealed>]
     type internal InstructionPreparer<'ins when Instructions<'ins>>(domainName: string, monitors: IWorkMonitors, tracker: SagaTracker<'ins>) =
         let loggerFactory = monitors.LoggerFactory(categoryName = $"Shopfoo.%s{domainName}.Workflow")
 
-        let prepare work (options: IInstructionOptions<'arg, 'ret>) args =
-            let instructionName = options.GetInstructionName args
-            let loggedWork = loggerFactory.Logger().Invoke(instructionName, work)
-            let timedWorks = options.GetTimer(monitors).Invoke(instructionName, loggedWork)
-
+        let runAndMonitor work getName getTimer args =
             async {
+                let name = getName args
+                let timer: WorkMonitor<_, _> = getTimer monitors
+                let loggedWork = loggerFactory.Logger().Invoke(name, work)
+                let timedWorks = timer.Invoke(name, loggedWork)
                 let! ret = timedWorks args
-
-                let stepStatus =
-                    match options.ToResult ret with
-                    | Ok _ -> RunDone
-                    | Error err -> (RunFailed err)
-
-                let meta = { Name = instructionName; Type = options.GetInstructionType args ret }
-                tracker.EnqueueStep { Instruction = meta; Status = stepStatus }
-
-                return ret
+                return name, ret
             }
 
         interface IInstructionPreparer<'ins> with
             member _.Query(work, getName) =
-                prepare
-                    work
-                    { new IInstructionOptions<_, _> with
-                        member _.GetInstructionName = getName
-                        member _.GetInstructionType = fun _ _ -> InstructionType.Query
-                        member _.GetTimer = _.QueryTimer()
-                        member _.ToResult = fun _ -> Ok()
+                fun args ->
+                    async {
+                        let! name, ret = runAndMonitor work getName _.QueryTimer() args
+                        tracker.EnqueueQuery name
+                        return ret
                     }
 
             member _.Command(work, getName) =
-                let build getUndo =
-                    prepare
-                        work
-                        { new IInstructionOptions<_, _> with
-                            member _.GetInstructionName = getName
-                            member _.GetInstructionType = fun arg ret -> InstructionType.Command(getUndo arg ret)
-                            member _.GetTimer = _.CommandTimer()
-                            member _.ToResult = Result.ignore
-                        }
+                let build getUndo args =
+                    async {
+                        let! name, ret = runAndMonitor work getName _.CommandTimer() args
+
+                        match ret with
+                        | Ok res -> tracker.EnqueueCommand name RunDone (getUndo args res)
+                        | Error err -> tracker.EnqueueCommand name (RunFailed err) Undo.None
+
+                        return ret
+                    }
 
                 WorkCommandBuilder(build)
 

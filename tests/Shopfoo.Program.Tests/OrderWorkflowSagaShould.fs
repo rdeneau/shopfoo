@@ -48,12 +48,12 @@ type OrderWorkflowSagaShould() =
                 member _.IssueInvoice =
                     preparer
                         .Command(invoiceRepository.IssueInvoice, "IssueInvoice")
-                        .Compensatable(fun _ res -> invoiceRepository.CompensateInvoice { InvoiceId = res |> Result.force })
+                        .Compensatable(fun _ invoiceId -> invoiceRepository.CompensateInvoice { InvoiceId = invoiceId })
 
                 member _.ProcessPayment =
                     preparer
                         .Command(paymentRepository.ProcessPayment, "ProcessPayment")
-                        .Compensatable(fun _ res -> paymentRepository.RefundPayment { PaymentId = res |> Result.force })
+                        .Compensatable(fun _ paymentId -> paymentRepository.RefundPayment { PaymentId = paymentId })
 
                 member _.SendNotification =
                     preparer

@@ -3,7 +3,7 @@ namespace Shopfoo.Program
 open Shopfoo.Domain.Types.Errors
 
 /// Wraps an undo function. Can be placed in structural types (records, DU) without causing equality issues.
-type UndoFunc([<InlineIfLambda>] func: unit -> Async<Result<unit, Error>>) =
+type UndoFunc([<InlineIfLambda>] func: unit -> Async<Res<unit>>) =
     static let hashCode = hash (nameof UndoFunc)
     member _.Invoke() = func ()
     override _.Equals(other) = (hash other = hashCode)
