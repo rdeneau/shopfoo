@@ -28,8 +28,8 @@ type SimulatedErrorProvider() =
 module private CmdErrorExtensions =
     type Id<'kind> with
         member this.ToError() = {|
-            DuplicateKey = fun () -> Error(DataError(DuplicateKey(Id = this.ToString(), Type = $"%A{this.Kind}")))
-            NotFound = fun () -> Error(DataError(DataNotFound(Id = this.ToString(), Type = $"%A{this.Kind}")))
+            DuplicateKey = fun () -> Error(DataError(DuplicateKey(Id = this.Value, Type = this.Type)))
+            NotFound = fun () -> Error(DataError(DataNotFound(Id = this.Value, Type = this.Type)))
         |}
 
     type CompensateInvoiceError(cmd: Cmd.CompensateInvoice) =
