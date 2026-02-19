@@ -13,6 +13,6 @@ type internal RemoveListPriceWorkflow private () =
         override _.Run sku =
             program {
                 let! prices = Program.getPrices sku |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
-                do! Program.savePrices { prices with ListPrice = None }
+                let! (PreviousValue _) = Program.savePrices { prices with ListPrice = None }
                 return Ok()
             }

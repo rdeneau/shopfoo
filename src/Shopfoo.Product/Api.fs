@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Product
 
+open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
@@ -44,21 +45,41 @@ type internal Api
         salesPipeline: SalesPipeline,
         warehousePipeline: WarehousePipeline
     ) =
-    let prepareInstructions (x: IInstructionPreparer<'ins>) =
+    let prepareInstructions (preparer: IInstructionPreparer<'ins>) =
         { new IProductInstructions with
-            member _.GetPrices = x.Query(pricesPipeline.GetPrices, "GetPrices")
-            member _.GetSales = x.Query(salesPipeline.GetSales, "GetSales")
-            member _.GetStockEvents = x.Query(warehousePipeline.GetStockEvents, "GetStockEvents")
+            member _.GetPrices = preparer.Query(pricesPipeline.GetPrices, "GetPrices")
+            member _.GetSales = preparer.Query(salesPipeline.GetSales, "GetSales")
+            member _.GetStockEvents = preparer.Query(warehousePipeline.GetStockEvents, "GetStockEvents")
 
-            // TODO RDE: add undo operations
-            member _.SavePrices = x.Command(pricesPipeline.SavePrices, "SavePrices").NotUndoable()
-            member _.SaveProduct = x.Command(catalogPipeline.SaveProduct, "SaveProduct").NotUndoable()
-            member _.AddPrices = x.Command(pricesPipeline.AddPrices, "AddPrices").NotUndoable()
-            member _.AddProduct = x.Command(catalogPipeline.AddProduct, "AddProduct").NotUndoable()
+            member _.SavePrices =
+                preparer
+                    .Command(pricesPipeline.SavePrices, "SavePrices")
+                    .Reversible(fun _ (PreviousValue initialPrices) ->
+                        async {
+                            let! res = pricesPipeline.SavePrices initialPrices
+                            return res |> Result.ignore
+                        }
+                    )
 
-            // TODO RDE: to remove once the pipeline functions are used in the undo operations above
-            member _.DeletePrices = x.Command(pricesPipeline.DeletePrices, "DeletePrices").NotUndoable()
-            member _.DeleteProduct = x.Command(catalogPipeline.DeleteProduct, "DeleteProduct").NotUndoable()
+            member _.SaveProduct =
+                preparer
+                    .Command(catalogPipeline.SaveProduct, "SaveProduct")
+                    .Reversible(fun _ (PreviousValue initialProduct) ->
+                        async {
+                            let! res = catalogPipeline.SaveProduct initialProduct
+                            return res |> Result.ignore
+                        }
+                    )
+
+            member _.AddPrices =
+                preparer // ↩
+                    .Command(pricesPipeline.AddPrices, "AddPrices")
+                    .Reversible(fun prices _ -> pricesPipeline.DeletePrices prices.SKU)
+
+            member _.AddProduct =
+                preparer // ↩
+                    .Command(catalogPipeline.AddProduct, "AddProduct")
+                    .Reversible(fun product _ -> catalogPipeline.DeleteProduct product.SKU)
         }
 
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =

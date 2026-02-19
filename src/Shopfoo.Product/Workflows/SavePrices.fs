@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Product.Workflows
 
+open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Model
 open Shopfoo.Product.Workflows
@@ -13,6 +14,6 @@ type internal SavePricesWorkflow private () =
         override _.Run prices =
             program {
                 do! Prices.validate prices
-                do! Program.savePrices prices
+                let! (PreviousValue _) = Program.savePrices prices
                 return Ok()
             }

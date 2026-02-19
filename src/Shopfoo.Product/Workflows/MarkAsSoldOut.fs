@@ -18,7 +18,7 @@ type internal MarkAsSoldOutWorkflow private (determineStockWorkflow: DetermineSt
                 do! Stock.verifyNoStock stock
 
                 let! prices = Program.getPrices sku |> Program.requireSomeData ($"SKU #%s{sku.Value}", TypeName.Custom "Prices")
-                do! Program.savePrices { prices with RetailPrice = RetailPrice.SoldOut }
+                let! (PreviousValue _) = Program.savePrices { prices with RetailPrice = RetailPrice.SoldOut }
 
                 return Ok()
             }

@@ -42,7 +42,7 @@ type internal CatalogPipeline
             )
         | SKUType.Unknown -> async { return None }
 
-    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
+    member _.SaveProduct(product: Product) =
         match product.Category with
         | Category.Bazaar _ -> fakeStorePipeline.SaveProduct product
         | Category.Books _ -> booksPipeline.SaveProduct product

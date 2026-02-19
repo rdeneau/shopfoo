@@ -92,12 +92,15 @@ type internal BooksPipeline(repository: BooksRepository) =
                 return ()
         }
 
-    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
+    member _.SaveProduct(product: Product) : Async<Result<PreviousValue<Product>, Error>> =
         asyncResult {
             do! Fake.latencyInMilliseconds 300
             let! book = tryGetBookWithIsbn product
             let dto = Mappers.ModelToDto.mapBook book product
-            return! repository |> Dictionary.tryUpdateBy _.ISBN dto |> liftDataRelatedError
+
+            match repository |> Dictionary.tryUpdateBy _.ISBN dto with
+            | Ok(PreviousValue previousBook) -> return PreviousValue(Mappers.DtoToModel.mapBook previousBook)
+            | Error dataRelatedError -> return! Error(DataError dataRelatedError)
         }
 
     member _.DeleteProduct(isbn: ISBN) : Async<Result<unit, Error>> =

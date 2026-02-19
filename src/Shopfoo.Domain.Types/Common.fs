@@ -80,12 +80,10 @@ type SKU = {
     Type: SKUType
     Value: string
 } with
-    member this.Match(withFSID, withISBN, withOLID) =
+    member this.AsFSID =
         match this.Type with
-        | SKUType.FSID fsid -> withFSID fsid
-        | SKUType.ISBN isbn -> withISBN isbn
-        | SKUType.OLID olid -> withOLID olid
-        | SKUType.Unknown -> failwith "SKU type is unknown"
+        | SKUType.FSID fsid -> Some fsid
+        | _ -> None
 
 /// FakeStore Product Identifier
 and FSID = FSID of int
@@ -127,6 +125,10 @@ module SKUExtensions =
 
 #if !FABLE_COMPILER
 
+type PreviousValue<'v> =
+    | PreviousValue of 'v
+    member this.Value = let (PreviousValue v) = this in v
+
 [<RequireQualifiedAccess>]
 module Dictionary =
     /// <summary>
@@ -150,12 +152,11 @@ module Dictionary =
             dict.TryGetValue key // ↩
             |> Option.ofPair
             |> Result.requireSome $"%A{key}"
-            |> Result.ignore
 
         match result with
-        | Ok() -> dict[key] <- item
-        | Error _ -> ()
-
-        result
+        | Ok previousValue ->
+            dict[key] <- item
+            Ok(PreviousValue previousValue)
+        | Error err -> Error err
 
 #endif

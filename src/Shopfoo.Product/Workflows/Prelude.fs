@@ -25,14 +25,10 @@ type IProductInstructions =
     abstract member GetStockEvents: (SKU -> Async<StockEvent list option>)
 
     // === Command Instructions ===
-    abstract member SavePrices: (Prices -> Async<Result<unit, Error>>)
-    abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
+    abstract member SavePrices: (Prices -> Async<Result<PreviousValue<Prices>, Error>>)
+    abstract member SaveProduct: (Product -> Async<Result<PreviousValue<Product>, Error>>)
     abstract member AddPrices: (Prices -> Async<Result<unit, Error>>)
     abstract member AddProduct: (Product -> Async<Result<unit, Error>>)
-
-    // === Undo Operations (for Saga pattern) ===
-    abstract member DeletePrices: (SKU -> Async<Result<unit, Error>>)
-    abstract member DeleteProduct: (SKU -> Async<Result<unit, Error>>)
 
 [<AutoOpen>]
 module internal Internals =

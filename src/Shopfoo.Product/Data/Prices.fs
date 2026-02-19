@@ -22,7 +22,7 @@ type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: Fa
             | SKUType.Unknown -> return None
         }
 
-    member _.SavePrices(prices: Prices) : Async<Result<unit, Error>> =
+    member _.SavePrices(prices: Prices) : Async<Result<PreviousValue<Prices>, Error>> =
         async {
             do! Fake.latencyInMilliseconds 250
             return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError

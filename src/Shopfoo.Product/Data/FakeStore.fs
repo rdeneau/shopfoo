@@ -49,6 +49,14 @@ module private Mappers =
             | "jewelery" -> Some BazaarCategory.Jewelry
             | _ -> None
 
+[<AutoOpen>]
+module private Extensions =
+    type SKU with
+        member this.BindFSID f =
+            match this.Type with
+            | SKUType.FSID fsid -> f fsid |> Option.map (fun res -> fsid, res)
+            | _ -> None
+
 type internal FakeStorePipeline(fakeStoreClient: IFakeStoreClient) =
     let cache = InMemoryProductCache()
 
@@ -91,7 +99,7 @@ type internal FakeStorePipeline(fakeStoreClient: IFakeStoreClient) =
     member _.GetPrice(fsid: FSID) : Async<Prices option> =
         async {
             do! Fake.latencyInMilliseconds 100
-            return cache.TryGetPrice(fsid)
+            return cache.TryGetPrices(fsid)
         }
 
     member _.GetProduct(fsid: FSID) : Async<Product option> =
@@ -100,16 +108,26 @@ type internal FakeStorePipeline(fakeStoreClient: IFakeStoreClient) =
             return cache.TryGetProduct(fsid)
         }
 
-    member _.SavePrices(prices: Prices) : Async<Result<unit, Error>> =
+    member _.SavePrices(prices: Prices) : Async<Result<PreviousValue<Prices>, Error>> =
         asyncResult {
             do! Fake.latencyInMilliseconds 280
-            do! cache.SetPrices(prices)
+
+            match prices.SKU.BindFSID cache.TryGetPrices with
+            | Some(fsid, existingPrices) ->
+                do! cache.SetPrices(fsid, prices)
+                return PreviousValue existingPrices
+            | None -> return! Error(DataError(DataNotFound(Id = prices.SKU.Value, Type = nameof Prices)))
         }
 
-    member _.SaveProduct(product: Product) : Async<Result<unit, Error>> =
+    member _.SaveProduct(product: Product) : Async<Result<PreviousValue<Product>, Error>> =
         asyncResult {
             do! Fake.latencyInMilliseconds 400
-            do! cache.SetProduct(product)
+
+            match product.SKU.BindFSID cache.TryGetProduct with
+            | Some(fsid, existingProduct) ->
+                do! cache.SetProduct(fsid, product)
+                return PreviousValue existingProduct
+            | None -> return! Error(DataError(DataNotFound(Id = product.SKU.Value, Type = nameof Product)))
         }
 
 type internal FakeStoreClient(httpClient: HttpClient, serializerFactory: HttpApiSerializerFactory) =

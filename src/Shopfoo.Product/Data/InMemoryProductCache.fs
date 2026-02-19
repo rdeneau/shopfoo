@@ -11,8 +11,14 @@ open Shopfoo.Domain.Types.Sales
 type internal InMemoryProductCache() =
     let cache = ConcurrentDictionary<FSID, Product * Prices>()
 
-    member _.TryGetProduct(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map fst
-    member _.TryGetPrice(fsid) = cache.TryGetValue(fsid) |> Option.ofPair |> Option.map snd
+    let tryGetValue (fsid: FSID) f =
+        option {
+            let! entry = cache.TryGetValue(fsid) |> Option.ofPair
+            return f entry
+        }
+
+    member _.TryGetProduct(fsid) = tryGetValue fsid fst
+    member _.TryGetPrices(fsid) = tryGetValue fsid snd
 
     member _.TryGetAllProducts() =
         match cache.Values |> Seq.toList with
@@ -33,17 +39,8 @@ type internal InMemoryProductCache() =
             return ()
         }
 
-    member private _.WhenFromFakeStore(sku: SKU, f) =
-        let error = GuardClause { EntityName = nameof SKU; ErrorMessage = $"Expected FSID, received %s{sku.Value}" }
-
-        sku.Match( // ↩
-            withFSID = f,
-            withISBN = (fun _ -> Error error),
-            withOLID = (fun _ -> Error error)
-        )
-
-    member this.SetProduct(product: Product) = this.WhenFromFakeStore(product.SKU, fun fsid -> this.Set(fsid, product = product))
-    member this.SetPrices(prices: Prices) = this.WhenFromFakeStore(prices.SKU, fun fsid -> this.Set(fsid, prices = prices))
+    member this.SetProduct(fsid, product) = this.Set(fsid, product = product)
+    member this.SetPrices(fsid, prices) = this.Set(fsid, prices = prices)
 
     member this.SetAll(entries) =
         cache.Clear()
