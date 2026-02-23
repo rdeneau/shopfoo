@@ -7,8 +7,9 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
+open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Tests
-open Shopfoo.Product.Tests.Helpers
+open Shopfoo.Product.Tests.Examples
 open Shopfoo.Product.Tests.Types
 open Swensen.Unquote
 open TUnit.Core
@@ -107,7 +108,7 @@ type AddProductShould() =
     member _.``reject invalid product``(FieldIssues issues) =
         async {
             let invalidProduct, errors =
-                ((createValidBookProduct (), []), issues)
+                ((CleanCode.Domain.product, []), issues)
                 ||> Seq.fold (fun (product, errors) issue -> issue.UpdateProduct product, issue.ExpectedError :: errors)
 
             use fixture = new ApiTestFixture()
@@ -127,7 +128,7 @@ type AddProductShould() =
     member _.``add initial prices too, in the given currency``(Currency.FromEnum currency) =
         async {
             use fixture = new ApiTestFixture()
-            let product = createValidBookProduct ()
+            let product = CleanCode.Domain.product
             let! existingProduct = fixture.Api.GetProduct product.SKU
             existingProduct =! None // Assume that the product doesn't already exist
 

@@ -17,7 +17,7 @@ module private WorkMonitorCall =
         Result = box result
     }
 
-type private WorkMonitorMock() =
+type private WorkMonitorSpy() =
     let mutable calls: WorkMonitorCall list = []
     member _.Calls = calls
 
@@ -31,16 +31,23 @@ type private WorkMonitorMock() =
                 }
         )
 
-type WorkMonitorsMock() =
-    let loggerWorkMonitor = WorkMonitorMock()
-    let queryTimerWorkMonitor = WorkMonitorMock()
-    let commandTimerWorkMonitor = WorkMonitorMock()
+type private ConsoleWorkMonitor() =
+    member _.Object() =
+        WorkMonitor<'arg, 'ret>(fun name work ->
+            fun (arg: 'arg) ->
+                async {
+                    let! (result: 'ret) = work arg
+                    printfn $"[Tests] %s{name} with argument %A{arg} finished with result %A{result}"
+                    return result
+                }
+        )
 
-    member _.Calls = {|
-        Logger = loggerWorkMonitor.Calls
-        QueryTimer = queryTimerWorkMonitor.Calls
-        CommandTimer = commandTimerWorkMonitor.Calls
-    |}
+type WorkMonitorsMock() =
+    let loggerWorkMonitor = ConsoleWorkMonitor()
+    let queryTimerWorkMonitor = WorkMonitorSpy()
+    let commandTimerWorkMonitor = WorkMonitorSpy()
+
+    member _.Calls = {| QueryTimer = queryTimerWorkMonitor.Calls; CommandTimer = commandTimerWorkMonitor.Calls |}
 
     interface IWorkMonitors with
         member _.QueryTimer() = queryTimerWorkMonitor.Object()
