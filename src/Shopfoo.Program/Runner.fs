@@ -19,6 +19,10 @@ type IWorkMonitors =
     abstract member CommandTimer: unit -> WorkMonitor<'arg, Res<'ret>>
     abstract member QueryTimer: unit -> WorkMonitor<'arg, 'ret option>
 
+type IWorkMonitors with
+    member this.WorkflowLoggerFactory(domainName) = // ↩
+        this.LoggerFactory(categoryName = $"Shopfoo.%s{domainName}.Workflow")
+
 [<Interface>]
 type IWorkCommandBuilder<'arg, 'ret> =
     abstract member NotUndoable: unit -> Work<'arg, Res<'ret>>
@@ -75,7 +79,7 @@ module Implementation =
 
     [<Sealed>]
     type internal InstructionPreparer<'ins when Instructions<'ins>>(domainName: string, monitors: IWorkMonitors, tracker: SagaTracker<'ins>) =
-        let loggerFactory = monitors.LoggerFactory(categoryName = $"Shopfoo.%s{domainName}.Workflow")
+        let loggerFactory = monitors.WorkflowLoggerFactory(domainName)
 
         let runAndMonitor work getName getTimer args =
             async {

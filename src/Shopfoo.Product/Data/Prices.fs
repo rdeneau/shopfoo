@@ -1,6 +1,7 @@
 ﻿module Shopfoo.Product.Data.Prices
 
 open System.Collections.Generic
+open FsToolkit.ErrorHandling
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
@@ -29,10 +30,14 @@ type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: Fa
         }
 
     member _.AddPrices(prices: Prices) : Async<Result<unit, Error>> =
-        async {
+        asyncResult {
             do! Fake.latencyInMilliseconds 200
-            repository.Add(prices.SKU, prices)
-            return Ok()
+
+            if repository.ContainsKey prices.SKU then
+                return! Error(Error.DataError(DuplicateKey(Id = prices.SKU.Value, Type = nameof Prices)))
+            else
+                repository.Add(prices.SKU, prices)
+                return ()
         }
 
     member _.DeletePrices(sku: SKU) : Async<Result<unit, Error>> =
