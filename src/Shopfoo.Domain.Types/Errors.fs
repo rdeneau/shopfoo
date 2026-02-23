@@ -249,6 +249,7 @@ type Error =
     | GuardClause of GuardClauseError
     | Validation of GuardClauseError list
     | WorkflowError of WorkflowError
+    | Errors of Error list
 
 [<AutoOpen>]
 module Helpers =
@@ -285,39 +286,8 @@ type GuardExtensions =
     static member ToValidation(guardResult: Result<'a, GuardClauseError>) : Validation<'a, GuardClauseError> = // ↩
         guardResult |> toValidation
 
-#if !FABLE_COMPILER
-
-[<RequireQualifiedAccess>]
-type TypeName<'a> =
-    | FullName
-    | Empty
-    | Custom of typeName: string
-
-    member this.Value =
-        match this with
-        | FullName -> typeof<'a>.FullName
-        | Empty -> String.empty
-        | Custom typeName -> typeName
-
-[<RequireQualifiedAccess>]
-module Result =
-    /// <summary>
-    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeName.Value))</c>.
-    /// </summary>
-    let requireSomeData (info: string, typeName: TypeName<'a>) (value: 'a option) : Result<'a, DataRelatedError> =
-        match value with
-        | Some value -> Ok value
-        | None -> Error(DataNotFound(Id = info, Type = typeName.Value))
-
-    /// <summary>
-    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeof{'a}.FullName))</c>.
-    /// </summary>
-    let requireSome info (value: 'a option) = requireSomeData (info, TypeName.FullName) value
-
-#endif
-
 module ErrorCategory =
-    let inline ofError error =
+    let rec ofError error =
         match error with
         | BusinessError err -> $"Business Error: %s{err.Code}"
         | Bug _ -> "Bug: Exception"
@@ -331,6 +301,10 @@ module ErrorCategory =
         | Validation _ -> "Validation"
         | WorkflowError(WorkflowCancelled _) -> "Workflow Cancelled"
         | WorkflowError(WorkflowUndoError _) -> "Workflow Undo Error"
+        | Errors errors ->
+            let errors = [| for err in errors -> ofError err |]
+            let errorCategories = errors |> String.concat " | "
+            $"%i{errors.Length} Errors: %s{errorCategories}"
 
 [<RequireQualifiedAccess>]
 module ErrorMessage =
@@ -374,7 +348,7 @@ module ErrorMessage =
         | WorkflowUndoError reason -> ErrorMessage.Create $"Workflow undo failed: %s{reason}"
         | WorkflowCancelled stepName -> ErrorMessage.Create $"Workflow cancelled at step %s{stepName}"
 
-    let ofError =
+    let rec ofError =
         function
         | BusinessError err -> ErrorMessage.Create $"Business Error %s{err.Code}: %s{err.Message}"
         | Bug(FirstException exn) -> ofBug exn
@@ -383,3 +357,41 @@ module ErrorMessage =
         | GuardClause err -> ofGuardClause err
         | Validation errors -> errors |> List.map ofGuardClause |> ErrorMessage.Combine
         | WorkflowError err -> ofWorkflowError err
+        | Errors errors -> errors |> List.map ofError |> ErrorMessage.Combine
+
+[<RequireQualifiedAccess>]
+type TypeName<'a> =
+    | FullName
+    | Empty
+    | Custom of typeName: string
+
+    member inline this.Value =
+        match this with
+        | FullName -> typeof<'a>.FullName
+        | Empty -> String.empty
+        | Custom typeName -> typeName
+
+type Res<'ret> = Result<'ret, Error>
+
+[<RequireQualifiedAccess>]
+module Result =
+    /// <summary>
+    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeName.Value))</c>.
+    /// </summary>
+    let inline requireSomeData (info: string, typeName: TypeName<'a>) (value: 'a option) : Result<'a, DataRelatedError> =
+        match value with
+        | Some value -> Ok value
+        | None -> Error(DataNotFound(Id = info, Type = typeName.Value))
+
+    /// <summary>
+    /// Similar to <c>Result.ofOption</c>, where the eventual Error case is <c>DataError(DataNotFound(Id = info, Type = typeof{'a}.FullName))</c>.
+    /// </summary>
+    let inline requireSome info (value: 'a option) = requireSomeData (info, TypeName.FullName) value
+
+    // Combine the two given results: both Ok values into a tuple, both Error into the Errors case, a single Error discards the Ok value.
+    let zip (resA: Res<'a>) (resB: Res<'b>) : Res<'a * 'b> =
+        match resA, resB with
+        | Ok v1, Ok v2 -> Ok(v1, v2)
+        | Error e1, Error e2 -> Error(Errors [ e1; e2 ])
+        | Error e, _ -> Error e
+        | _, Error e -> Error e

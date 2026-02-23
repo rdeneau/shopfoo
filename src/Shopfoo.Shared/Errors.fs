@@ -72,6 +72,7 @@ type ApiError = {
         | GuardClause _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | Validation _ -> ApiError.Business(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | WorkflowError _ -> ApiError.Technical(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | Errors _ -> ApiError.Technical(errorMessage, errorCategory, ?key = key, ?translations = translations)
 
     static member FromException(FirstException exn, user: User) =
         ApiError.Technical(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))

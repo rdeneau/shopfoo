@@ -122,7 +122,7 @@ module ActivePatterns =
     /// <remarks>
     /// The name <c>As</c> is inspired by C# <c>as</c> operator, which performs a similar type test and cast.
     /// </remarks>
-    let (|As|_|) (input: obj) : 't option =
+    let inline (|As|_|) (input: obj) : 't option =
         match input with
         | :? 't as value -> Some value
         | _ -> None

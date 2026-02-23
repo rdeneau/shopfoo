@@ -30,8 +30,6 @@ type Instructions<'ins when 'ins :> IProgramInstructions> = 'ins
 /// </remarks>
 type Program<'ins, 'ret when Instructions<'ins>> = 'ins -> Async<'ret>
 
-type Res<'ret> = Result<'ret, Error>
-
 [<RequireQualifiedAccess>]
 module Program =
     let retn (a: 'a) : Program<'ins, 'a> = // ↩
@@ -123,8 +121,8 @@ module ProgramBuilder =
         member _.Bind2Return(progA: Program<'ins, 'a>, progB: Program<'ins, 'b>, f: 'a * 'b -> 'c) : Program<'ins, 'c> =
             Program.map2 (fun a b -> f (a, b)) progA progB
 
-        member _.MergeSources(progA: Program<'ins, 'a>, progB: Program<'ins, 'b>) : Program<'ins, 'a * 'b> =
-            Program.map2 (fun a b -> (a, b)) progA progB
+        member this.MergeSources(progA: Program<'ins, 'a>, progB: Program<'ins, 'b>) : Program<'ins, 'a * 'b> = // ↩
+            this.Bind2Return(progA, progB, id)
 
     let program = ProgramBuilder()
 
