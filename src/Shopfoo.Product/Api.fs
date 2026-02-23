@@ -84,9 +84,9 @@ type internal Api
 
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =
         async {
-            let workflowRunner = workflowRunnerFactory.Create(domainName = "Product")
             let! result, _ = workflowRunner.RunInSaga workflow arg prepareInstructions CanUndo.never // TODO RDE: support undo
             // Here we could inspect the saga state and history for debugging or reporting...
+            let workflowRunner = workflowRunnerFactory.Create(Manifest.DomainName)
             return result
         }
 

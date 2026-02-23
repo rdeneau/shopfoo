@@ -6,6 +6,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Content Include="paket.references" />
+    <Compile Include="Manifest.fs" />
     <Compile Include="Model\Extensions.fs" />
     <Compile Include="Model\Prices.fs" />
     <Compile Include="Model\Product.fs" />

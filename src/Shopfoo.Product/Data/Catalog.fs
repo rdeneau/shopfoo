@@ -1,12 +1,13 @@
 ﻿module Shopfoo.Product.Data.Catalog
 
-open FsToolkit.ErrorHandling
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
+open Shopfoo.Product
 open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Data.FakeStore
 open Shopfoo.Product.Data.OpenLibrary
+open Shopfoo.Program.Runner
 
 /// <summary>
 /// Facade pattern hiding the different data pipelines (<c>Books</c>, <c>FakeStore</c>, <c>OpenLibrary</c>)
@@ -16,8 +17,11 @@ type internal CatalogPipeline
     (
         booksPipeline: BooksPipeline, // ↩
         fakeStorePipeline: FakeStorePipeline,
-        openLibraryPipeline: OpenLibraryPipeline
+        openLibraryPipeline: OpenLibraryPipeline,
+        monitors: IWorkMonitors
     ) =
+    let loggerFactory = monitors.WorkflowLoggerFactory(Manifest.DomainName)
+
     member _.GetProducts(provider: Provider) : Async<Product list> =
         async {
             match provider with
@@ -35,11 +39,11 @@ type internal CatalogPipeline
         | SKUType.FSID fsid -> fakeStorePipeline.GetProduct fsid
         | SKUType.ISBN isbn -> booksPipeline.GetProduct isbn
         | SKUType.OLID olid ->
-            openLibraryPipeline.GetProductByOlid olid
-            |> Async.map (fun x ->
-                printfn "[RDE] OpenLibrary result for OLID #%s{olid.Value}: %A" olid.Value x // TODO RDE
-                x |> Result.toOption
-            )
+            async {
+                let getProductByOlid = loggerFactory.Logger().Invoke("GetProductByOlid", openLibraryPipeline.GetProductByOlid)
+                let! bookResult = getProductByOlid olid
+                return bookResult |> Result.toOption
+            }
         | SKUType.Unknown -> async { return None }
 
     member _.SaveProduct(product: Product) =
