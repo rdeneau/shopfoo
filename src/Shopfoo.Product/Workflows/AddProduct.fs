@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Product.Workflows
 
+open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
@@ -25,8 +26,9 @@ type internal AddProductWorkflow private () =
                 do! Product.validate product |> liftValidation
 
                 // addProduct and addPrices can be run in Parallel
-                let! _ = Program.addProduct product
-                and! _ = Program.addPrices (Prices.Initial(sku, currency))
+                let! resA = Program.addProduct product
+                and! resB = Program.addPrices (Prices.Initial(sku, currency))
 
-                return Ok()
+                // Combine potential errors from any or both operations, and ignore the successful values (both `unit`)
+                return Result.zip resA resB |> Result.ignore
             }

@@ -104,6 +104,61 @@ module Extensions =
     let (|FieldIssues|) (NonEmptySet issueTypes: NonEmptySet<FieldIssueType>) = issueTypes |> Seq.map FieldIssue.ofType |> Seq.distinctBy _.Name // Avoid duplicate issues for the same field
 
 type AddProductShould() =
+    member private _.TestAddProductFailure(shouldCheckUndo, product, expectedError, createFixture, initialProduct, initialPrices) =
+        async {
+            use fixture: ApiTestFixture = createFixture ()
+            let! result = fixture.Api.AddProduct(product, Currency.EUR)
+            result =! Error expectedError
+
+            if shouldCheckUndo then
+                let! actualProduct = fixture.Api.GetProduct product.SKU
+                let! actualPrice = fixture.Api.GetPrices product.SKU
+                (actualProduct, actualPrice) =! (initialProduct, initialPrices)
+        }
+
+    [<Test>]
+    [<Arguments(false)>]
+    [<Arguments(true)>]
+    member this.``prevent adding Bazaar products`` shouldCheckUndo =
+        this.TestAddProductFailure(
+            shouldCheckUndo,
+            product = FakeElectronicProduct.Domain.product,
+            expectedError = GuardClause { EntityName = "Product"; ErrorMessage = "Adding Bazaar products is not supported" },
+            createFixture = (fun () -> new ApiTestFixture()),
+            initialProduct = None,
+            initialPrices = None
+        )
+
+    [<Test>]
+    [<Arguments(false)>]
+    [<Arguments(true)>]
+    member this.``prevent adding a book already existing in the catalog`` shouldCheckUndo =
+        let product = CleanCode.Domain.product
+
+        this.TestAddProductFailure(
+            shouldCheckUndo,
+            product,
+            expectedError = Error.DataError(DuplicateKey("ISBN " + CleanCode.Dto.bookRaw.ISBN.Value, "Book")),
+            createFixture = (fun () -> new ApiTestFixture(books = [ CleanCode.Dto.bookRaw ])),
+            initialProduct = Some product,
+            initialPrices = None
+        )
+
+    [<Test>]
+    [<Arguments(false)>]
+    [<Arguments(true)>]
+    member this.``prevent adding the prices already existing`` shouldCheckUndo =
+        let prices = Prices.Create(CleanCode.Domain.product.SKU, Currency.EUR, 39.99m)
+
+        this.TestAddProductFailure(
+            shouldCheckUndo,
+            product = CleanCode.Domain.product,
+            expectedError = Error.DataError(DuplicateKey(CleanCode.Domain.product.SKU.Value, "Prices")),
+            createFixture = (fun () -> new ApiTestFixture(pricesSet = [ prices ])),
+            initialProduct = None,
+            initialPrices = Some prices
+        )
+
     [<Test; ShopfooFsCheckProperty>]
     member _.``reject invalid product``(FieldIssues issues) =
         async {
