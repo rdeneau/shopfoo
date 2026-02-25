@@ -302,6 +302,9 @@ module TranslationPages =
         member this.Stock = this.Get "Stock"
         member this.StockAfterInventory = this.Get "StockAfterInventory"
         member this.StockBeforeInventory = this.Get "StockBeforeInventory"
+        member this.SupplyDate = this.Get "SupplyDate"
+        member this.SupplyQuantity = this.Get "SupplyQuantity"
+        member this.SupplyPurchasePrice = this.Get "SupplyPurchasePrice"
 
         member this.StockAction =
             this.WithPrefix "StockAction."

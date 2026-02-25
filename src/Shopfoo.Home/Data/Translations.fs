@@ -189,6 +189,10 @@ let private translationPages = [
         TagCode "StockAfterInventory", "Stock adjusted after inventory", "Stock réel après inventaire"
         TagCode "StockBeforeInventory", "Stock before inventory", "Stock avant inventaire"
         TagCode "StockAction.AdjustStockAfterInventory", "Inventory adjustment", "Ajuster le stock suite à inventaire"
+        TagCode "StockAction.ReceivePurchasedProducts", "Receive purchased products", "Réceptionner les achats"
+        TagCode "SupplyDate", "Date", "Date"
+        TagCode "SupplyQuantity", "Quantity", "Quantité"
+        TagCode "SupplyPurchasePrice", "Purchase price", "Prix d'achat"
     ]
 ]
 

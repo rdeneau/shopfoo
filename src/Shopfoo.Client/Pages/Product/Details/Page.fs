@@ -9,6 +9,7 @@ open Shopfoo.Client.Pages.Product.Details.Actions
 open Shopfoo.Client.Pages.Product.Details.AdjustStock
 open Shopfoo.Client.Pages.Product.Details.CatalogInfo
 open Shopfoo.Client.Pages.Product.Details.ManagePrice
+open Shopfoo.Client.Pages.Product.Details.ReceiveSupply
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Routing
 open Shopfoo.Domain.Types
@@ -117,8 +118,8 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
                             | None -> ()
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
-                            | Some InputSales
-                            | Some(ReceivePurchasedProducts _) ->
+                            | Some(ReceivePurchasedProducts currency) -> ReceiveSupplyForm key sku currency fullContext drawerControl
+                            | Some InputSales ->
                                 // TODO: [Drawer] other actions
                                 Html.text "🚧 TODO"
                         ]

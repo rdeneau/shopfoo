@@ -45,6 +45,7 @@ type private Msg =
     | PricesFetched of ApiResult<GetPricesResponse>
     | PurchasePricestatsFetched of ApiResult<GetPurchasePricesResponse>
     | StockFetched of ApiResult<Stock>
+    | RefreshAfterSupply
     | PerformAction of Action * SKU * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
@@ -100,7 +101,7 @@ let private init (fullContext: FullContext) sku =
         Cmd.loadPurchasePrices (fullContext.PrepareRequest sku)
     ]
 
-let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Model) =
+let private update (fullContext: FullContext) sku onSavePrice (msg: Msg) (model: Model) =
     match msg with
     | PricesFetched(Ok response) -> { model with Prices = response.Prices |> Remote.ofOption }, Cmd.none
     | PricesFetched(Error apiError) -> { model with Prices = Remote.LoadError apiError }, Cmd.none
@@ -110,6 +111,13 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
 
     | StockFetched(Ok stock) -> { model with Stock = Remote.Loaded stock }, Cmd.none
     | StockFetched(Error apiError) -> { model with Stock = Remote.LoadError apiError }, Cmd.none
+
+    | RefreshAfterSupply ->
+        { model with PurchasePriceStats = Remote.Loading; Stock = Remote.Loading },
+        Cmd.batch [
+            Cmd.loadPurchasePrices (fullContext.PrepareRequest sku)
+            Cmd.determineStock (fullContext.PrepareRequest sku)
+        ]
 
     | PerformAction(action, sku, Start) ->
         { model with PriceActionStatus = action, Remote.Loading }, // ↩
@@ -134,7 +142,7 @@ let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Mod
 
 [<ReactComponent>]
 let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice setSoldOut =
-    let model, dispatch = React.useElmish (init fullContext sku, update fullContext onSavePrice, [||])
+    let model, dispatch = React.useElmish (init fullContext sku, update fullContext sku onSavePrice, [||])
 
     React.useEffect (
         (fun () ->
@@ -158,8 +166,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         match drawer with
         | Drawer.AdjustStockAfterInventory stock -> dispatch (StockFetched(Ok stock))
         | Drawer.ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
-        | Drawer.InputSales
-        | Drawer.ReceivePurchasedProducts _ -> ()
+        | Drawer.InputSales -> ()
+        | Drawer.ReceivePurchasedProducts _ -> dispatch RefreshAfterSupply
     )
 
     let modalRef: IRefValue<HTMLElement option> = React.useElementRef ()
@@ -368,12 +376,18 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                             ]
                         ]
 
-                        ActionsDropdown "last-purchase-price" "mb-0" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional lastPurchasePrice) []
+                        ActionsDropdown "last-purchase-price" "mb-0" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional lastPurchasePrice) [
+                            ActionProps.withIcon
+                                "receive-purchased-products"
+                                (icon fa6Solid.warehouse)
+                                translations.Product.StockAction.ReceivePurchasedProducts
+                                (fun () -> drawerControl.Open(Drawer.ReceivePurchasedProducts prices.Currency))
+                        ]
 
                         // -- Average Purchase Price (form hint) ----
                         Daisy.fieldsetLabel [
                             prop.key "average-purchase-price-hint"
-                            prop.className "grid grid-cols-[1fr_auto] items-center mb-4 italic"
+                            prop.className "grid grid-cols-[1fr_auto] items-center mb-3 italic"
                             prop.children [
                                 Html.span [
                                     prop.key "average-label"

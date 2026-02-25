@@ -116,7 +116,7 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 - Purchasing
   - Purchase price
     - [x] Display last price and average over 1Y based on the purchases and stock adjustment, ~~with an arrow indicating if it has increased ↗️ or decreased ↘️~~
-    - [ ] Action: Receive purchased products
+    - [x] Action: Receive purchased products
 - Warehouse
   - Stock
     - [x] Display the stock based on the stock events
