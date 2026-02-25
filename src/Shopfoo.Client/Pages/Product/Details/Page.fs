@@ -58,6 +58,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
 
     let onSavePrice (price, error) = env.ShowToast(Toast.Prices(price, error))
     let onSaveStock (stock, error) = env.ShowToast(Toast.Stock(stock, error))
+    let onSaveSupply (sku, error) = env.ShowToast(Toast.Supply(sku, error))
 
     let onSaveProduct (product: Product, error) =
         updateProductModel { productModel with SKU = product.SKU }
@@ -118,7 +119,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
                             | None -> ()
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
-                            | Some(ReceivePurchasedProducts currency) -> ReceiveSupplyForm key sku currency fullContext drawerControl
+                            | Some(ReceivePurchasedProducts currency) -> ReceiveSupplyForm key sku currency fullContext drawerControl onSaveSupply
                             | Some InputSales ->
                                 // TODO: [Drawer] other actions
                                 Html.text "🚧 TODO"

@@ -16,6 +16,7 @@ type Toast =
     | Prices of Prices * ApiError option
     | Product of Product * ApiError option
     | Stock of Stock * ApiError option
+    | Supply of SKU * ApiError option
 
 /// Provides access for pages to main `AppView` component functionality:
 /// - Shared data access (e.g. `FullContext`) that pages should not stored in their own model

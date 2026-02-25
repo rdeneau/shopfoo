@@ -57,7 +57,7 @@ let private init sku currency =
     },
     Cmd.none
 
-let private update (fullContext: FullContext) (msg: Msg) (model: Model) =
+let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
     match msg with
     | DateChanged date -> // ↩
         { model with Date = date }, Cmd.none
@@ -80,11 +80,12 @@ let private update (fullContext: FullContext) (msg: Msg) (model: Model) =
         Cmd.receiveSupply (fullContext.PrepareRequest input)
 
     | ReceiveSupply(Done result) ->
-        { model with SaveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult }, Cmd.none
+        { model with SaveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
+        Cmd.ofEffect (fun _ -> onSave (model.SKU, result |> Result.tryGetError))
 
 [<ReactComponent>]
-let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullContext) (drawerControl: DrawerControl) =
-    let model, dispatch = React.useElmish (init sku currency, update fullContext, [||])
+let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullContext) (drawerControl: DrawerControl) onSave =
+    let model, dispatch = React.useElmish (init sku currency, update fullContext onSave, [||])
 
     // Close the drawer after success with a short delay (500ms),
     // time to let the user get this result visually.
