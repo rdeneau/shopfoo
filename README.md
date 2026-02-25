@@ -83,20 +83,20 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 - Catalog Info
   - Index
     - [x] Display the table of products
-      - [ ] Display ellipsis for texts longer than 2 lines
-    - [ ] Handle two categories: Books and Goodies
-      - [ ] Filter by categories, book author
-        - [ ] New component "Filter"
-    - [ ] Add new product
-    - [ ] Delete product (if no stock, no sales, no purchases)
+      - [x] Display ellipsis for texts longer than 2 lines
+    - [x] Handle two categories: Books and Goodies
+      - [x] Filter by categories, book author
+        - [x] New component "Filter"
+    - [x] Add new product
+    - [x] ~~Delete product (if no stock, no sales, no purchases)~~
   - Details
     - [x] Edit the image, with preview.
     - [x] Edit the product name: required, max 128 chars.
     - [x] Edit the product description: max 512 chars.
-    - [ ] Edit the book authors
-      - [ ] Select/Unselect existing author(s)
-        - [ ] New component "MultiSelect"
-      - [ ] Add new author
+    - [x] Edit the book authors
+      - [x] Select/Unselect existing author(s)
+        - [x] New component "MultiSelect"
+      - [x] Add new author
 - Sales
   - List price (a.k.a. recommended price)
     - [x] Display the price fetched from the server
