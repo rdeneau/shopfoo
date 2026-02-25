@@ -9,9 +9,12 @@ open Shopfoo.Shared.Remoting
 type ReceiveSupplyHandler(api: FeatApi) =
     inherit SecureCommandHandler<ReceiveSupplyInput>()
 
-    override _.Handle _ _input user =
+    override _.Handle _ input user =
         async {
-            // TODO: implement ReceiveSupply
+            let! result = api.Product.ReceiveSupply input
             let response = ResponseBuilder.plain user
-            return response.Ok()
+
+            match result with
+            | Ok() -> return response.Ok()
+            | Error err -> return response.ApiError err
         }
