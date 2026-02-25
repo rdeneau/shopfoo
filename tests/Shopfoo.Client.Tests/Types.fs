@@ -3,8 +3,8 @@
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Search
-open Shopfoo.Client.Tests.FsCheckArbs
 open Shopfoo.Domain.Types
+open Shopfoo.Tests.Common.FsCheckArbs
 
 type BookTag = private {
     Tag: AlphaNumString option

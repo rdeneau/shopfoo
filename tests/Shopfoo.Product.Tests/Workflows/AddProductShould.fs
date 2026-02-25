@@ -2,7 +2,6 @@ namespace Shopfoo.Product.Tests
 
 open System
 open FsCheck
-open Shopfoo.Client.Tests.FsCheckArbs
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
@@ -11,6 +10,7 @@ open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Tests
 open Shopfoo.Product.Tests.Examples
 open Shopfoo.Product.Tests.Types
+open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
 open TUnit.Core
 

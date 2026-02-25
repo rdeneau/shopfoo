@@ -1,8 +1,8 @@
 ﻿namespace Shopfoo.Client.Tests
 
 open Shopfoo.Client.Routing
-open Shopfoo.Client.Tests.FsCheckArbs
 open Shopfoo.Client.Tests.Types
+open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
 open TUnit.Core
 

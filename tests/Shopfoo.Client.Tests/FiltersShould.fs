@@ -7,8 +7,8 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Home.Data
-open Shopfoo.Client.Tests.FsCheckArbs
 open Shopfoo.Shared.Translations
+open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
 open TUnit.Core
 

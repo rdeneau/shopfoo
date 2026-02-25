@@ -1,4 +1,4 @@
-﻿namespace Shopfoo.Client.Tests.FsCheckArbs
+﻿namespace Shopfoo.Tests.Common.FsCheckArbs
 
 open System
 open FsCheck

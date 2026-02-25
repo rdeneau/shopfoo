@@ -1,5 +1,5 @@
 ﻿[<AutoOpen>]
-module Shopfoo.Client.Tests.FsCheckArbs.Shopfoo
+module Shopfoo.Tests.Common.FsCheckArbs.Shopfoo
 
 type ShopfooFsCheckProperty() =
     inherit
