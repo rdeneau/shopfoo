@@ -35,6 +35,7 @@
     <Compile Include="Remoting\Prices\GetPurchasePricesHandler.fs" />
     <Compile Include="Remoting\Prices\SavePricesHandler.fs" />
     <Compile Include="Remoting\Prices\MarkAsSoldOutHandler.fs" />
+    <Compile Include="Remoting\Prices\ReceiveSupplyHandler.fs" />
     <Compile Include="Remoting\Prices\RemoveListPriceHandler.fs" />
     <Compile Include="Remoting\Prices\PricesApiBuilder.fs" />
     <Compile Include="Remoting\RootApiBuilder.fs" />

@@ -118,7 +118,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
                             | Some InputSales
-                            | Some ReceivePurchasedProducts ->
+                            | Some(ReceivePurchasedProducts _) ->
                                 // TODO: [Drawer] other actions
                                 Html.text "🚧 TODO"
                         ]

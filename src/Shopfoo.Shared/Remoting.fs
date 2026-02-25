@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Shared.Remoting
 
+open System
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
@@ -135,6 +136,13 @@ module PricesApi =
     type GetPurchasePricesResponse = { Stats: PurchasePrices }
     type PriceCommand = { SKU: SKU }
 
+    type ReceiveSupplyInput = {
+        SKU: SKU
+        Date: DateOnly
+        Quantity: int
+        PurchasePrice: Money
+    }
+
     type PricesApi = {
         AdjustStock: Command<Stock>
         DetermineStock: Query<SKU, Stock>
@@ -142,6 +150,7 @@ module PricesApi =
         GetPurchasePrices: Query<SKU, GetPurchasePricesResponse>
         SavePrices: Command<Prices>
         MarkAsSoldOut: Command<PriceCommand>
+        ReceiveSupply: Command<ReceiveSupplyInput>
         RemoveListPrice: Command<PriceCommand>
     } with
         interface IApi

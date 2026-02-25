@@ -51,7 +51,7 @@ type PriceType with
 type Drawer =
     | ManagePrice of PriceModel * Prices
     | InputSales
-    | ReceivePurchasedProducts
+    | ReceivePurchasedProducts of Currency
     | AdjustStockAfterInventory of Stock
 
 /// This object is created by the view holding the Drawer.

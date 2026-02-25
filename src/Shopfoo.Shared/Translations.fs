@@ -305,7 +305,10 @@ module TranslationPages =
 
         member this.StockAction =
             this.WithPrefix "StockAction."
-            <| fun this -> {| AdjustStockAfterInventory = this.Get "AdjustStockAfterInventory" |}
+            <| fun this -> {|
+                AdjustStockAfterInventory = this.Get "AdjustStockAfterInventory"
+                ReceivePurchasedProducts = this.Get "ReceivePurchasedProducts"
+            |}
 
 open TranslationPages
 

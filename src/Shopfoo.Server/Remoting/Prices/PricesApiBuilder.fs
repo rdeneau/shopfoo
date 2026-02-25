@@ -8,6 +8,7 @@ open Shopfoo.Shared.Remoting
 type PricesApiBuilder(api: FeatApi) =
     static let salesClaim = Claims.single Feat.Sales
     static let stockClaims = Map [ Feat.Sales, Access.View; Feat.Warehouse, Access.View ]
+    static let warehouseClaim = Claims.single Feat.Warehouse
 
     member _.Build() : PricesApi = {
         AdjustStock = AdjustStockHandler(api) |> Security.authorizeHandler stockClaims
@@ -16,5 +17,6 @@ type PricesApiBuilder(api: FeatApi) =
         GetPurchasePrices = GetPurchasePricesHandler(api) |> Security.authorizeHandler stockClaims
         SavePrices = SavePricesHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)
         MarkAsSoldOut = MarkAsSoldOutHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)
+        ReceiveSupply = ReceiveSupplyHandler(api) |> Security.authorizeHandler (warehouseClaim Access.Edit)
         RemoveListPrice = RemoveListPriceHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)
     }

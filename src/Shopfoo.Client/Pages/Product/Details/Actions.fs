@@ -158,7 +158,8 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         match drawer with
         | Drawer.AdjustStockAfterInventory stock -> dispatch (StockFetched(Ok stock))
         | Drawer.ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
-        | _ -> ()
+        | Drawer.InputSales
+        | Drawer.ReceivePurchasedProducts _ -> ()
     )
 
     let modalRef: IRefValue<HTMLElement option> = React.useElementRef ()
@@ -291,43 +292,48 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                         ]
                     ]
 
-                    ActionsDropdown "retail-price"  "mb-4" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
-                        match prices.RetailPrice with
-                        | RetailPrice.Regular price ->
-                            ActionProps.withIcon
-                                "increase-retail-price"
-                                PriceAction.Icons.increase
-                                translations.Product.PriceAction.Increase
-                                (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Increase price, prices)))
-
-                            ActionProps.withIcon
-                                "decrease-retail-price"
-                                PriceAction.Icons.decrease
-                                translations.Product.PriceAction.Decrease
-                                (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Decrease price, prices)))
-
-                            match model.Stock with
-                            | Remote.Loaded stock ->
-                                let action =
-                                    if stock.Quantity = 0 then
-                                        Action.MarkAsSoldOut
-                                    else
-                                        Action.WarnMarkAsSoldOutForbidden
+                    ActionsDropdown
+                        "retail-price"
+                        "mb-4"
+                        (fullContext.User.AccessTo Feat.Sales)
+                        (Value.OfMoneyOptional(prices.RetailPrice.ToOption()))
+                        [
+                            match prices.RetailPrice with
+                            | RetailPrice.Regular price ->
+                                ActionProps.withIcon
+                                    "increase-retail-price"
+                                    PriceAction.Icons.increase
+                                    translations.Product.PriceAction.Increase
+                                    (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Increase price, prices)))
 
                                 ActionProps.withIcon
-                                    "mark-as-sold-out"
-                                    PriceAction.Icons.soldOut
-                                    translations.Product.PriceAction.MarkAsSoldOut
-                                    (fun () -> openModal action)
-                            | _ -> ()
+                                    "decrease-retail-price"
+                                    PriceAction.Icons.decrease
+                                    translations.Product.PriceAction.Decrease
+                                    (fun () -> drawerControl.Open(ManagePrice(RetailPrice.To Decrease price, prices)))
 
-                        | RetailPrice.SoldOut ->
-                            ActionProps.withIcon
-                                "define-retail-price"
-                                PriceAction.Icons.define
-                                translations.Product.PriceAction.Define
-                                (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
-                    ]
+                                match model.Stock with
+                                | Remote.Loaded stock ->
+                                    let action =
+                                        if stock.Quantity = 0 then
+                                            Action.MarkAsSoldOut
+                                        else
+                                            Action.WarnMarkAsSoldOutForbidden
+
+                                    ActionProps.withIcon
+                                        "mark-as-sold-out"
+                                        PriceAction.Icons.soldOut
+                                        translations.Product.PriceAction.MarkAsSoldOut
+                                        (fun () -> openModal action)
+                                | _ -> ()
+
+                            | RetailPrice.SoldOut ->
+                                ActionProps.withIcon
+                                    "define-retail-price"
+                                    PriceAction.Icons.define
+                                    translations.Product.PriceAction.Define
+                                    (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
+                        ]
 
                     // -- Purchase Prices ----
                     match prices.RetailPrice, model.PurchasePriceStats with
@@ -340,7 +346,10 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
 
                         let lastDate =
                             purchasePrices.LastPrice
-                            |> Option.map (fun (_, date) -> {| day = translations.Home.DayInMonthOf date; month = translations.Home.ShortMonthOf date |})
+                            |> Option.map (fun (_, date) -> {|
+                                day = translations.Home.DayInMonthOf date
+                                month = translations.Home.ShortMonthOf date
+                            |})
                             |> Option.defaultValue {| day = "-"; month = "" |}
 
                         // -- Last Purchase Price ----
