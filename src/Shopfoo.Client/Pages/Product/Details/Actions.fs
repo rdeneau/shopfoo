@@ -243,7 +243,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                     // -- ListPrice ----
                     Daisy.fieldsetLabel [ prop.key "list-price-label"; prop.text translations.Product.ListPrice ]
 
-                    ActionsDropdown "list-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional prices.ListPrice) [
+                    ActionsDropdown "list-price" "mb-4" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional prices.ListPrice) [
                         match prices.ListPrice with
                         | Some price ->
                             ActionProps.withIcon
@@ -291,7 +291,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                         ]
                     ]
 
-                    ActionsDropdown "retail-price" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
+                    ActionsDropdown "retail-price"  "mb-4" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional(prices.RetailPrice.ToOption())) [
                         match prices.RetailPrice with
                         | RetailPrice.Regular price ->
                             ActionProps.withIcon
@@ -329,75 +329,63 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                 (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
                     ]
 
-                    // -- PurchasePriceStats ----
+                    // -- Purchase Prices ----
                     match prices.RetailPrice, model.PurchasePriceStats with
-                    | RetailPrice.Regular retailPrice, Remote.Loaded stats ->
+                    | RetailPrice.Regular retailPrice, Remote.Loaded purchasePrices ->
                         let marginPct purchasedPrice =
                             Money.tryCompute retailPrice purchasedPrice (fun r p -> round (100m * (r - p) / r))
                             |> Option.map _.Value
 
-                        let displayPriceWithMargin purchasedPrice key label =
-                            Daisy.fieldsetLabel [
-                                prop.key $"%s{key}-label"
-                                prop.className "grid grid-cols-[110px_60px_1fr] items-center"
-                                prop.children [
-                                    Html.span [ prop.key $"%s{key}-label-text"; prop.text $"• %s{label}%s{translations.Home.Colon}" ]
+                        let lastPurchasePrice = purchasePrices.LastPrice |> Option.map fst
 
-                                    match purchasedPrice with
-                                    | None ->
-                                        Html.span [ prop.key $"%s{key}-value"; prop.text "-" ]
-                                        Html.span [ prop.key $"%s{key}-margin"; prop.text "-" ]
+                        let lastDate =
+                            purchasePrices.LastPrice
+                            |> Option.map (fun (_, date) -> {| day = translations.Home.DayInMonthOf date; month = translations.Home.ShortMonthOf date |})
+                            |> Option.defaultValue {| day = "-"; month = "" |}
 
-                                    | Some(price: Money) ->
-                                        Html.span [
-                                            prop.key $"%s{key}-value"
-                                            prop.className "text-right"
-                                            prop.text price.ValueWithCurrencySymbol
-                                        ]
-
-                                        Html.span [
-                                            prop.key $"%s{key}-margin"
-                                            prop.className "text-right"
-
-                                            match marginPct price with
-                                            | None -> prop.text "-"
-                                            | Some margin -> prop.text $"%0.0f{margin}%%"
-                                        ]
-                                ]
-                            ]
-
-                        Html.div [
-                            prop.key "purchase-price-stats"
-                            prop.className "max-w-md space-y-1 mb-4"
+                        // -- Last Purchase Price ----
+                        Daisy.fieldsetLabel [
+                            prop.key "last-purchase-price-label"
                             prop.children [
-                                Daisy.fieldsetLabel [
-                                    prop.key $"%s{key}-label-value"
-                                    prop.className "grid grid-cols-[110px_60px_1fr]"
+                                Html.text (translations.Product.LastPurchasePrice(day = lastDate.day, month = lastDate.month))
+                                match lastPurchasePrice |> Option.bind marginPct with
+                                | None -> ()
+                                | Some margin ->
+                                    Html.div [
+                                        prop.key "last-purchase-price-margin"
+                                        prop.className "ml-auto"
+                                        prop.text $"%s{translations.Product.Margin}%s{translations.Home.Colon} %.0f{margin}%%"
+                                    ]
+                            ]
+                        ]
+
+                        ActionsDropdown "last-purchase-price" "mb-0" (fullContext.User.AccessTo Feat.Sales) (Value.OfMoneyOptional lastPurchasePrice) []
+
+                        // -- Average Purchase Price (form hint) ----
+                        Daisy.fieldsetLabel [
+                            prop.key "average-purchase-price-hint"
+                            prop.className "grid grid-cols-[1fr_auto] items-center mb-4 italic"
+                            prop.children [
+                                Html.span [
+                                    prop.key "average-label"
                                     prop.children [
-                                        Html.span [
-                                            prop.key $"%s{key}-label"
-                                            prop.className "col-span-2"
-                                            prop.text $"%s{translations.Product.PurchasePrice} "
-                                        ]
-                                        Html.span [
-                                            prop.key $"%s{key}-margin"
-                                            prop.className "text-right"
-                                            prop.text $"%s{translations.Product.Margin} / %s{translations.Product.RetailPrice}"
-                                        ]
+                                        Html.text $"%s{translations.Product.AveragePriceOver1Y}%s{translations.Home.Colon} "
+                                        Html.text (
+                                            match purchasePrices.AverageOver1Y with
+                                            | Some price -> price.ValueWithCurrencySymbol
+                                            | None -> "-"
+                                        )
                                     ]
                                 ]
-
-                                let lastDate =
-                                    stats.LastPrice
-                                    |> Option.map (fun (_, date) -> $""" (%s{date.ToDateTime().ToString("MMM dd")})""")
-                                    |> Option.defaultValue ""
-
-                                displayPriceWithMargin
-                                    (stats.LastPrice |> Option.map fst)
-                                    "last-purchase-price"
-                                    (translations.Product.``Last(Price)`` + lastDate)
-
-                                displayPriceWithMargin stats.AverageOver1Y "average-purchase-price-1y" translations.Product.AveragePriceOver1Y
+                                Html.span [
+                                    prop.key "average-margin"
+                                    prop.className "text-right"
+                                    prop.text (
+                                        match purchasePrices.AverageOver1Y |> Option.bind marginPct with
+                                        | Some margin -> $"%.0f{margin}%%"
+                                        | None -> "-"
+                                    )
+                                ]
                             ]
                         ]
                     | _ -> ()
@@ -411,7 +399,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                 | Remote.Loaded stock, _ ->
                     Daisy.fieldsetLabel [ prop.key "stock-label"; prop.text translations.Product.Stock ]
 
-                    ActionsDropdown "stock" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural stock.Quantity) [
+                    ActionsDropdown "stock" "mb-4" (fullContext.User.AccessTo Feat.Warehouse) (Value.Natural stock.Quantity) [
                         ActionProps.withIcon
                             "inventory-adjustment"
                             (icon fa6Solid.pencil)

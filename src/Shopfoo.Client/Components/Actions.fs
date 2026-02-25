@@ -44,7 +44,7 @@ type Value =
         | Value.Money(Some f, _) -> $"%0.2f{f}"
 
 [<ReactComponent>]
-let ActionsDropdown key access (value: Value) (actions: ActionProps list) =
+let ActionsDropdown key css access (value: Value) (actions: ActionProps list) =
     let itemElement (action: ActionProps) =
         Html.li [
             prop.key $"{key}-action--{action.Key}"
@@ -74,7 +74,7 @@ let ActionsDropdown key access (value: Value) (actions: ActionProps list) =
 
     Html.div [
         prop.key $"%s{key}-div"
-        prop.className "flex items-center mb-4 w-full"
+        prop.className $"flex items-center w-full %s{css}"
         prop.children [
             Daisy.label.input [
                 prop.key $"{key}-label-input"

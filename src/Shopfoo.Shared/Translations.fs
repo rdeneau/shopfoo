@@ -82,6 +82,110 @@ module TranslationPages =
         member this.ChangeLangOk = this.Get "ChangeLangOk"
         member this.ErrorNotFound(what: string) = this.Format("ErrorNotFound", what)
 
+        member this.DayInMonth =
+            this.WithPrefix "DayInMonth."
+            <| fun this -> {|
+                ``1st`` = this.Get "1st"
+                ``2nd`` = this.Get "2nd"
+                ``3rd`` = this.Get "3rd"
+                ``4th`` = this.Get "4th"
+                ``5th`` = this.Get "5th"
+                ``6th`` = this.Get "6th"
+                ``7th`` = this.Get "7th"
+                ``8th`` = this.Get "8th"
+                ``9th`` = this.Get "9th"
+                ``10th`` = this.Get "10th"
+                ``11th`` = this.Get "11th"
+                ``12th`` = this.Get "12th"
+                ``13th`` = this.Get "13th"
+                ``14th`` = this.Get "14th"
+                ``15th`` = this.Get "15th"
+                ``16th`` = this.Get "16th"
+                ``17th`` = this.Get "17th"
+                ``18th`` = this.Get "18th"
+                ``19th`` = this.Get "19th"
+                ``20th`` = this.Get "20th"
+                ``21st`` = this.Get "21st"
+                ``22nd`` = this.Get "22nd"
+                ``23rd`` = this.Get "23rd"
+                ``24th`` = this.Get "24th"
+                ``25th`` = this.Get "25th"
+                ``26th`` = this.Get "26th"
+                ``27th`` = this.Get "27th"
+                ``28th`` = this.Get "28th"
+                ``29th`` = this.Get "29th"
+                ``30th`` = this.Get "30th"
+                ``31st`` = this.Get "31st"
+            |}
+
+        member this.DayInMonthOf(date: DateOnly) =
+            match date.Day with
+            | 1 -> this.DayInMonth.``1st``
+            | 2 -> this.DayInMonth.``2nd``
+            | 3 -> this.DayInMonth.``3rd``
+            | 4 -> this.DayInMonth.``4th``
+            | 5 -> this.DayInMonth.``5th``
+            | 6 -> this.DayInMonth.``6th``
+            | 7 -> this.DayInMonth.``7th``
+            | 8 -> this.DayInMonth.``8th``
+            | 9 -> this.DayInMonth.``9th``
+            | 10 -> this.DayInMonth.``10th``
+            | 11 -> this.DayInMonth.``11th``
+            | 12 -> this.DayInMonth.``12th``
+            | 13 -> this.DayInMonth.``13th``
+            | 14 -> this.DayInMonth.``14th``
+            | 15 -> this.DayInMonth.``15th``
+            | 16 -> this.DayInMonth.``16th``
+            | 17 -> this.DayInMonth.``17th``
+            | 18 -> this.DayInMonth.``18th``
+            | 19 -> this.DayInMonth.``19th``
+            | 20 -> this.DayInMonth.``20th``
+            | 21 -> this.DayInMonth.``21st``
+            | 22 -> this.DayInMonth.``22nd``
+            | 23 -> this.DayInMonth.``23rd``
+            | 24 -> this.DayInMonth.``24th``
+            | 25 -> this.DayInMonth.``25th``
+            | 26 -> this.DayInMonth.``26th``
+            | 27 -> this.DayInMonth.``27th``
+            | 28 -> this.DayInMonth.``28th``
+            | 29 -> this.DayInMonth.``29th``
+            | 30 -> this.DayInMonth.``30th``
+            | 31 -> this.DayInMonth.``31st``
+            | d -> $"%i{d}"
+
+        member this.ShortMonth =
+            this.WithPrefix "ShortMonth."
+            <| fun this -> {|
+                Jan = this.Get "Jan"
+                Feb = this.Get "Feb"
+                Mar = this.Get "Mar"
+                Apr = this.Get "Apr"
+                May = this.Get "May"
+                Jun = this.Get "Jun"
+                Jul = this.Get "Jul"
+                Aug = this.Get "Aug"
+                Sep = this.Get "Sep"
+                Oct = this.Get "Oct"
+                Nov = this.Get "Nov"
+                Dec = this.Get "Dec"
+            |}
+
+        member this.ShortMonthOf(date: DateOnly) =
+            match date.Month with
+            | 1 -> this.ShortMonth.Jan
+            | 2 -> this.ShortMonth.Feb
+            | 3 -> this.ShortMonth.Mar
+            | 4 -> this.ShortMonth.Apr
+            | 5 -> this.ShortMonth.May
+            | 6 -> this.ShortMonth.Jun
+            | 7 -> this.ShortMonth.Jul
+            | 8 -> this.ShortMonth.Aug
+            | 9 -> this.ShortMonth.Sep
+            | 10 -> this.ShortMonth.Oct
+            | 11 -> this.ShortMonth.Nov
+            | 12 -> this.ShortMonth.Dec
+            | d -> $"%i{d}"
+
         member this.Theme =
             this.WithPrefix "Theme."
             <| fun this -> {|
@@ -161,9 +265,8 @@ module TranslationPages =
         member this.NewPrice = this.Get "NewPrice"
         member this.ListPrice = this.Get "ListPrice"
         member this.RetailPrice = this.Get "RetailPrice"
-        member this.PurchasePrice = this.Get "PurchasePrice"
-        member this.``Last(Price)`` = this.Get "Last(Price)"
         member this.AveragePriceOver1Y = this.Get "AveragePriceOver1Y"
+        member this.LastPurchasePrice(day: string, month: string) = this.Format("LastPurchasePrice", day, month)
 
         member this.PriceAction =
             this.WithPrefix "PriceAction."
