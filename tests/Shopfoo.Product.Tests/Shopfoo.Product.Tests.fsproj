@@ -15,6 +15,7 @@
     <Compile Include="Workflows\ApiTestFixture.fs" />
     <Compile Include="Workflows\AddProductShould.fs" />
     <Compile Include="Workflows\DetermineStockShould.fs" />
+    <Compile Include="Workflows\ReceiveSupplyShould.fs" />
     <Compile Include="Workflows\GetProductShould.fs" />
     <Compile Include="Workflows\GetPurchasePricesShould.fs" />
     <Compile Include="Workflows\MarkAsSoldOutShould.fs" />

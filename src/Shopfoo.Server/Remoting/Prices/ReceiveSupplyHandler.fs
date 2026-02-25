@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Prices
 
+open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting

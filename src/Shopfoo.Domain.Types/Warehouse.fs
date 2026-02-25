@@ -21,6 +21,13 @@ module StockEvent =
 
 type Stock = { SKU: SKU; Quantity: int }
 
+type ReceiveSupplyInput = {
+    SKU: SKU
+    Date: DateOnly
+    Quantity: int
+    PurchasePrice: Money
+}
+
 type PurchasePrices = {
     /// Price of the most recent `ProductSupplyReceived` event.
     LastPrice: (Money * DateOnly) option

@@ -27,6 +27,13 @@ type internal WarehousePipeline(repository: StockEventRepository) =
             return Ok()
         }
 
+    member _.AddStockEvent(stockEvent: StockEvent) : Async<Result<unit, 'a>> =
+        async {
+            do! Fake.latencyInMilliseconds 250
+            repository.AddStockEvent stockEvent
+            return Ok()
+        }
+
     member _.GetStockEvents(sku: SKU) : Async<StockEvent list option> =
         async {
             do! Fake.latencyInMilliseconds 150

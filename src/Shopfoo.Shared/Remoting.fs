@@ -136,13 +136,6 @@ module PricesApi =
     type GetPurchasePricesResponse = { Stats: PurchasePrices }
     type PriceCommand = { SKU: SKU }
 
-    type ReceiveSupplyInput = {
-        SKU: SKU
-        Date: DateOnly
-        Quantity: int
-        PurchasePrice: Money
-    }
-
     type PricesApi = {
         AdjustStock: Command<Stock>
         DetermineStock: Query<SKU, Stock>

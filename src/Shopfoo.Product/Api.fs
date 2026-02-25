@@ -32,6 +32,7 @@ type IProductApi =
     abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
     abstract member GetPurchasePrices: (SKU -> Async<PurchasePrices>)
     abstract member GetSales: (SKU -> Async<Sale list option>)
+    abstract member ReceiveSupply: (ReceiveSupplyInput -> Async<Result<unit, Error>>)
 
     abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
     abstract member SearchBooks: (string -> Async<Result<BookSearchResults, Error>>)
@@ -81,6 +82,11 @@ type internal Api
                 preparer // ↩
                     .Command(catalogPipeline.AddProduct, "AddProduct")
                     .Reversible(fun product _ -> catalogPipeline.DeleteProduct product.SKU)
+
+            member _.AddStockEvent =
+                preparer // ↩
+                    .Command(warehousePipeline.AddStockEvent, "AddStockEvent")
+                    .NotUndoable()
         }
 
     let runWorkflow (workflow: IProductWorkflow<'arg, 'ret>) (arg: 'arg) : Async<Result<'ret, Error>> =
@@ -107,6 +113,7 @@ type internal Api
         member val AdjustStock = warehousePipeline.AdjustStock
         member val DetermineStock = fun sku -> runWorkflow DetermineStockWorkflow.Instance sku
         member val GetPurchasePrices = warehousePipeline.GetPurchasePrices
+        member val ReceiveSupply = fun input -> runWorkflow ReceiveSupplyWorkflow.Instance input
 
         member val SearchAuthors = openLibraryPipeline.SearchAuthors
         member val SearchBooks = openLibraryPipeline.SearchBooks

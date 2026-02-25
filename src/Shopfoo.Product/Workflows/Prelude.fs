@@ -29,6 +29,7 @@ type IProductInstructions =
     abstract member SaveProduct: (Product -> Async<Result<PreviousValue<Product>, Error>>)
     abstract member AddPrices: (Prices -> Async<Result<unit, Error>>)
     abstract member AddProduct: (Product -> Async<Result<unit, Error>>)
+    abstract member AddStockEvent: (StockEvent -> Async<Result<unit, Error>>)
 
 [<AutoOpen>]
 module internal Internals =
@@ -43,6 +44,7 @@ module internal Internals =
         let saveProduct product = DefineProgram.instruction _.SaveProduct(product)
         let addPrices prices = DefineProgram.instruction _.AddPrices(prices)
         let addProduct product = DefineProgram.instruction _.AddProduct(product)
+        let addStockEvent stockEvent = DefineProgram.instruction _.AddStockEvent(stockEvent)
 
     [<Interface>]
     type IProductWorkflow<'arg, 'ret> =
