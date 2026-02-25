@@ -16,4 +16,7 @@ release.sh
 *.orig
 *.DotSettings.user
 appsettings.Development.json
+.github/AGENTS.md
 .github/agents
+.github/instructions
+.github/skills

@@ -154,6 +154,12 @@ module DomainGen =
             return BooksProducts products
         }
 
+[<AutoOpen>]
+module ActivePatterns =
+    let (|PositiveDollars|) (PositiveInt amount) : Money = Money.Dollars(decimal amount)
+    let (|PositiveEuros|) (PositiveInt amount) : Money = Money.Euros(decimal amount)
+    let (|ManyPositiveEuros|) (NonEmptyArray amounts) : Money array = [| for PositiveEuros price in amounts -> price |]
+
 type DomainArbs =
     static member FSID() = Arb.fromGen genFSID
     static member ISBN() = Arb.fromGen genISBN

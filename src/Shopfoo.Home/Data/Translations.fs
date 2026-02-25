@@ -105,6 +105,7 @@ let private translationPages = [
         TagCode "OpenLibraryAuthorPage", "{0} page on Open Library", "Page de {0} sur Open Library"
 
         TagCode "Discount", "Discount", "Réduction"
+        TagCode "Margin", "Margin", "Marge"
         TagCode "Increase", "Increase", "Augmentation"
         TagCode "Decrease", "Decrease", "Diminution"
         TagCode "Define", "Define", "Définition"
@@ -113,6 +114,9 @@ let private translationPages = [
         TagCode "NewPrice", "New price", "nouveau prix"
         TagCode "ListPrice", "List price", "Prix catalogue"
         TagCode "RetailPrice", "Retail price", "Prix de vente"
+        TagCode "PurchasePrice", "Purchase price", "Prix d'achat"
+        TagCode "Last(Price)", "Last", "Dernier"
+        TagCode "AveragePriceOver1Y", "Average (1 year)", "Moyenne (1 an)"
 
         TagCode "PriceAction.Define", "Define", "Définir"
         TagCode "PriceAction.Remove", "Remove", "Supprimer"

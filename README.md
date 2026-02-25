@@ -106,7 +106,7 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
   - Retail price
     - [x] Display the price fetched from the server
     - [x] Display discount / list price if any
-    - [ ] Display margin / Purchased price (last or average over 1Y)
+    - [x] Display margin / Purchased price (last or average over 1Y)
     - [x] Action: Modify (intent: Increase or Decrease)
     - [x] Action: Mark as sold out
   - Sales
@@ -114,8 +114,8 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
     - [ ] Display 1Y sale: quantity, total
     - [ ] Action: Input sales
 - Purchasing
-  - Purchased price
-    - [ ] Display last price and average over 1Y based on the purchases and stock adjustment, with an arrow indicating if it has increased ↗️ or decreased ↘️
+  - Purchase price
+    - [x] Display last price and average over 1Y based on the purchases and stock adjustment, ~~with an arrow indicating if it has increased ↗️ or decreased ↘️~~
     - [ ] Action: Receive purchased products
 - Warehouse
   - Stock

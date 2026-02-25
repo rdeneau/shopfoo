@@ -33,11 +33,46 @@ type internal WarehousePipeline(repository: StockEventRepository) =
             return repository.GetStockEvents sku
         }
 
+    member _.GetPurchasePrices(sku: SKU) : Async<PurchasePrices> =
+        async {
+            do! Fake.latencyInMilliseconds 200
+
+            let stockEvents = repository.GetStockEvents sku |> Option.defaultValue []
+
+            let purchaseEvents =
+                stockEvents
+                |> List.choose (fun e ->
+                    match e.Type with
+                    | EventType.ProductSupplyReceived price -> Some(e.Date, price, decimal e.Quantity)
+                    | _ -> None
+                )
+
+            match purchaseEvents with
+            | [] -> return PurchasePrices.Empty
+            | _ ->
+                let lastDate, lastPrice, _ = purchaseEvents |> List.maxBy (fun (date, _, _) -> date)
+
+                let cutoff = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays -365)
+                let within1Y = purchaseEvents |> List.filter (fun (date, _, _) -> date >= cutoff)
+                let currency = within1Y |> Seq.map (fun (_, price, _) -> price.Currency) |> Seq.distinct |> Seq.tryExactlyOne
+                let totalQty = within1Y |> List.sumBy (fun (_, _, qty) -> qty)
+
+                let averageOver1Y =
+                    match currency with
+                    | Some currency when totalQty > 0m ->
+                        let totalAmount = within1Y |> List.sumBy (fun (_, price, qty) -> price.Value * qty)
+                        Some(Money.ByCurrency currency (totalAmount / totalQty))
+                    | _ -> None
+
+                return { LastPrice = Some(lastPrice, lastDate); AverageOver1Y = averageOver1Y }
+        }
+
 module private Fakes =
     let oneYear = [
         yield!
             ISBN.CleanArchitecture.Events [ // ↩
-                10 |> Units.Purchased (Dollars 24.99m) (365 |> daysAgo)
+                2 |> Units.Purchased (Dollars 23.99m) (365 |> daysAgo)
+                8 |> Units.Purchased (Dollars 24.99m) (360 |> daysAgo)
             ]
         yield!
             ISBN.DomainDrivenDesign.Events [ // ↩
@@ -45,7 +80,7 @@ module private Fakes =
             ]
         yield!
             ISBN.DomainModelingMadeFunctional.Events [
-                15 |> Units.Purchased (25.99m |> Euros) (365 |> daysAgo)
+                15 |> Units.Purchased (26.99m |> Euros) (365 |> daysAgo)
                 10 |> Units.Purchased (25.99m |> Euros) (100 |> daysAgo)
                 11 |> Units.Remaining(50 |> daysAgo) // 2 units lost
             ]

@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Details.Actions
+module Shopfoo.Client.Pages.Product.Details.Actions
 
 open System
 open Browser.Types
@@ -38,10 +38,12 @@ type private Model = {
     Prices: Remote<Prices>
     PriceActionStatus: Action * Remote<DateTime>
     Stock: Remote<Stock>
+    PurchasePriceStats: Remote<PurchasePrices>
 }
 
 type private Msg =
     | PricesFetched of ApiResult<GetPricesResponse>
+    | PurchasePricestatsFetched of ApiResult<GetPurchasePricesResponse>
     | StockFetched of ApiResult<Stock>
     | PerformAction of Action * SKU * ApiCall<unit>
 
@@ -59,6 +61,13 @@ module private Cmd =
             Call = fun api -> api.Prices.GetPrices request
             Error = Error >> PricesFetched
             Success = Ok >> PricesFetched
+        }
+
+    let loadPurchasePrices (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Prices.GetPurchasePrices request
+            Error = Error >> PurchasePricestatsFetched
+            Success = Ok >> PurchasePricestatsFetched
         }
 
     let perform action (cmder: Cmder, request) =
@@ -83,16 +92,21 @@ let private init (fullContext: FullContext) sku =
         Prices = Remote.Loading
         PriceActionStatus = Action.None, Remote.Empty
         Stock = Remote.Loading
+        PurchasePriceStats = Remote.Loading
     },
     Cmd.batch [ // ↩
         Cmd.loadPrices (fullContext.PrepareRequest sku)
         Cmd.determineStock (fullContext.PrepareRequest sku)
+        Cmd.loadPurchasePrices (fullContext.PrepareRequest sku)
     ]
 
 let private update (fullContext: FullContext) onSavePrice (msg: Msg) (model: Model) =
     match msg with
     | PricesFetched(Ok response) -> { model with Prices = response.Prices |> Remote.ofOption }, Cmd.none
     | PricesFetched(Error apiError) -> { model with Prices = Remote.LoadError apiError }, Cmd.none
+
+    | PurchasePricestatsFetched(Ok data) -> { model with PurchasePriceStats = Remote.Loaded data.Stats }, Cmd.none
+    | PurchasePricestatsFetched(Error apiError) -> { model with PurchasePriceStats = Remote.LoadError apiError }, Cmd.none
 
     | StockFetched(Ok stock) -> { model with Stock = Remote.Loaded stock }, Cmd.none
     | StockFetched(Error apiError) -> { model with Stock = Remote.LoadError apiError }, Cmd.none
@@ -314,6 +328,79 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                 translations.Product.PriceAction.Define
                                 (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
                     ]
+
+                    // -- PurchasePriceStats ----
+                    match prices.RetailPrice, model.PurchasePriceStats with
+                    | RetailPrice.Regular retailPrice, Remote.Loaded stats ->
+                        let marginPct purchasedPrice =
+                            Money.tryCompute retailPrice purchasedPrice (fun r p -> round (100m * (r - p) / r))
+                            |> Option.map _.Value
+
+                        let displayPriceWithMargin purchasedPrice key label =
+                            Daisy.fieldsetLabel [
+                                prop.key $"%s{key}-label"
+                                prop.className "grid grid-cols-[110px_60px_1fr] items-center"
+                                prop.children [
+                                    Html.span [ prop.key $"%s{key}-label-text"; prop.text $"• %s{label}%s{translations.Home.Colon}" ]
+
+                                    match purchasedPrice with
+                                    | None ->
+                                        Html.span [ prop.key $"%s{key}-value"; prop.text "-" ]
+                                        Html.span [ prop.key $"%s{key}-margin"; prop.text "-" ]
+
+                                    | Some(price: Money) ->
+                                        Html.span [
+                                            prop.key $"%s{key}-value"
+                                            prop.className "text-right"
+                                            prop.text price.ValueWithCurrencySymbol
+                                        ]
+
+                                        Html.span [
+                                            prop.key $"%s{key}-margin"
+                                            prop.className "text-right"
+
+                                            match marginPct price with
+                                            | None -> prop.text "-"
+                                            | Some margin -> prop.text $"%0.0f{margin}%%"
+                                        ]
+                                ]
+                            ]
+
+                        Html.div [
+                            prop.key "purchase-price-stats"
+                            prop.className "max-w-md space-y-1 mb-4"
+                            prop.children [
+                                Daisy.fieldsetLabel [
+                                    prop.key $"%s{key}-label-value"
+                                    prop.className "grid grid-cols-[110px_60px_1fr]"
+                                    prop.children [
+                                        Html.span [
+                                            prop.key $"%s{key}-label"
+                                            prop.className "col-span-2"
+                                            prop.text $"%s{translations.Product.PurchasePrice} "
+                                        ]
+                                        Html.span [
+                                            prop.key $"%s{key}-margin"
+                                            prop.className "text-right"
+                                            prop.text $"%s{translations.Product.Margin} / %s{translations.Product.RetailPrice}"
+                                        ]
+                                    ]
+                                ]
+
+                                let lastDate =
+                                    stats.LastPrice
+                                    |> Option.map (fun (_, date) -> $""" (%s{date.ToDateTime().ToString("MMM dd")})""")
+                                    |> Option.defaultValue ""
+
+                                displayPriceWithMargin
+                                    (stats.LastPrice |> Option.map fst)
+                                    "last-purchase-price"
+                                    (translations.Product.``Last(Price)`` + lastDate)
+
+                                displayPriceWithMargin stats.AverageOver1Y "average-purchase-price-1y" translations.Product.AveragePriceOver1Y
+                            ]
+                        ]
+                    | _ -> ()
 
                 // -- Stock ----
                 match model.Stock, translations with

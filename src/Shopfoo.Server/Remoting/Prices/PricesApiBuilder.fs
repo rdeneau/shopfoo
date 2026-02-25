@@ -13,6 +13,7 @@ type PricesApiBuilder(api: FeatApi) =
         AdjustStock = AdjustStockHandler(api) |> Security.authorizeHandler stockClaims
         DetermineStock = DetermineStockHandler(api) |> Security.authorizeHandler stockClaims
         GetPrices = GetPricesHandler(api) |> Security.authorizeHandler (salesClaim Access.View)
+        GetPurchasePrices = GetPurchasePricesHandler(api) |> Security.authorizeHandler stockClaims
         SavePrices = SavePricesHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)
         MarkAsSoldOut = MarkAsSoldOutHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)
         RemoveListPrice = RemoveListPriceHandler(api) |> Security.authorizeHandler (salesClaim Access.Edit)

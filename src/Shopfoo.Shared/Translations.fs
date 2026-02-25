@@ -152,6 +152,7 @@ module TranslationPages =
         member this.OpenLibraryAuthorPage(authorName: string) = this.Format("OpenLibraryAuthorPage", authorName)
 
         member this.Discount = this.Get "Discount"
+        member this.Margin = this.Get "Margin"
         member this.Increase = this.Get "Increase"
         member this.Decrease = this.Get "Decrease"
         member this.Define = this.Get "Define"
@@ -160,6 +161,9 @@ module TranslationPages =
         member this.NewPrice = this.Get "NewPrice"
         member this.ListPrice = this.Get "ListPrice"
         member this.RetailPrice = this.Get "RetailPrice"
+        member this.PurchasePrice = this.Get "PurchasePrice"
+        member this.``Last(Price)`` = this.Get "Last(Price)"
+        member this.AveragePriceOver1Y = this.Get "AveragePriceOver1Y"
 
         member this.PriceAction =
             this.WithPrefix "PriceAction."

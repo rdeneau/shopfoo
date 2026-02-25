@@ -132,12 +132,14 @@ module PricesApi =
     open Shopfoo.Domain.Types.Sales
 
     type GetPricesResponse = { Prices: Prices option }
+    type GetPurchasePricesResponse = { Stats: PurchasePrices }
     type PriceCommand = { SKU: SKU }
 
     type PricesApi = {
         AdjustStock: Command<Stock>
         DetermineStock: Query<SKU, Stock>
         GetPrices: Query<SKU, GetPricesResponse>
+        GetPurchasePrices: Query<SKU, GetPurchasePricesResponse>
         SavePrices: Command<Prices>
         MarkAsSoldOut: Command<PriceCommand>
         RemoveListPrice: Command<PriceCommand>

@@ -50,6 +50,11 @@ type Money =
 
     member this.ValueWithCurrencySymbol = Money.Format this.Currency this.Value
 
+    static member map (f: decimal -> decimal) (money: Money) : Money =
+        match money with
+        | Dollars value -> Dollars(f value)
+        | Euros value -> Euros(f value)
+
 [<RequireQualifiedAccess>]
 module Money =
     let private (|ValueWithCase|) =
