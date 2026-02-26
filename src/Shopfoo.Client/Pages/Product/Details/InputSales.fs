@@ -31,7 +31,7 @@ type private Model = {
     member model.CloseDrawer(drawerControl: DrawerControl) =
         let drawer =
             match model.SaveDate with
-            | Remote.Loaded _ -> Some(Drawer.InputSales model.Currency)
+            | Remote.Loaded _ -> Some(Drawer.InputSales(model.Currency, defaultSalePrice = None))
             | _ -> None
 
         drawerControl.Close(?drawer = drawer)
@@ -45,12 +45,12 @@ module private Cmd =
             Success = InputSale << Done << Ok
         }
 
-let private init sku currency =
+let private init sku currency defaultPrice =
     {
         SKU = sku
         Date = DateOnly.FromDateTime(DateTime.Today)
         Quantity = 1
-        SalePrice = 0m
+        SalePrice = defaultPrice |> Option.defaultValue 0m
         Currency = currency
         SaveDate = Remote.Empty
     },
@@ -83,8 +83,16 @@ let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
         Cmd.ofEffect (fun _ -> onSave (model.SKU, result |> Result.tryGetError))
 
 [<ReactComponent>]
-let InputSalesForm key (sku: SKU) (currency: Currency) (fullContext: FullContext) (drawerControl: DrawerControl) onSave =
-    let model, dispatch = React.useElmish (init sku currency, update fullContext onSave, [||])
+let InputSalesForm
+    key
+    (sku: SKU)
+    (currency: Currency)
+    (defaultPrice: decimal option)
+    (fullContext: FullContext)
+    (drawerControl: DrawerControl)
+    onSave
+    =
+    let model, dispatch = React.useElmish (init sku currency defaultPrice, update fullContext onSave, [||])
 
     React.useEffect (fun () ->
         match model.SaveDate with

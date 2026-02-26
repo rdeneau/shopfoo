@@ -122,7 +122,8 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
                             | Some(ReceivePurchasedProducts currency) -> ReceiveSupplyForm key sku currency fullContext drawerControl onSaveSupply
-                            | Some(InputSales currency) -> InputSalesForm key sku currency fullContext drawerControl onSaveSale
+                            | Some(InputSales(currency, defaultPrice)) ->
+                                InputSalesForm key sku currency defaultPrice fullContext drawerControl onSaveSale
                         ]
                     ]
                 ]

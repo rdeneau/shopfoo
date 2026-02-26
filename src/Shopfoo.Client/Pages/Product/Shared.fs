@@ -50,7 +50,7 @@ type PriceType with
 
 type Drawer =
     | ManagePrice of PriceModel * Prices
-    | InputSales of Currency
+    | InputSales of Currency * defaultSalePrice: decimal option
     | ReceivePurchasedProducts of Currency
     | AdjustStockAfterInventory of Stock
 

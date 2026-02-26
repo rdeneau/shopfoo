@@ -452,7 +452,10 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                     "input-sales"
                                     (icon fa6Solid.cashRegister)
                                     translations.Product.SaleAction.InputSales
-                                    (fun () -> drawerControl.Open(Drawer.InputSales prices.Currency))
+                                    (fun () ->
+                                        let defaultSalePrice = prices.RetailPrice.ToOption() |> Option.map _.Value
+                                        drawerControl.Open(Drawer.InputSales(prices.Currency, defaultSalePrice))
+                                    )
                             ]
 
                         // -- Total Sales Over 1Y (form hint) ----
