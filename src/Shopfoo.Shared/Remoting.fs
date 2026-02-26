@@ -134,6 +134,7 @@ module PricesApi =
 
     type GetPricesResponse = { Prices: Prices option }
     type GetPurchasePricesResponse = { Stats: PurchasePrices }
+    type GetSalesStatsResponse = { Stats: SalesStats }
     type PriceCommand = { SKU: SKU }
 
     type PricesApi = {
@@ -141,6 +142,8 @@ module PricesApi =
         DetermineStock: Query<SKU, Stock>
         GetPrices: Query<SKU, GetPricesResponse>
         GetPurchasePrices: Query<SKU, GetPurchasePricesResponse>
+        GetSalesStats: Query<SKU, GetSalesStatsResponse>
+        InputSale: Command<Sale>
         SavePrices: Command<Prices>
         MarkAsSoldOut: Command<PriceCommand>
         ReceiveSupply: Command<ReceiveSupplyInput>

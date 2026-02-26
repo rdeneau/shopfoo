@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Product.Data.Sales
 
+open System
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data
@@ -16,6 +17,44 @@ type internal SalesPipeline(repository: SalesRepository) =
         async {
             do! Fake.latencyInMilliseconds 250
             return repository.GetSales sku
+        }
+
+    member _.GetSalesStats(sku: SKU) : Async<SalesStats> =
+        async {
+            do! Fake.latencyInMilliseconds 200
+
+            let sales = repository.GetSales sku |> Option.defaultValue []
+
+            match sales with
+            | [] -> return SalesStats.Empty
+            | _ ->
+                let lastSale = sales |> List.maxBy _.Date
+
+                let cutoff = DateOnly.FromDateTime(DateTime.UtcNow.Date.AddDays -365)
+                let within1Y = sales |> List.filter (fun s -> s.Date >= cutoff)
+                let totalQty = within1Y |> List.sumBy _.Quantity
+
+                let currency = within1Y |> Seq.map (fun s -> s.Price.Currency) |> Seq.distinct |> Seq.tryExactlyOne
+
+                let totalOver1Y =
+                    match currency with
+                    | Some currency when totalQty > 0 ->
+                        let totalAmount = within1Y |> List.sumBy (fun s -> s.Price.Value * decimal s.Quantity)
+                        Some(Money.ByCurrency currency totalAmount)
+                    | _ -> None
+
+                return {
+                    LastSale = Some lastSale
+                    QuantityOver1Y = totalQty
+                    TotalOver1Y = totalOver1Y
+                }
+        }
+
+    member _.AddSale(sale: Sale) : Async<Result<unit, 'a>> =
+        async {
+            do! Fake.latencyInMilliseconds 250
+            repository.AddSale sale
+            return Ok()
         }
 
 module private Fakes =

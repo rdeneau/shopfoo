@@ -33,6 +33,8 @@
     <Compile Include="Remoting\Prices\DetermineStockHandler.fs" />
     <Compile Include="Remoting\Prices\GetPricesHandler.fs" />
     <Compile Include="Remoting\Prices\GetPurchasePricesHandler.fs" />
+    <Compile Include="Remoting\Prices\GetSalesStatsHandler.fs" />
+    <Compile Include="Remoting\Prices\InputSaleHandler.fs" />
     <Compile Include="Remoting\Prices\SavePricesHandler.fs" />
     <Compile Include="Remoting\Prices\MarkAsSoldOutHandler.fs" />
     <Compile Include="Remoting\Prices\ReceiveSupplyHandler.fs" />

@@ -8,6 +8,7 @@ open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Pages.Product.Details.Actions
 open Shopfoo.Client.Pages.Product.Details.AdjustStock
 open Shopfoo.Client.Pages.Product.Details.CatalogInfo
+open Shopfoo.Client.Pages.Product.Details.InputSales
 open Shopfoo.Client.Pages.Product.Details.ManagePrice
 open Shopfoo.Client.Pages.Product.Details.ReceiveSupply
 open Shopfoo.Client.Pages.Shared
@@ -59,6 +60,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
     let onSavePrice (price, error) = env.ShowToast(Toast.Prices(price, error))
     let onSaveStock (stock, error) = env.ShowToast(Toast.Stock(stock, error))
     let onSaveSupply (sku, error) = env.ShowToast(Toast.Supply(sku, error))
+    let onSaveSale (sku, error) = env.ShowToast(Toast.Sale(sku, error))
 
     let onSaveProduct (product: Product, error) =
         updateProductModel { productModel with SKU = product.SKU }
@@ -120,9 +122,7 @@ let ProductDetailsView (env: #Env.IFullContext & #Env.IFillTranslations & #Env.I
                             | Some(ManagePrice(priceModel, prices)) -> ManagePriceForm key fullContext priceModel prices drawerControl onSavePrice
                             | Some(AdjustStockAfterInventory stock) -> AdjustStockForm key fullContext stock drawerControl onSaveStock
                             | Some(ReceivePurchasedProducts currency) -> ReceiveSupplyForm key sku currency fullContext drawerControl onSaveSupply
-                            | Some InputSales ->
-                                // TODO: [Drawer] other actions
-                                Html.text "🚧 TODO"
+                            | Some(InputSales currency) -> InputSalesForm key sku currency fullContext drawerControl onSaveSale
                         ]
                     ]
                 ]

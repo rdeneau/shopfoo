@@ -54,3 +54,17 @@ type Sale = {
     Price: Money
     Quantity: int
 }
+
+type SalesStats = {
+    /// Most recent sale.
+    LastSale: Sale option
+    /// Total quantity sold within the last 365 days.
+    QuantityOver1Y: int
+    /// Total revenue within the last 365 days.
+    TotalOver1Y: Money option
+} with
+    static member Empty = {
+        LastSale = None
+        QuantityOver1Y = 0
+        TotalOver1Y = None
+    }

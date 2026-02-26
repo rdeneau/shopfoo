@@ -42,6 +42,7 @@ let private translationPages = [
         TagCode "Warning", "Warning", "Attention"
 
         TagCode "Colon", ":", " :"
+        TagCode "Date", "Date", "Date"
         TagCode "Required", "Required", "Requis"
 
         TagCode "ChangeLangOk", "Successful switch to English", "Passage au français réussi"
@@ -92,6 +93,8 @@ let private translationPages = [
         TagCode "ShortMonth.Oct", "Oct", "Oct"
         TagCode "ShortMonth.Nov", "Nov", "Nov"
         TagCode "ShortMonth.Dec", "Dec", "Déc"
+
+        TagCode "StandardDateFormat", "ShortMonth DayInMonth, Year", "DayInMonth ShortMonth Year"
 
         TagCode "Theme.Dark", "Dark", "Sombre (Dark)"
         TagCode "Theme.Light", "Light", "Clair (Light)"
@@ -151,16 +154,24 @@ let private translationPages = [
 
         TagCode "Discount", "Discount", "Réduction"
         TagCode "Margin", "Margin", "Marge"
+        TagCode "Quantity", "Quantity", "Quantité"
+
         TagCode "Increase", "Increase", "Augmentation"
         TagCode "Decrease", "Decrease", "Diminution"
         TagCode "Define", "Define", "Définition"
+
         TagCode "Price", "Price", "Prix"
         TagCode "CurrentPrice", "Current price", "Prix actuel"
         TagCode "NewPrice", "New price", "nouveau prix"
         TagCode "ListPrice", "List price", "Prix catalogue"
         TagCode "RetailPrice", "Retail price", "Prix de vente"
-        TagCode "LastPurchasePrice", "Last purchase price ({0} {1})", "Dernier prix d'achat le {1} {0}"
-        TagCode "AveragePriceOver1Y", "Average (1 year)", "Moyenne (1 an)"
+        TagCode "SalePrice", "Sale price", "Prix de vente"
+
+        TagCode "AverageOver1Y", "Average (1 year)", "Moyenne (1 an)"
+        TagCode "LastPurchase", "Last purchase", "Dernier d'achat"
+        TagCode "LastSale", "Last sale", "Dernière vente"
+        TagCode "TotalSalesOver1Y", "Total sales (1 year)", "Total des ventes (1 an)"
+        TagCode "SaleAction.InputSales", "Input sales", "Saisir des ventes"
 
         TagCode "PriceAction.Define", "Define", "Définir"
         TagCode "PriceAction.Remove", "Remove", "Supprimer"

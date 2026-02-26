@@ -50,7 +50,7 @@ type PriceType with
 
 type Drawer =
     | ManagePrice of PriceModel * Prices
-    | InputSales
+    | InputSales of Currency
     | ReceivePurchasedProducts of Currency
     | AdjustStockAfterInventory of Stock
 

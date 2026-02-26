@@ -15,6 +15,7 @@ type Toast =
     | Lang of Lang
     | Prices of Prices * ApiError option
     | Product of Product * ApiError option
+    | Sale of SKU * ApiError option
     | Stock of Stock * ApiError option
     | Supply of SKU * ApiError option
 

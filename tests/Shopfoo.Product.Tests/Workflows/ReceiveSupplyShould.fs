@@ -35,6 +35,7 @@ type ReceiveSupplyShould() =
     member _.``reject supply when purchase price is zero or negative``(price: double) =
         async {
             let price = decimal price
+
             let input: ReceiveSupplyInput = {
                 SKU = (ISBN "978-0-13-468599-2").AsSKU
                 Date = DateOnly.FromDateTime(DateTime.UtcNow)

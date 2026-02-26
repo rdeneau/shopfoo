@@ -32,6 +32,8 @@ type IProductApi =
     abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
     abstract member GetPurchasePrices: (SKU -> Async<PurchasePrices>)
     abstract member GetSales: (SKU -> Async<Sale list option>)
+    abstract member GetSalesStats: (SKU -> Async<SalesStats>)
+    abstract member AddSale: (Sale -> Async<Result<unit, Error>>)
     abstract member ReceiveSupply: (ReceiveSupplyInput -> Async<Result<unit, Error>>)
 
     abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
@@ -109,6 +111,8 @@ type internal Api
         member val RemoveListPrice = fun sku -> runWorkflow RemoveListPriceWorkflow.Instance sku
 
         member val GetSales = salesPipeline.GetSales
+        member val GetSalesStats = salesPipeline.GetSalesStats
+        member val AddSale = salesPipeline.AddSale
 
         member val AdjustStock = warehousePipeline.AdjustStock
         member val DetermineStock = fun sku -> runWorkflow DetermineStockWorkflow.Instance sku

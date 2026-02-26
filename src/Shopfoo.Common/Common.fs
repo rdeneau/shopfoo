@@ -2,6 +2,7 @@
 module Shopfoo.Common.Common
 
 open System
+open System.Diagnostics.CodeAnalysis
 open System.Globalization
 open System.Runtime.CompilerServices
 
@@ -240,7 +241,7 @@ module Exception =
 module Regex =
     open System.Text.RegularExpressions
 
-    let (|Match|_|) pattern value =
+    let (|Match|_|) ([<StringSyntax(StringSyntaxAttribute.Regex)>] pattern) value =
         let m = Regex.Match(value, pattern)
 
         if not m.Success || m.Groups.Count < 1 then
@@ -251,7 +252,7 @@ module Regex =
                     m.Groups[i].Value
             ]
 
-    let (|Matches|_|) pattern value =
+    let (|Matches|_|) ([<StringSyntax(StringSyntaxAttribute.Regex)>] pattern) value =
         [
             for m in Regex.Matches(value, pattern) do
                 if m.Success && m.Groups.Count > 0 then

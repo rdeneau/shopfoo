@@ -1,4 +1,4 @@
-﻿module Shopfoo.Client.Pages.Product.Details.ReceiveSupply
+module Shopfoo.Client.Pages.Product.Details.InputSales
 
 open System
 open Elmish
@@ -11,39 +11,38 @@ open Shopfoo.Client.Pages.Product
 open Shopfoo.Client.Remoting
 open Shopfoo.Common
 open Shopfoo.Domain.Types
-open Shopfoo.Domain.Types.Warehouse
+open Shopfoo.Domain.Types.Sales
 open Shopfoo.Shared.Remoting
 
 type private Msg =
     | DateChanged of DateOnly
     | QuantityChanged of int
-    | PurchasePriceChanged of decimal
-    | ReceiveSupply of ApiCall<unit>
+    | SalePriceChanged of decimal
+    | InputSale of ApiCall<unit>
 
 type private Model = {
     SKU: SKU
     Date: DateOnly
     Quantity: int
-    PurchasePrice: decimal
+    SalePrice: decimal
     Currency: Currency
     SaveDate: Remote<DateTime>
 } with
-    /// Closes the drawer, passing the modified data back to drawer opener, only if it has been saved.
     member model.CloseDrawer(drawerControl: DrawerControl) =
         let drawer =
             match model.SaveDate with
-            | Remote.Loaded _ -> Some(Drawer.ReceivePurchasedProducts model.Currency)
+            | Remote.Loaded _ -> Some(Drawer.InputSales model.Currency)
             | _ -> None
 
         drawerControl.Close(?drawer = drawer)
 
 [<RequireQualifiedAccess>]
 module private Cmd =
-    let receiveSupply (cmder: Cmder, request) =
+    let inputSale (cmder: Cmder, request) =
         cmder.ofApiRequest {
-            Call = fun api -> api.Prices.ReceiveSupply request
-            Error = ReceiveSupply << Done << Error
-            Success = ReceiveSupply << Done << Ok
+            Call = fun api -> api.Prices.InputSale request
+            Error = InputSale << Done << Error
+            Success = InputSale << Done << Ok
         }
 
 let private init sku currency =
@@ -51,7 +50,7 @@ let private init sku currency =
         SKU = sku
         Date = DateOnly.FromDateTime(DateTime.Today)
         Quantity = 1
-        PurchasePrice = 0m
+        SalePrice = 0m
         Currency = currency
         SaveDate = Remote.Empty
     },
@@ -65,30 +64,28 @@ let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
     | QuantityChanged quantity -> // ↩
         { model with Quantity = quantity }, Cmd.none
 
-    | PurchasePriceChanged price -> // ↩
-        { model with PurchasePrice = price }, Cmd.none
+    | SalePriceChanged price -> // ↩
+        { model with SalePrice = price }, Cmd.none
 
-    | ReceiveSupply Start ->
-        let input: ReceiveSupplyInput = {
+    | InputSale Start ->
+        let sale: Sale = {
             SKU = model.SKU
             Date = model.Date
             Quantity = model.Quantity
-            PurchasePrice = Money.ByCurrency model.Currency model.PurchasePrice
+            Price = Money.ByCurrency model.Currency model.SalePrice
         }
 
         { model with SaveDate = Remote.Loading }, // ↩
-        Cmd.receiveSupply (fullContext.PrepareRequest input)
+        Cmd.inputSale (fullContext.PrepareRequest sale)
 
-    | ReceiveSupply(Done result) ->
+    | InputSale(Done result) ->
         { model with SaveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
         Cmd.ofEffect (fun _ -> onSave (model.SKU, result |> Result.tryGetError))
 
 [<ReactComponent>]
-let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullContext) (drawerControl: DrawerControl) onSave =
+let InputSalesForm key (sku: SKU) (currency: Currency) (fullContext: FullContext) (drawerControl: DrawerControl) onSave =
     let model, dispatch = React.useElmish (init sku currency, update fullContext onSave, [||])
 
-    // Close the drawer after success with a short delay (500ms),
-    // time to let the user get this result visually.
     React.useEffect (fun () ->
         match model.SaveDate with
         | Remote.Loaded _ ->
@@ -105,7 +102,7 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
         | Remote.Loaded _ -> true
         | _ -> false
 
-    let canSave = model.Quantity > 0 && model.PurchasePrice > 0m
+    let canSave = model.Quantity > 0 && model.SalePrice > 0m
 
     let currencySymbol = model.Currency.Symbol
 
@@ -115,13 +112,13 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
             Html.legend [
                 prop.key $"%s{key}-legend"
                 prop.className "text-base font-bold mb-2 flex items-center"
-                prop.text translations.Product.StockAction.ReceivePurchasedProducts
+                prop.text translations.Product.SaleAction.InputSales
             ]
 
             // -- Date ----
             Daisy.fieldsetLabel [ // ↩
                 prop.key $"%s{key}-date-fieldset-label"
-                prop.text translations.Product.SupplyDate
+                prop.text translations.Home.Date
             ]
 
             Daisy.label.input [
@@ -153,7 +150,7 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
             ]
 
             // -- Quantity ----
-            Daisy.fieldsetLabel [ prop.key $"%s{key}-quantity-fieldset-label"; prop.text translations.Product.SupplyQuantity ]
+            Daisy.fieldsetLabel [ prop.key $"%s{key}-quantity-fieldset-label"; prop.text translations.Product.Quantity ]
 
             Daisy.label.input [
                 prop.key $"{key}-quantity-label"
@@ -177,7 +174,7 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
                             prop.onChange (fun (value: int) -> dispatch (QuantityChanged value))
 
                             if canSave then
-                                prop.onKeyUp (Feliz.key.enter, fun _ -> dispatch (ReceiveSupply Start))
+                                prop.onKeyUp (Feliz.key.enter, fun _ -> dispatch (InputSale Start))
 
                         prop.min 1
                         prop.step 1
@@ -185,8 +182,8 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
                 ]
             ]
 
-            // -- Purchase Price ----
-            Daisy.fieldsetLabel [ prop.key $"%s{key}-price-fieldset-label"; prop.text translations.Product.SupplyPurchasePrice ]
+            // -- Sale Price ----
+            Daisy.fieldsetLabel [ prop.key $"%s{key}-price-fieldset-label"; prop.text translations.Product.SalePrice ]
 
             Daisy.label.input [
                 prop.key $"{key}-price-label"
@@ -205,16 +202,16 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
                         prop.type' "number"
                         prop.className "flex-1 validator"
                         prop.required true
-                        prop.value (model.PurchasePrice |> float)
+                        prop.value (model.SalePrice |> float)
 
                         if afterSaveOk then
                             prop.ariaReadOnly true
                             prop.readOnly true
                         else
-                            prop.onChange (fun (value: float) -> dispatch (PurchasePriceChanged(decimal value)))
+                            prop.onChange (fun (value: float) -> dispatch (SalePriceChanged(decimal value)))
 
                             if canSave then
-                                prop.onKeyUp (Feliz.key.enter, fun _ -> dispatch (ReceiveSupply Start))
+                                prop.onKeyUp (Feliz.key.enter, fun _ -> dispatch (InputSale Start))
 
                         prop.min 0.01
                     ]
@@ -242,14 +239,14 @@ let ReceiveSupplyForm key (sku: SKU) (currency: Currency) (fullContext: FullCont
 
                     // -- Save ----
                     Buttons.SaveButton(
-                        key = "save-supply",
+                        key = "save-sale",
                         label = translations.Home.Save,
-                        tooltipOk = translations.Home.SavedOk translations.Product.Stock,
-                        tooltipError = (fun err -> translations.Home.SavedError(translations.Product.Stock, err.ErrorMessage)),
+                        tooltipOk = translations.Home.SavedOk translations.Product.SaleAction.InputSales,
+                        tooltipError = (fun err -> translations.Home.SavedError(translations.Product.SaleAction.InputSales, err.ErrorMessage)),
                         tooltipProps = [ tooltip.left ],
                         saveDate = model.SaveDate,
                         disabled = (afterSaveOk || not canSave),
-                        onClick = (fun () -> dispatch (ReceiveSupply Start))
+                        onClick = (fun () -> dispatch (InputSale Start))
                     )
                 ]
             ]

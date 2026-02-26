@@ -39,13 +39,16 @@ type private Model = {
     PriceActionStatus: Action * Remote<DateTime>
     Stock: Remote<Stock>
     PurchasePriceStats: Remote<PurchasePrices>
+    SalesStats: Remote<SalesStats>
 }
 
 type private Msg =
     | PricesFetched of ApiResult<GetPricesResponse>
     | PurchasePricestatsFetched of ApiResult<GetPurchasePricesResponse>
+    | SalesStatsFetched of ApiResult<GetSalesStatsResponse>
     | StockFetched of ApiResult<Stock>
     | RefreshAfterSupply
+    | RefreshAfterSale
     | PerformAction of Action * SKU * ApiCall<unit>
 
 [<RequireQualifiedAccess>]
@@ -71,6 +74,13 @@ module private Cmd =
             Success = Ok >> PurchasePricestatsFetched
         }
 
+    let loadSalesStats (cmder: Cmder, request) =
+        cmder.ofApiRequest {
+            Call = fun api -> api.Prices.GetSalesStats request
+            Error = Error >> SalesStatsFetched
+            Success = Ok >> SalesStatsFetched
+        }
+
     let perform action (cmder: Cmder, request) =
         cmder.ofApiRequest {
             Call =
@@ -94,11 +104,13 @@ let private init (fullContext: FullContext) sku =
         PriceActionStatus = Action.None, Remote.Empty
         Stock = Remote.Loading
         PurchasePriceStats = Remote.Loading
+        SalesStats = Remote.Loading
     },
     Cmd.batch [ // ↩
         Cmd.loadPrices (fullContext.PrepareRequest sku)
         Cmd.determineStock (fullContext.PrepareRequest sku)
         Cmd.loadPurchasePrices (fullContext.PrepareRequest sku)
+        Cmd.loadSalesStats (fullContext.PrepareRequest sku)
     ]
 
 let private update (fullContext: FullContext) sku onSavePrice (msg: Msg) (model: Model) =
@@ -109,15 +121,19 @@ let private update (fullContext: FullContext) sku onSavePrice (msg: Msg) (model:
     | PurchasePricestatsFetched(Ok data) -> { model with PurchasePriceStats = Remote.Loaded data.Stats }, Cmd.none
     | PurchasePricestatsFetched(Error apiError) -> { model with PurchasePriceStats = Remote.LoadError apiError }, Cmd.none
 
+    | SalesStatsFetched(Ok data) -> { model with SalesStats = Remote.Loaded data.Stats }, Cmd.none
+    | SalesStatsFetched(Error apiError) -> { model with SalesStats = Remote.LoadError apiError }, Cmd.none
+
     | StockFetched(Ok stock) -> { model with Stock = Remote.Loaded stock }, Cmd.none
     | StockFetched(Error apiError) -> { model with Stock = Remote.LoadError apiError }, Cmd.none
 
     | RefreshAfterSupply ->
         { model with PurchasePriceStats = Remote.Loading; Stock = Remote.Loading },
-        Cmd.batch [
-            Cmd.loadPurchasePrices (fullContext.PrepareRequest sku)
-            Cmd.determineStock (fullContext.PrepareRequest sku)
-        ]
+        Cmd.batch [ Cmd.loadPurchasePrices (fullContext.PrepareRequest sku); Cmd.determineStock (fullContext.PrepareRequest sku) ]
+
+    | RefreshAfterSale ->
+        { model with SalesStats = Remote.Loading; Stock = Remote.Loading },
+        Cmd.batch [ Cmd.loadSalesStats (fullContext.PrepareRequest sku); Cmd.determineStock (fullContext.PrepareRequest sku) ]
 
     | PerformAction(action, sku, Start) ->
         { model with PriceActionStatus = action, Remote.Loading }, // ↩
@@ -154,6 +170,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
     )
 
     let translations = fullContext.Translations
+    let standardDateFormat = translations.Home.StandardDateFormat
 
     // As the drawers are opened from dropdown menus that are positioned above the side drawer,
     // we apply two fixing strategies:
@@ -166,7 +183,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         match drawer with
         | Drawer.AdjustStockAfterInventory stock -> dispatch (StockFetched(Ok stock))
         | Drawer.ManagePrice(_, savedPrices) -> dispatch (PricesFetched(Ok { Prices = Some savedPrices }))
-        | Drawer.InputSales -> ()
+        | Drawer.InputSales _ -> dispatch RefreshAfterSale
         | Drawer.ReceivePurchasedProducts _ -> dispatch RefreshAfterSupply
     )
 
@@ -352,19 +369,16 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
 
                         let lastPurchasePrice = purchasePrices.LastPrice |> Option.map fst
 
-                        let lastDate =
-                            purchasePrices.LastPrice
-                            |> Option.map (fun (_, date) -> {|
-                                day = translations.Home.DayInMonthOf date
-                                month = translations.Home.ShortMonthOf date
-                            |})
-                            |> Option.defaultValue {| day = "-"; month = "" |}
-
                         // -- Last Purchase Price ----
                         Daisy.fieldsetLabel [
                             prop.key "last-purchase-price-label"
                             prop.children [
-                                Html.text (translations.Product.LastPurchasePrice(day = lastDate.day, month = lastDate.month))
+                                Html.text translations.Product.LastPurchase
+
+                                match purchasePrices.LastPrice with
+                                | None -> ()
+                                | Some(_, date) -> Html.text $" (%s{translations.Home.FormatDate(date, standardDateFormat)})"
+
                                 match lastPurchasePrice |> Option.bind marginPct with
                                 | None -> ()
                                 | Some margin ->
@@ -392,7 +406,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                 Html.span [
                                     prop.key "average-label"
                                     prop.children [
-                                        Html.text $"%s{translations.Product.AveragePriceOver1Y}%s{translations.Home.Colon} "
+                                        Html.text $"%s{translations.Product.AverageOver1Y}%s{translations.Home.Colon}  "
                                         Html.text (
                                             match purchasePrices.AverageOver1Y with
                                             | Some price -> price.ValueWithCurrencySymbol
@@ -409,6 +423,63 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                         | None -> "-"
                                     )
                                 ]
+                            ]
+                        ]
+                    | _ -> ()
+
+                    // -- Sales ----
+                    match model.SalesStats with
+                    | Remote.Loaded salesStats ->
+                        // -- Last Sale ----
+                        Daisy.fieldsetLabel [
+                            prop.key "last-sale-label"
+                            prop.children [
+                                Html.text translations.Product.LastSale
+
+                                match salesStats.LastSale with
+                                | None -> ()
+                                | Some sale -> Html.text $" (%s{translations.Home.FormatDate(sale.Date, standardDateFormat)})"
+                            ]
+                        ]
+
+                        ActionsDropdown
+                            "last-sale"
+                            "mb-0"
+                            (fullContext.User.AccessTo Feat.Sales)
+                            (Value.OfMoneyOptional(salesStats.LastSale |> Option.map _.Price))
+                            [
+                                ActionProps.withIcon
+                                    "input-sales"
+                                    (icon fa6Solid.cashRegister)
+                                    translations.Product.SaleAction.InputSales
+                                    (fun () -> drawerControl.Open(Drawer.InputSales prices.Currency))
+                            ]
+
+                        // -- Total Sales Over 1Y (form hint) ----
+                        Daisy.fieldsetLabel [
+                            prop.key "sales-over-1y-hint"
+                            prop.className "grid grid-cols-[1fr_auto] items-center mb-3 italic"
+                            prop.children [
+                                Html.span [
+                                    prop.key "sales-1y-label"
+                                    prop.className "pr-2"
+                                    prop.children [
+                                        Html.text $"%s{translations.Product.TotalSalesOver1Y}%s{translations.Home.Colon}  "
+                                        Html.text (
+                                            match salesStats.TotalOver1Y with
+                                            | None -> "-"
+                                            | Some price -> price.ValueWithCurrencySymbol
+                                        )
+                                    ]
+                                ]
+                                match salesStats.TotalOver1Y with
+                                | None -> ()
+                                | Some _ ->
+                                    Html.span [
+                                        prop.key "sales-1y-values"
+                                        prop.className "text-right"
+                                        prop.text $"%s{translations.Product.Quantity}%s{translations.Home.Colon}  %i{salesStats.QuantityOver1Y}"
+                                    ]
                             ]
                         ]
                     | _ -> ()

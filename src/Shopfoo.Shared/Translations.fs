@@ -1,9 +1,16 @@
 ﻿module Shopfoo.Shared.Translations
 
 open System
+open System.Text.RegularExpressions
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Translations
+
+type DatePartFormat =
+    | DayInMonth
+    | MonthShortName
+    | Year
+    | Separator of string
 
 module TranslationPages =
     type internal TranslationKeyBuilder(pageCode: PageCode) =
@@ -76,115 +83,87 @@ module TranslationPages =
         member this.Warning = this.Get "Warning"
 
         member this.Colon = this.Get "Colon"
+        member this.Date = this.Get "Date"
         member this.Required = this.Get "Required"
 
         member this.ChangeLangError(lang: string, error: string) = this.Format("ChangeLangError", lang, error)
         member this.ChangeLangOk = this.Get "ChangeLangOk"
         member this.ErrorNotFound(what: string) = this.Format("ErrorNotFound", what)
 
-        member this.DayInMonth =
-            this.WithPrefix "DayInMonth."
-            <| fun this -> {|
-                ``1st`` = this.Get "1st"
-                ``2nd`` = this.Get "2nd"
-                ``3rd`` = this.Get "3rd"
-                ``4th`` = this.Get "4th"
-                ``5th`` = this.Get "5th"
-                ``6th`` = this.Get "6th"
-                ``7th`` = this.Get "7th"
-                ``8th`` = this.Get "8th"
-                ``9th`` = this.Get "9th"
-                ``10th`` = this.Get "10th"
-                ``11th`` = this.Get "11th"
-                ``12th`` = this.Get "12th"
-                ``13th`` = this.Get "13th"
-                ``14th`` = this.Get "14th"
-                ``15th`` = this.Get "15th"
-                ``16th`` = this.Get "16th"
-                ``17th`` = this.Get "17th"
-                ``18th`` = this.Get "18th"
-                ``19th`` = this.Get "19th"
-                ``20th`` = this.Get "20th"
-                ``21st`` = this.Get "21st"
-                ``22nd`` = this.Get "22nd"
-                ``23rd`` = this.Get "23rd"
-                ``24th`` = this.Get "24th"
-                ``25th`` = this.Get "25th"
-                ``26th`` = this.Get "26th"
-                ``27th`` = this.Get "27th"
-                ``28th`` = this.Get "28th"
-                ``29th`` = this.Get "29th"
-                ``30th`` = this.Get "30th"
-                ``31st`` = this.Get "31st"
-            |}
+        member private this.DayInMonth =
+            function
+            | 1 -> this.Get "DayInMonth.1st"
+            | 2 -> this.Get "DayInMonth.2nd"
+            | 3 -> this.Get "DayInMonth.3rd"
+            | 4 -> this.Get "DayInMonth.4th"
+            | 5 -> this.Get "DayInMonth.5th"
+            | 6 -> this.Get "DayInMonth.6th"
+            | 7 -> this.Get "DayInMonth.7th"
+            | 8 -> this.Get "DayInMonth.8th"
+            | 9 -> this.Get "DayInMonth.9th"
+            | 10 -> this.Get "DayInMonth.10th"
+            | 11 -> this.Get "DayInMonth.11th"
+            | 12 -> this.Get "DayInMonth.12th"
+            | 13 -> this.Get "DayInMonth.13th"
+            | 14 -> this.Get "DayInMonth.14th"
+            | 15 -> this.Get "DayInMonth.15th"
+            | 16 -> this.Get "DayInMonth.16th"
+            | 17 -> this.Get "DayInMonth.17th"
+            | 18 -> this.Get "DayInMonth.18th"
+            | 19 -> this.Get "DayInMonth.19th"
+            | 20 -> this.Get "DayInMonth.20th"
+            | 21 -> this.Get "DayInMonth.21st"
+            | 22 -> this.Get "DayInMonth.22nd"
+            | 23 -> this.Get "DayInMonth.23rd"
+            | 24 -> this.Get "DayInMonth.24th"
+            | 25 -> this.Get "DayInMonth.25th"
+            | 26 -> this.Get "DayInMonth.26th"
+            | 27 -> this.Get "DayInMonth.27th"
+            | 28 -> this.Get "DayInMonth.28th"
+            | 29 -> this.Get "DayInMonth.29th"
+            | 30 -> this.Get "DayInMonth.30th"
+            | 31 -> this.Get "DayInMonth.31st"
+            | _ -> String.Empty
 
-        member this.DayInMonthOf(date: DateOnly) =
-            match date.Day with
-            | 1 -> this.DayInMonth.``1st``
-            | 2 -> this.DayInMonth.``2nd``
-            | 3 -> this.DayInMonth.``3rd``
-            | 4 -> this.DayInMonth.``4th``
-            | 5 -> this.DayInMonth.``5th``
-            | 6 -> this.DayInMonth.``6th``
-            | 7 -> this.DayInMonth.``7th``
-            | 8 -> this.DayInMonth.``8th``
-            | 9 -> this.DayInMonth.``9th``
-            | 10 -> this.DayInMonth.``10th``
-            | 11 -> this.DayInMonth.``11th``
-            | 12 -> this.DayInMonth.``12th``
-            | 13 -> this.DayInMonth.``13th``
-            | 14 -> this.DayInMonth.``14th``
-            | 15 -> this.DayInMonth.``15th``
-            | 16 -> this.DayInMonth.``16th``
-            | 17 -> this.DayInMonth.``17th``
-            | 18 -> this.DayInMonth.``18th``
-            | 19 -> this.DayInMonth.``19th``
-            | 20 -> this.DayInMonth.``20th``
-            | 21 -> this.DayInMonth.``21st``
-            | 22 -> this.DayInMonth.``22nd``
-            | 23 -> this.DayInMonth.``23rd``
-            | 24 -> this.DayInMonth.``24th``
-            | 25 -> this.DayInMonth.``25th``
-            | 26 -> this.DayInMonth.``26th``
-            | 27 -> this.DayInMonth.``27th``
-            | 28 -> this.DayInMonth.``28th``
-            | 29 -> this.DayInMonth.``29th``
-            | 30 -> this.DayInMonth.``30th``
-            | 31 -> this.DayInMonth.``31st``
-            | d -> $"%i{d}"
+        member private this.ShortMonth =
+            function
+            | 1 -> this.Get "ShortMonth.Jan"
+            | 2 -> this.Get "ShortMonth.Feb"
+            | 3 -> this.Get "ShortMonth.Mar"
+            | 4 -> this.Get "ShortMonth.Apr"
+            | 5 -> this.Get "ShortMonth.May"
+            | 6 -> this.Get "ShortMonth.Jun"
+            | 7 -> this.Get "ShortMonth.Jul"
+            | 8 -> this.Get "ShortMonth.Aug"
+            | 9 -> this.Get "ShortMonth.Sep"
+            | 10 -> this.Get "ShortMonth.Oct"
+            | 11 -> this.Get "ShortMonth.Nov"
+            | 12 -> this.Get "ShortMonth.Dec"
+            | _ -> String.Empty
 
-        member this.ShortMonth =
-            this.WithPrefix "ShortMonth."
-            <| fun this -> {|
-                Jan = this.Get "Jan"
-                Feb = this.Get "Feb"
-                Mar = this.Get "Mar"
-                Apr = this.Get "Apr"
-                May = this.Get "May"
-                Jun = this.Get "Jun"
-                Jul = this.Get "Jul"
-                Aug = this.Get "Aug"
-                Sep = this.Get "Sep"
-                Oct = this.Get "Oct"
-                Nov = this.Get "Nov"
-                Dec = this.Get "Dec"
-            |}
+        /// Parse the format parts from the translation, e.g. "DayInMonth ShortMonth, Year" -> [DayInMonth; Separator " "; ShortMonth; Separator ", "; Year]
+        member this.StandardDateFormat: DatePartFormat list = [
+            for part in Regex.Split(input = this.Get("StandardDateFormat"), pattern = @"(DayInMonth|DDD|ShortMonth|MMM|Year|YYYY)") do
+                match part with
+                | null
+                | "" -> ()
+                // ReSharper disable FSharpRedundantParens
+                | ("DDD" | "DayInMonth") -> DayInMonth
+                | ("MMM" | "ShortMonth") -> MonthShortName
+                | ("YYYY" | "Year") -> Year
+                // ReSharper restore FSharpRedundantParens
+                | separator -> Separator separator
+        ]
 
-        member this.ShortMonthOf(date: DateOnly) =
-            match date.Month with
-            | 1 -> this.ShortMonth.Jan
-            | 2 -> this.ShortMonth.Feb
-            | 3 -> this.ShortMonth.Mar
-            | 4 -> this.ShortMonth.Apr
-            | 5 -> this.ShortMonth.May
-            | 6 -> this.ShortMonth.Jun
-            | 7 -> this.ShortMonth.Jul
-            | 8 -> this.ShortMonth.Aug
-            | 9 -> this.ShortMonth.Sep
-            | 10 -> this.ShortMonth.Oct
-            | 11 -> this.ShortMonth.Nov
-            | 12 -> this.ShortMonth.Dec
-            | d -> $"%i{d}"
+        member this.FormatDate(date: DateOnly, format: DatePartFormat list) =
+            String.concat "" [
+                for part in format do
+                    match part with
+                    | DayInMonth -> this.DayInMonth date.Day
+                    | MonthShortName -> this.ShortMonth date.Month
+                    | Year -> string date.Year
+                    | Separator sep -> sep
+            ]
 
         member this.Theme =
             this.WithPrefix "Theme."
@@ -257,16 +236,23 @@ module TranslationPages =
 
         member this.Discount = this.Get "Discount"
         member this.Margin = this.Get "Margin"
+        member this.Quantity = this.Get "Quantity"
+
         member this.Increase = this.Get "Increase"
         member this.Decrease = this.Get "Decrease"
         member this.Define = this.Get "Define"
-        member this.Price = this.Get "Price"
+
         member this.CurrentPrice = this.Get "CurrentPrice"
+        member this.Price = this.Get "Price"
         member this.NewPrice = this.Get "NewPrice"
         member this.ListPrice = this.Get "ListPrice"
         member this.RetailPrice = this.Get "RetailPrice"
-        member this.AveragePriceOver1Y = this.Get "AveragePriceOver1Y"
-        member this.LastPurchasePrice(day: string, month: string) = this.Format("LastPurchasePrice", day, month)
+        member this.SalePrice = this.Get "SalePrice"
+
+        member this.AverageOver1Y = this.Get "AverageOver1Y"
+        member this.LastPurchase = this.Get "LastPurchase"
+        member this.LastSale = this.Get "LastSale"
+        member this.TotalSalesOver1Y = this.Get "TotalSalesOver1Y"
 
         member this.PriceAction =
             this.WithPrefix "PriceAction."
@@ -312,6 +298,10 @@ module TranslationPages =
                 AdjustStockAfterInventory = this.Get "AdjustStockAfterInventory"
                 ReceivePurchasedProducts = this.Get "ReceivePurchasedProducts"
             |}
+
+        member this.SaleAction =
+            this.WithPrefix "SaleAction." // ↩
+            <| fun this -> {| InputSales = this.Get "InputSales" |}
 
 open TranslationPages
 

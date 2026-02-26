@@ -20,3 +20,5 @@ appsettings.Development.json
 .github/agents
 .github/instructions
 .github/skills
+CLAUDE.md
+.claude

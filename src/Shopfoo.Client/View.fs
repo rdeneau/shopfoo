@@ -268,6 +268,9 @@ let AppView () =
             | Some(Toast.Prices(prices, error)) -> // ↩
                 toast $"%s{translations.Product.Price} %s{prices.SKU.Value}" error
 
+            | Some(Toast.Sale(sku, error)) -> // ↩
+                toast $"%s{translations.Product.SaleAction.InputSales} %s{sku.Value}" error
+
             | Some(Toast.Stock(stock, error)) -> // ↩
                 toast $"%s{translations.Product.Stock} %s{stock.SKU.Value}" error
 

@@ -110,9 +110,9 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
     - [x] Action: Modify (intent: Increase or Decrease)
     - [x] Action: Mark as sold out
   - Sales
-    - [ ] Display last sale
-    - [ ] Display 1Y sale: quantity, total
-    - [ ] Action: Input sales
+    - [x] Display last sale
+    - [x] Display 1Y sale: quantity, total
+    - [x] Action: Input sales
 - Purchasing
   - Purchase price
     - [x] Display last price and average over 1Y based on the purchases and stock adjustment, ~~with an arrow indicating if it has increased ↗️ or decreased ↘️~~

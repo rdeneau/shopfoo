@@ -42,6 +42,7 @@
     <Compile Include="Pages\Product\Shared.fs" />
     <Compile Include="Pages\Product\Details\Actions.fs" />
     <Compile Include="Pages\Product\Details\AdjustStock.fs" />
+    <Compile Include="Pages\Product\Details\InputSales.fs" />
     <Compile Include="Pages\Product\Details\ManagePrice.fs" />
     <Compile Include="Pages\Product\Details\ReceiveSupply.fs" />
     <Compile Include="Pages\Product\Details\CatalogInfo.fs" />
