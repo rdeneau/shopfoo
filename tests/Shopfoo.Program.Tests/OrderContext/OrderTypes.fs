@@ -3,17 +3,6 @@ namespace Shopfoo.Product.Tests.OrderContext
 open System
 open Shopfoo.Domain.Types.Errors
 
-// TODO RDE: Document this pattern for creating strongly-typed IDs:
-//   ✅ reduced boilerplate
-//   ✅ terse formatting by fantomas, contrary to unit of measure needing 2 more lines - see https://nordfjord.io/equinox/ using FSharp.UMX
-//   ✅ standalone: no need for external dependencies like FSharp.UMX
-//   ✅ type safety
-//   ⚠️ recursive module: optional, trade-off
-//       ✅ optional: just to use the type aliases in the XxxId.New function whereas they are declared afterwards
-//       ✅ to secure when using Id.New : the type annotation using the type alias prevents accidentally forgetting to specify the prefix
-//       ⚠️ can be confusing
-//   ⚠️ the 'kind refers to the entity, not the ID (as it's traditionally done in other patterns), hence the Type property and the %A format to get the case name!
-//       tradeoff: terse vs being more explicit constraint on the 'kind generic type
 [<AutoOpen>]
 module rec Id =
     type Id<'kind> = private {

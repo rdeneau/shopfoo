@@ -13,6 +13,7 @@
     <Content Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="NetArchTestExtensions.fs" />
     <Compile Include="FsCheckArbs\Common.fs" />
     <Compile Include="FsCheckArbs\Domain.fs" />
     <Compile Include="FsCheckArbs\Shopfoo.fs" />

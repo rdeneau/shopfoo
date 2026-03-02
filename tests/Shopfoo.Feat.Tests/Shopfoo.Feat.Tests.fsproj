@@ -11,21 +11,11 @@
   <Import Project="..\..\.paket\Paket.Restore.targets" />
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="Examples.fs" />
-    <Compile Include="Data\OpenLibraryShould.fs" />
-    <Compile Include="Workflows\Types.fs" />
-    <Compile Include="Workflows\ApiTestFixture.fs" />
-    <Compile Include="Workflows\AddProductShould.fs" />
-    <Compile Include="Workflows\DetermineStockShould.fs" />
-    <Compile Include="Workflows\ReceiveSupplyShould.fs" />
-    <Compile Include="Workflows\GetProductShould.fs" />
-    <Compile Include="Workflows\GetPurchasePricesShould.fs" />
-    <Compile Include="Workflows\MarkAsSoldOutShould.fs" />
-    <Compile Include="Workflows\SavePricesShould.fs" />
+    <Compile Include="ArchitectureTests.fs" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Shopfoo.Home\Shopfoo.Home.fsproj" />
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />
-    <ProjectReference Include="..\Shopfoo.Program.Tests\Shopfoo.Program.Tests.fsproj" />
     <ProjectReference Include="..\Shopfoo.Tests.Common\Shopfoo.Tests.Common.fsproj" />
   </ItemGroup>
 </Project>

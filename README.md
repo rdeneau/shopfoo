@@ -141,5 +141,5 @@ Several domains are involved: Catalog, Sales, Purchases, Warehouse.
 - [x] Install Iconify and FontAwesome 6 Solid icons via Glutinum
 - [x] Use FontAwesome icons
 - [x] Workflow tests
-- [ ] Architecture tests
+- [x] Architecture tests
 - [ ] UI tests
