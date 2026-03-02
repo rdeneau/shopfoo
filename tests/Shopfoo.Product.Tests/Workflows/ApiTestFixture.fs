@@ -1,4 +1,4 @@
-namespace Shopfoo.Product.Tests
+namespace Shopfoo.Product.Tests.Workflows
 
 open System
 open Microsoft.Extensions.DependencyInjection

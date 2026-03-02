@@ -1,4 +1,4 @@
-namespace Shopfoo.Product.Tests
+namespace Shopfoo.Product.Tests.Workflows
 
 open System
 open FsCheck
@@ -7,9 +7,9 @@ open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Product.Data.Books
-open Shopfoo.Product.Tests
-open Shopfoo.Product.Tests.Examples
-open Shopfoo.Product.Tests.Types
+open Shopfoo.Product.Tests.Workflows
+open Shopfoo.Product.Tests.Workflows.Examples
+open Shopfoo.Product.Tests.Workflows.Types
 open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
 open TUnit.Core

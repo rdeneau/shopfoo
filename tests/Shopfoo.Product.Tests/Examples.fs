@@ -1,4 +1,4 @@
-﻿module Shopfoo.Product.Tests.Examples
+﻿module Shopfoo.Product.Tests.Workflows.Examples
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog

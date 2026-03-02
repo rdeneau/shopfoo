@@ -1,4 +1,4 @@
-﻿module Shopfoo.Product.Tests.Types
+﻿module Shopfoo.Product.Tests.Workflows.Types
 
 open FsCheck
 open Shopfoo.Domain.Types.Common

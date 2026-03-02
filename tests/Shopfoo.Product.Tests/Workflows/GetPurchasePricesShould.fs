@@ -1,11 +1,11 @@
-namespace Shopfoo.Product.Tests
+namespace Shopfoo.Product.Tests.Workflows
 
 open FsCheck
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Product.Data.Helpers
-open Shopfoo.Product.Tests
-open Shopfoo.Product.Tests.Types.Purchases
+open Shopfoo.Product.Tests.Workflows
+open Shopfoo.Product.Tests.Workflows.Types.Purchases
 open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
 open TUnit.Core

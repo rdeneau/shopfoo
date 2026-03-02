@@ -1,10 +1,10 @@
-namespace Shopfoo.Product.Tests
+namespace Shopfoo.Product.Tests.Workflows
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Product.Data.Books
-open Shopfoo.Product.Tests
-open Shopfoo.Product.Tests.Examples
+open Shopfoo.Product.Tests.Workflows
+open Shopfoo.Product.Tests.Workflows.Examples
 open Swensen.Unquote
 open TUnit.Core
 

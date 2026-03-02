@@ -10,7 +10,7 @@
   </PropertyGroup>
   <ItemGroup>
     <Compile Include="Examples.fs" />
-    <Compile Include="OpenLibrary\KeySanitizingShould.fs" />
+    <Compile Include="Data\OpenLibraryShould.fs" />
     <Compile Include="Workflows\Types.fs" />
     <Compile Include="Workflows\ApiTestFixture.fs" />
     <Compile Include="Workflows\AddProductShould.fs" />
