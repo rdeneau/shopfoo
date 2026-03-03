@@ -14,11 +14,11 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type Model = { Personas: Remote<User list> }
+type Model = { Personas: Remote<Persona list> }
 
 type Msg =
     | HomeDataFetched of ApiResult<HomeIndexResponse * Translations>
-    | Login of User
+    | Login of Persona
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -33,7 +33,7 @@ let private init (env: #Env.IFullContext) =
     { Personas = Remote.Loading }, // ↩
     Cmd.loadHomeData (env.FullContext.PrepareQueryWithTranslations())
 
-let private update (env: #Env.IFillTranslations & #Env.ILoginUser) msg (model: Model) =
+let private update (env: #Env.IFillTranslations & #Env.ILogin) msg (model: Model) =
     match msg with
     | Msg.HomeDataFetched(Ok(data, translations)) ->
         { model with Personas = Remote.Loaded data.Personas }, // ↩
@@ -42,8 +42,9 @@ let private update (env: #Env.IFillTranslations & #Env.ILoginUser) msg (model: M
     | Msg.HomeDataFetched(Error apiError) ->
         { model with Personas = Remote.LoadError apiError }, // ↩
         Cmd.ofEffect (fun _ -> env.FillTranslations apiError.Translations)
-    | Msg.Login user -> // ↩
-        model, Cmd.ofEffect (fun _ -> env.LoginUser user)
+
+    | Msg.Login persona -> // ↩
+        model, Cmd.ofEffect (fun _ -> env.Login persona)
 
 type private Users =
     static member th(key, text, ?icon: ReactElement, ?className) =
@@ -108,12 +109,12 @@ let LoginView env =
                     prop.text apiError.ErrorMessage
                 ]
 
-            | Remote.Loaded users ->
+            | Remote.Loaded personas ->
                 let authUsers = [
-                    for user in users do
-                        match user with
+                    for persona in personas do
+                        match persona.User with
                         | User.Anonymous -> ()
-                        | User.LoggedIn(userName, claims) -> user, userName, claims
+                        | User.LoggedIn(userName, claims) -> persona, userName, claims
                 ]
 
                 Daisy.fieldset [
@@ -159,7 +160,7 @@ let LoginView env =
                                 Html.tbody [
                                     prop.key "users-table-tbody"
                                     prop.children [
-                                        for i, (user, userName, claims) in Seq.indexed authUsers do
+                                        for i, (persona, userName, claims) in Seq.indexed authUsers do
                                             let accessTo feat =
                                                 match claims |> Map.tryFind feat with
                                                 | Some Access.Edit -> translations.Login.Access.Edit
@@ -169,7 +170,7 @@ let LoginView env =
                                             Html.tr [
                                                 prop.key $"users-tr-%i{i}"
                                                 prop.className "hover:bg-accent hover:fg-accent hover:cursor-pointer"
-                                                prop.onClick (fun _ -> dispatch (Msg.Login user))
+                                                prop.onClick (fun _ -> dispatch (Msg.Login persona))
                                                 prop.children [
                                                     Users.td ($"%i{i}-num", string (i + 1))
                                                     Users.td ($"%i{i}-user", userName, UserIcon userName)

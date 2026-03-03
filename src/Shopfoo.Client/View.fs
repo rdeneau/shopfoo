@@ -28,7 +28,7 @@ open Shopfoo.Shared.Translations
 type private Msg =
     | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
     | FillTranslations of Translations
-    | Login of User
+    | Login of Persona
     | Logout
     | ThemeChanged of Theme
     | UrlChanged of Page
@@ -103,14 +103,14 @@ let private update (msg: Msg) (model: Model) : Model * Cmd<Msg> =
     | Msg.FillTranslations translations -> // ↩
         { model with FullContext = model.FullContext.FillTranslations(translations) }, Cmd.none
 
-    | Msg.Login user ->
-        { model with Model.FullContext.User = user },
+    | Msg.Login persona ->
+        { model with FullContext = model.FullContext.WithPersona(persona) },
         match model.Page with
         | Page.Login -> Cmd.navigatePage Page.ProductIndexDefaults
         | _ -> Cmd.none
 
     | Msg.Logout ->
-        { model with Model.FullContext.User = User.Anonymous }, // ↩
+        { model with FullContext = model.FullContext.WithAnonymousUser() }, // ↩
         Cmd.navigatePage Page.Login
 
     | Msg.ThemeChanged theme -> { model with Theme = theme }, Cmd.ofEffect (fun _ -> theme.ApplyOnHtml())
@@ -129,8 +129,8 @@ type private Env(fullContext, dispatch) =
     interface Env.IFillTranslations with
         member _.FillTranslations translations = dispatch (Msg.FillTranslations translations)
 
-    interface Env.ILoginUser with
-        member _.LoginUser user = dispatch (Msg.Login user)
+    interface Env.ILogin with
+        member _.Login persona = dispatch (Msg.Login persona)
 
     interface Env.IShowToast with
         member _.ShowToast toast = dispatch (Msg.ToastOn toast)

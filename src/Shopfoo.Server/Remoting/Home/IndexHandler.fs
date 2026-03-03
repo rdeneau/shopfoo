@@ -1,5 +1,6 @@
 ﻿namespace Shopfoo.Server.Remoting.Home
 
+open Shopfoo.Domain.Types.Security
 open Shopfoo.Server.Remoting
 open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
@@ -8,9 +9,11 @@ open Shopfoo.Shared.Remoting
 type IndexHandler(api: FeatApi, authorizedPageCodes) =
     inherit SecureQueryDataAndTranslationsHandler<unit, HomeIndexResponse>()
 
+    let buildToken user = user |> JsonFSharp.serialize |> AuthToken
+
     override _.Handle lang request user =
         async {
-            let! personas = api.Home.GetPersonas()
+            let! personaUsers = api.Home.GetPersonaUsers()
 
             let! translations =
                 api.Home.GetAllowedTranslations {
@@ -21,7 +24,8 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
 
             let response = ResponseBuilder.withTranslations user translations
 
-            match personas with
-            | Ok personas -> return response.Ok { Personas = personas }
-            | Error error -> return response.ApiError error
+            return
+                match personaUsers with
+                | Ok users -> response.Ok { Personas = [ for user in users -> { User = user; Token = buildToken user } ] }
+                | Error error -> response.ApiError error
         }

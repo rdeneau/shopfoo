@@ -11,6 +11,7 @@
   <ItemGroup>
     <Content Include="paket.references" />
     <Compile Include="ArchitectureTests.fs" />
+    <Compile Include="AuthorizeHandlerShould.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Server\Shopfoo.Server.fsproj" />

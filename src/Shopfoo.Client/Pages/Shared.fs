@@ -4,7 +4,6 @@ open Shopfoo.Client.Remoting
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
-open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
@@ -39,13 +38,13 @@ module Env =
         abstract member FullContext: FullContext
 
     type IFillTranslations =
-        abstract member FillTranslations: translations: Translations -> unit
+        abstract member FillTranslations: Translations -> unit
 
-    type ILoginUser =
-        abstract member LoginUser: user: User -> unit
+    type ILogin =
+        abstract member Login: Persona -> unit
 
     type IShowToast =
-        abstract member ShowToast: toast: Toast -> unit
+        abstract member ShowToast: Toast -> unit
 
     let fillTranslations (env: #IFillTranslations) translations = env.FillTranslations translations
     let prepareQueryWithTranslations (env: #IFullContext) query = env.FullContext.PrepareQueryWithTranslations query

@@ -38,7 +38,7 @@ let private checkToken (claims: Claims) (token: AuthToken option) =
             | User.LoggedIn(_, userClaims) -> userClaims |> Claims.toSet
 
         let requiredClaims = claims |> Claims.toSet
-        let missingClaims = Set.intersect requiredClaims userClaims
+        let missingClaims = requiredClaims - userClaims
 
         if missingClaims.IsEmpty then
             Result.Ok user

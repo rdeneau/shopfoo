@@ -1,6 +1,5 @@
 ﻿module Shopfoo.Shared.Remoting
 
-open System
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
@@ -8,6 +7,8 @@ open Shopfoo.Domain.Types.Translations
 open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Translations
+
+type Persona = { User: User; Token: AuthToken }
 
 [<RequireQualifiedAccess>]
 type FullContext = {
@@ -22,6 +23,9 @@ type FullContext = {
         Token = None
         Translations = AppTranslations()
     }
+
+    member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
+    member this.WithPersona(persona: Persona) = { this with User = persona.User; Token = Some persona.Token }
 
     member this.FillTranslations(translations: Translations) = // ↩
         { this with Translations = this.Translations.Fill translations }
@@ -117,7 +121,7 @@ module CatalogApi =
 
 [<AutoOpen>]
 module HomeApi =
-    type HomeIndexResponse = { Personas: User list }
+    type HomeIndexResponse = { Personas: Persona list }
 
     type GetTranslationsRequest = { Lang: Lang; PageCodes: Set<PageCode> }
     type GetTranslationsResponse = { Lang: Lang; Translations: Translations }
