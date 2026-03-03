@@ -8,7 +8,11 @@ open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Translations
 
-type Persona = { User: User; Token: AuthToken }
+type Persona = {
+    Name: PersonaName
+    Claims: Claims
+    Token: AuthToken
+}
 
 [<RequireQualifiedAccess>]
 type FullContext = {
@@ -25,7 +29,7 @@ type FullContext = {
     }
 
     member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
-    member this.WithPersona(persona: Persona) = { this with User = persona.User; Token = Some persona.Token }
+    member this.WithPersona(persona: Persona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
 
     member this.FillTranslations(translations: Translations) = // ↩
         { this with Translations = this.Translations.Fill translations }

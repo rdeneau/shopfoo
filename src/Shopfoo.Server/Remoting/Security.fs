@@ -24,6 +24,8 @@ module JsonFSharp =
     let deserialize<'T> (json: string) = JsonSerializer.Deserialize<'T>(json, options)
     let serialize (x: 'T) = JsonSerializer.Serialize<'T>(x, options)
 
+let internal tokenFor user = user |> JsonFSharp.serialize |> AuthToken
+
 let private checkToken (claims: Claims) (token: AuthToken option) =
     try
         let user =

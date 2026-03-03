@@ -110,13 +110,6 @@ let LoginView env =
                 ]
 
             | Remote.Loaded personas ->
-                let authUsers = [
-                    for persona in personas do
-                        match persona.User with
-                        | User.Anonymous -> ()
-                        | User.LoggedIn(userName, claims) -> persona, userName, claims
-                ]
-
                 Daisy.fieldset [
                     prop.key "login-fieldset"
                     prop.className "bg-base-200 border border-base-300 rounded-box p-4"
@@ -160,9 +153,9 @@ let LoginView env =
                                 Html.tbody [
                                     prop.key "users-table-tbody"
                                     prop.children [
-                                        for i, (persona, userName, claims) in Seq.indexed authUsers do
+                                        for i, persona in Seq.indexed personas do
                                             let accessTo feat =
-                                                match claims |> Map.tryFind feat with
+                                                match persona.Claims |> Map.tryFind feat with
                                                 | Some Access.Edit -> translations.Login.Access.Edit
                                                 | Some Access.View -> translations.Login.Access.View
                                                 | None -> ""
@@ -173,7 +166,7 @@ let LoginView env =
                                                 prop.onClick (fun _ -> dispatch (Msg.Login persona))
                                                 prop.children [
                                                     Users.td ($"%i{i}-num", string (i + 1))
-                                                    Users.td ($"%i{i}-user", userName, UserIcon userName)
+                                                    Users.td ($"%i{i}-user", persona.Name, UserIcon persona.Name)
                                                     Users.td ($"%i{i}-feat-about", (accessTo Feat.About))
                                                     Users.td ($"%i{i}-feat-catalog", (accessTo Feat.Catalog))
                                                     Users.td ($"%i{i}-feat-sales", (accessTo Feat.Sales))

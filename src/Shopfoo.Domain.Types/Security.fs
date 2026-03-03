@@ -44,16 +44,18 @@ type User =
 let (|UserCanAccess|_|) feat (user: User) = user.CanAccess feat |> Option.ofBool
 let (|UserCanNotAccess|_|) feat (user: User) = not (user.CanAccess feat) |> Option.ofBool
 
-[<RequireQualifiedAccess>]
-module UserNames =
-    let guest = "Guest"
-    let catalogEditor = "Catalog Editor"
-    let sales = "Sales"
-    let productManager = "Product Manager"
-    let administrator = "Administrator"
-
 type AuthToken = AuthToken of string
 
 type AuthError =
     | TokenInvalid
     | UserUnauthorized
+
+type PersonaName = string
+
+[<RequireQualifiedAccess>]
+module PersonaName =
+    let guest: PersonaName = "Guest"
+    let catalogEditor: PersonaName = "Catalog Editor"
+    let sales: PersonaName = "Sales"
+    let productManager: PersonaName = "Product Manager"
+    let administrator: PersonaName = "Administrator"

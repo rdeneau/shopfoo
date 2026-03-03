@@ -8,15 +8,15 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Shared.Translations
 
 let UserIcon userName =
-    if userName = UserNames.guest then
+    if userName = PersonaName.guest then
         icon fa6Solid.user
-    elif userName = UserNames.catalogEditor then
+    elif userName = PersonaName.catalogEditor then
         icon fa6Solid.userTag
-    elif userName = UserNames.sales then
+    elif userName = PersonaName.sales then
         icon fa6Solid.userPen
-    elif userName = UserNames.productManager then
+    elif userName = PersonaName.productManager then
         icon fa6Solid.userTie
-    elif userName = UserNames.administrator then
+    elif userName = PersonaName.administrator then
         icon fa6Solid.userShield
     else
         Html.none

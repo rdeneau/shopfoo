@@ -11,7 +11,7 @@ open TUnit.Core
 module private Helpers =
     let catalogViewClaims = Claims.single Feat.Catalog Access.View
 
-    let catalogEditor = User.LoggedIn(UserNames.catalogEditor, Map [ Feat.About, Access.View; Feat.Catalog, Access.Edit ])
+    let catalogEditor = User.LoggedIn(PersonaName.catalogEditor, Map [ Feat.About, Access.View; Feat.Catalog, Access.Edit ])
 
     /// Stub handler that echoes back the authorized user
     type EchoUserHandler() =
@@ -48,7 +48,7 @@ type AuthorizeHandlerShould() =
     [<Test>]
     member _.``reject the request given a user without the required claims``() =
         async {
-            let guest = User.LoggedIn(UserNames.guest, Map [ Feat.About, Access.View; Feat.Catalog, Access.View ])
+            let guest = User.LoggedIn(PersonaName.guest, Map [ Feat.About, Access.View; Feat.Catalog, Access.View ])
             let request = makeRequest (tokenFor guest)
             let editClaims = Claims.single Feat.Catalog Access.Edit
             let! result = authorizeHandler editClaims echoHandler request

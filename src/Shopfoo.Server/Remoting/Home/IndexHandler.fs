@@ -9,11 +9,9 @@ open Shopfoo.Shared.Remoting
 type IndexHandler(api: FeatApi, authorizedPageCodes) =
     inherit SecureQueryDataAndTranslationsHandler<unit, HomeIndexResponse>()
 
-    let buildToken user = user |> JsonFSharp.serialize |> AuthToken
-
     override _.Handle lang request user =
         async {
-            let! personaUsers = api.Home.GetPersonaUsers()
+            let! personas = api.Home.GetPersonas()
 
             let! translations =
                 api.Home.GetAllowedTranslations {
@@ -25,7 +23,17 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
             let response = ResponseBuilder.withTranslations user translations
 
             return
-                match personaUsers with
-                | Ok users -> response.Ok { Personas = [ for user in users -> { User = user; Token = buildToken user } ] }
+                match personas with
+                | Ok personas ->
+                    response.Ok {
+                        Personas = [
+                            for name, claims in personas ->
+                                {
+                                    Name = name
+                                    Claims = claims
+                                    Token = tokenFor (User.LoggedIn(name, claims))
+                                }
+                        ]
+                    }
                 | Error error -> response.ApiError error
         }
