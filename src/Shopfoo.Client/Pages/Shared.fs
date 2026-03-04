@@ -41,7 +41,7 @@ module Env =
         abstract member FillTranslations: Translations -> unit
 
     type ILogin =
-        abstract member Login: Persona -> unit
+        abstract member Login: AuthPersona -> unit
 
     type IShowToast =
         abstract member ShowToast: Toast -> unit

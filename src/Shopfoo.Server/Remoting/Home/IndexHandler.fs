@@ -27,12 +27,7 @@ type IndexHandler(api: FeatApi, authorizedPageCodes) =
                 | Ok personas ->
                     response.Ok {
                         Personas = [
-                            for name, claims in personas ->
-                                {
-                                    Name = name
-                                    Claims = claims
-                                    Token = tokenFor (User.LoggedIn(name, claims))
-                                }
+                            for persona in personas -> { Persona = persona; Token = tokenFor (User.LoggedIn(persona.Name, persona.Claims)) }
                         ]
                     }
                 | Error error -> response.ApiError error

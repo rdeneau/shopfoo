@@ -22,6 +22,7 @@
     <Compile Include="Workflows\GetPurchasePricesShould.fs" />
     <Compile Include="Workflows\MarkAsSoldOutShould.fs" />
     <Compile Include="Workflows\SavePricesShould.fs" />
+    <Compile Include="Workflows\ResetAllCachesShould.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Product\Shopfoo.Product.fsproj" />

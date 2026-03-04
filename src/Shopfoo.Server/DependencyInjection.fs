@@ -21,6 +21,7 @@ type IServiceCollection with
         |> ignore
 
         services
+            .AddSingleton<Remoting.Admin.AdminApiBuilder>()
             .AddSingleton<Remoting.Catalog.CatalogApiBuilder>()
             .AddSingleton<Remoting.Home.HomeApiBuilder>()
             .AddSingleton<Remoting.Prices.PricesApiBuilder>()

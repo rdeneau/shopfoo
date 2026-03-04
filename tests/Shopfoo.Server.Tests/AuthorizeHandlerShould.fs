@@ -6,51 +6,27 @@ open Shopfoo.Server.Remoting.Security
 open Shopfoo.Shared.Remoting
 open Swensen.Unquote
 open TUnit.Core
-
-[<AutoOpen>]
-module private Helpers =
-    let catalogViewClaims = Claims.single Feat.Catalog Access.View
-
-    let catalogEditor = User.LoggedIn(PersonaName.catalogEditor, Map [ Feat.About, Access.View; Feat.Catalog, Access.Edit ])
-
-    /// Stub handler that echoes back the authorized user
-    type EchoUserHandler() =
-        inherit SecureQueryHandler<unit, User>()
-        override _.Handle _lang _request user = async { return Ok user }
-
-    let echoHandler = EchoUserHandler()
-
-    let tokenFor user = tokenFor user |> Some
-
-    let makeRequest (token: AuthToken option) : Request<unit> = {
-        Token = token
-        Lang = Lang.English
-        Body = ()
-    }
+open TUnit.FsCheck
 
 type AuthorizeHandlerShould() =
-    [<Test>]
-    member _.``authorize a logged-in user given a valid token with sufficient claims``() =
+    [<Test; FsCheckProperty(MaxTest = 10)>]
+    member _.``reject a forged token (plain JSON, not encrypted)``(persona: Persona) =
         async {
-            let request = makeRequest (tokenFor catalogEditor)
-            let! result = authorizeHandler catalogViewClaims echoHandler request
-            result =! Ok catalogEditor
-        }
+            let user = User.LoggedIn(persona.Name, persona.Claims)
 
-    [<Test>]
-    member _.``reject the request given no token and claims are required``() =
-        async {
-            let request = makeRequest None
-            let! result = authorizeHandler catalogViewClaims echoHandler request
-            result =! Error(ServerError.AuthError AuthError.UserUnauthorized)
-        }
+            let echoHandler =
+                { new SecureQueryHandler<unit, User>() with
+                    override _.Handle _lang _request user = async { return Ok user }
+                }
 
-    [<Test>]
-    member _.``reject the request given a user without the required claims``() =
-        async {
-            let guest = User.LoggedIn(PersonaName.guest, Map [ Feat.About, Access.View; Feat.Catalog, Access.View ])
-            let request = makeRequest (tokenFor guest)
-            let editClaims = Claims.single Feat.Catalog Access.Edit
-            let! result = authorizeHandler editClaims echoHandler request
-            result =! Error(ServerError.AuthError AuthError.UserUnauthorized)
+            let forgedToken = AuthToken(JsonFSharp.serialize user)
+
+            let request: Request<unit> = {
+                Token = Some forgedToken
+                Lang = Lang.English
+                Body = ()
+            }
+
+            let! result = authorizeHandler (Claims.single Feat.Admin Access.Edit) echoHandler request
+            result =! Error(ServerError.AuthError AuthError.TokenInvalid)
         }

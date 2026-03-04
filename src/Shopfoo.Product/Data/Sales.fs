@@ -7,12 +7,16 @@ open Shopfoo.Product.Data
 open Shopfoo.Product.Data.Helpers
 
 type SalesRepository(sales: Sale seq) =
+    let initialData = Seq.toList sales
     let repository = FakeRepository(sales, _.SKU)
 
     member _.AddSale(sale: Sale) : unit = repository.Add sale
     member _.GetSales(sku: SKU) : Sale list option = repository.Get sku
+    member _.Reset() = repository.Reset initialData
 
 type internal SalesPipeline(repository: SalesRepository) =
+    member _.ResetCache() = repository.Reset()
+
     member _.GetSales(sku: SKU) : Async<Sale list option> =
         async {
             do! Fake.latencyInMilliseconds 250

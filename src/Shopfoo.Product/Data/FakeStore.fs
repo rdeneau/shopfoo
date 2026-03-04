@@ -60,6 +60,8 @@ module private Extensions =
 type internal FakeStorePipeline(fakeStoreClient: IFakeStoreClient) =
     let cache = InMemoryProductCache()
 
+    member _.ResetCache() = cache.Clear()
+
     member _.GetProducts() : Async<Result<Product list, Error>> =
         asyncResult {
             match cache.TryGetAllProducts() with

@@ -114,7 +114,13 @@ type internal BooksPipeline(repository: BooksRepository) =
                     Error(DataError(DataNotFound(isbn.Value, "Product")))
         }
 
-module private Fakes =
+    member internal _.Reseed(books: BookRaw list) =
+        repository.Clear()
+
+        for book in books do
+            repository.Add(book.ISBN, book)
+
+module internal Fakes =
     let andyHunt = { Id = OLID "OL1391034A"; Name = "Andy Hunt" }
     let daveThomas = { Id = OLID "OL1439324A"; Name = "Dave Thomas" }
     let douglasCrockford = { Id = OLID "OL14426346A"; Name = "Douglas Crockford" }
@@ -126,7 +132,7 @@ module private Fakes =
     let uncleBobMartin = { Id = OLID "OL2653686A"; Name = "Robert C. Martin" }
     let vladimirKhorikov = { Id = OLID "OL8466340A"; Name = "Vladimir Khorikov" }
 
-    let private cleanArchitecture = {
+    let cleanArchitecture = {
         ISBN = ISBN.CleanArchitecture
         Title = "Clean Architecture"
         Subtitle = "A Craftsman's Guide to Software Structure and Design"
@@ -136,7 +142,7 @@ module private Fakes =
         Tags = [ "Architecture"; "Software Craftsmanship" ]
     }
 
-    let private cleanCode = {
+    let cleanCode = {
         ISBN = ISBN.CleanCode
         Title = "Clean Code"
         Subtitle = "A Handbook of Agile Software Craftsmanship"
@@ -146,7 +152,7 @@ module private Fakes =
         Tags = [ "OOP"; "Software Craftsmanship" ]
     }
 
-    let private codeThatFitsInYourHead = {
+    let codeThatFitsInYourHead = {
         ISBN = ISBN.CodeThatFitsInYourHead
         Title = "Code That Fits in Your Head"
         Subtitle = "Heuristics for Software Engineering"
@@ -156,7 +162,7 @@ module private Fakes =
         Tags = [ "Software Craftsmanship" ]
     }
 
-    let private dependencyInjection = {
+    let dependencyInjection = {
         ISBN = ISBN.DependencyInjection
         Title = "Dependency Injection"
         Subtitle = "Principles, Practices, and Patterns"
@@ -166,7 +172,7 @@ module private Fakes =
         Tags = [ "OOP"; "Software Craftsmanship" ]
     }
 
-    let private domainDrivenDesign = {
+    let domainDrivenDesign = {
         ISBN = ISBN.DomainDrivenDesign
         Title = "Domain-Driven Design"
         Subtitle = "Tackling Complexity in the Heart of Software"
@@ -179,7 +185,7 @@ module private Fakes =
         Tags = [ "Domain-Driven Design" ]
     }
 
-    let private domainDrivenDesignReference = {
+    let domainDrivenDesignReference = {
         ISBN = ISBN.DomainDrivenDesignReference
         Title = "Domain-Driven Design Reference"
         Subtitle = "Definitions and Pattern Summaries"
@@ -189,7 +195,7 @@ module private Fakes =
         Tags = [ "Domain-Driven Design" ]
     }
 
-    let private domainModelingMadeFunctional = {
+    let domainModelingMadeFunctional = {
         ISBN = ISBN.DomainModelingMadeFunctional
         Title = "Domain Modeling Made Functional"
         Subtitle = "Tackle Software Complexity with Domain-Driven Design and F#"
@@ -205,7 +211,7 @@ module private Fakes =
         Tags = [ "Domain-Driven Design"; "F#" ]
     }
 
-    let private fsharpInActions = {
+    let fsharpInActions = {
         ISBN = ISBN.FsharpInActions
         Title = "F# in Action"
         Subtitle = ""
@@ -216,7 +222,7 @@ module private Fakes =
         Tags = [ "F#" ]
     }
 
-    let private howJavaScriptWorks = {
+    let howJavaScriptWorks = {
         ISBN = ISBN.HowJavaScriptWorks
         Title = "How JavaScript Works"
         Subtitle = ""
@@ -226,7 +232,7 @@ module private Fakes =
         Tags = [ "JavaScript" ]
     }
 
-    let private javaScriptTheGoodParts = {
+    let javaScriptTheGoodParts = {
         ISBN = ISBN.JavaScriptTheGoodParts
         Title = "JavaScript"
         Subtitle = "The Good Parts"
@@ -236,7 +242,7 @@ module private Fakes =
         Tags = [ "JavaScript" ]
     }
 
-    let private refactoring = {
+    let refactoring = {
         ISBN = ISBN.Refactoring
         Title = "Refactoring"
         Subtitle = "Improving the Design of Existing Code"
@@ -246,7 +252,7 @@ module private Fakes =
         Tags = [ "Software Craftsmanship" ]
     }
 
-    let private thePragmaticProgrammer = {
+    let thePragmaticProgrammer = {
         ISBN = ISBN.ThePragmaticProgrammer
         Title = "The Pragmatic Programmer"
         Subtitle = "Your Journey to Mastery"
@@ -258,7 +264,7 @@ module private Fakes =
         Tags = [ "Software Craftsmanship" ]
     }
 
-    let private unitTesting = {
+    let unitTesting = {
         ISBN = ISBN.UnitTesting
         Title = "Unit Testing"
         Subtitle = "Principles, Practices, and Patterns"
@@ -288,3 +294,6 @@ module private Fakes =
 module BooksRepository =
     let ofList (books: BookRaw list) : BooksRepository = books |> Dictionary.ofListBy _.ISBN
     let internal instance = ofList Fakes.allBooks
+
+type BooksPipeline with
+    member internal this.ResetCache() = this.Reseed(Fakes.allBooks)

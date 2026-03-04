@@ -50,12 +50,63 @@ type AuthError =
     | TokenInvalid
     | UserUnauthorized
 
-type PersonaName = string
-
 [<RequireQualifiedAccess>]
-module PersonaName =
-    let guest: PersonaName = "Guest"
-    let catalogEditor: PersonaName = "Catalog Editor"
-    let sales: PersonaName = "Sales"
-    let productManager: PersonaName = "Product Manager"
-    let administrator: PersonaName = "Administrator"
+type Persona =
+    | Guest
+    | CatalogEditor
+    | Sales
+    | ProductManager
+    | Administrator
+
+    member this.Name: string =
+        match this with
+        | Guest -> "Guest"
+        | CatalogEditor -> "Catalog Editor"
+        | Sales -> "Sales"
+        | ProductManager -> "Product Manager"
+        | Administrator -> "Administrator"
+
+    member this.Claims: Claims =
+        match this with
+        | Guest ->
+            Map [ // ↩
+                Feat.About, Access.View
+                Feat.Catalog, Access.View
+            ]
+        | CatalogEditor ->
+            Map [
+                Feat.About, Access.View
+                Feat.Catalog, Access.Edit
+                Feat.Sales, Access.View
+                Feat.Warehouse, Access.View
+            ]
+        | Sales ->
+            Map [
+                Feat.About, Access.View
+                Feat.Catalog, Access.View
+                Feat.Sales, Access.Edit
+                Feat.Warehouse, Access.Edit
+            ]
+        | ProductManager ->
+            Map [
+                Feat.About, Access.View
+                Feat.Catalog, Access.Edit
+                Feat.Sales, Access.Edit
+                Feat.Warehouse, Access.Edit
+            ]
+        | Administrator ->
+            Map [
+                Feat.About, Access.View
+                Feat.Catalog, Access.Edit
+                Feat.Sales, Access.Edit
+                Feat.Warehouse, Access.Edit
+                Feat.Admin, Access.Edit
+            ]
+
+    static member All = [
+        Guest
+        CatalogEditor
+        Sales
+        ProductManager
+        Administrator
+    ]

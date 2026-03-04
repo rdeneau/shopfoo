@@ -15,7 +15,7 @@ type GetAllowedTranslationsRequest = {
 [<Interface>]
 type IHomeApi =
     abstract member GetAllowedTranslations: request: GetAllowedTranslationsRequest -> Async<Result<Translations, Error>>
-    abstract member GetPersonas: unit -> Async<Result<(PersonaName * Claims) list, Error>>
+    abstract member GetPersonas: unit -> Async<Result<Persona list, Error>>
 
 type internal Api() =
     interface IHomeApi with
@@ -38,7 +38,7 @@ type internal Api() =
                 | None -> return Error(DataError(DataRelatedError.DataNotFound(Id = string request.lang, Type = "")))
             }
 
-        member _.GetPersonas() = async { return Ok Users.personas }
+        member _.GetPersonas() = async { return Ok Persona.All }
 
 module DependencyInjection =
     open Microsoft.Extensions.DependencyInjection

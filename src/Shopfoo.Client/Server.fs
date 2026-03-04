@@ -7,6 +7,7 @@ let private options = Remoting.createApi () |> Remoting.withRouteBuilder Route.b
 
 /// A proxy you can use to talk to server directly
 let api: RootApi = {
+    Admin = Remoting.buildProxy options
     Catalog = Remoting.buildProxy options
     Home = Remoting.buildProxy options
     Prices = Remoting.buildProxy options

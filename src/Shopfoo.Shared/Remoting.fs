@@ -8,11 +8,12 @@ open Shopfoo.Domain.Types.Warehouse
 open Shopfoo.Shared.Errors
 open Shopfoo.Shared.Translations
 
-type Persona = {
-    Name: PersonaName
-    Claims: Claims
+type AuthPersona = {
+    Persona: Persona
     Token: AuthToken
-}
+} with
+    member this.Name = this.Persona.Name
+    member this.Claims = this.Persona.Claims
 
 [<RequireQualifiedAccess>]
 type FullContext = {
@@ -29,7 +30,7 @@ type FullContext = {
     }
 
     member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
-    member this.WithPersona(persona: Persona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
+    member this.WithPersona(persona: AuthPersona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
 
     member this.FillTranslations(translations: Translations) = // ↩
         { this with Translations = this.Translations.Fill translations }
@@ -125,7 +126,7 @@ module CatalogApi =
 
 [<AutoOpen>]
 module HomeApi =
-    type HomeIndexResponse = { Personas: Persona list }
+    type HomeIndexResponse = { Personas: AuthPersona list }
 
     type GetTranslationsRequest = { Lang: Lang; PageCodes: Set<PageCode> }
     type GetTranslationsResponse = { Lang: Lang; Translations: Translations }
@@ -159,7 +160,15 @@ module PricesApi =
     } with
         interface IApi
 
+[<AutoOpen>]
+module AdminApi =
+    type AdminApi = {
+        ResetProductCache: Command<unit>
+    } with
+        interface IApi
+
 type RootApi = {
+    Admin: AdminApi
     Catalog: CatalogApi
     Home: HomeApi
     Prices: PricesApi

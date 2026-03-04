@@ -12,10 +12,16 @@
     <Content Include="paket.references" />
     <Compile Include="ArchitectureTests.fs" />
     <Compile Include="AuthorizeHandlerShould.fs" />
+    <Compile Include="RemotingApi\Helpers.fs" />
+    <Compile Include="RemotingApi\AdminApiSecurityTests.fs" />
+    <Compile Include="RemotingApi\CatalogApiSecurityTests.fs" />
+    <Compile Include="RemotingApi\HomeApiSecurityTests.fs" />
+    <Compile Include="RemotingApi\PricesApiSecurityTests.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Server\Shopfoo.Server.fsproj" />
     <ProjectReference Include="..\Shopfoo.Feat.Tests\Shopfoo.Feat.Tests.fsproj" />
+    <ProjectReference Include="..\Shopfoo.Program.Tests\Shopfoo.Program.Tests.fsproj" />
     <ProjectReference Include="..\Shopfoo.Tests.Common\Shopfoo.Tests.Common.fsproj" />
   </ItemGroup>
   <Import Project="..\..\.paket\Paket.Restore.targets" />

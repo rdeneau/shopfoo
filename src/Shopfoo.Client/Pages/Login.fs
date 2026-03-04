@@ -14,11 +14,11 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type Model = { Personas: Remote<Persona list> }
+type Model = { Personas: Remote<AuthPersona list> }
 
 type Msg =
     | HomeDataFetched of ApiResult<HomeIndexResponse * Translations>
-    | Login of Persona
+    | Login of AuthPersona
 
 [<RequireQualifiedAccess>]
 module private Cmd =

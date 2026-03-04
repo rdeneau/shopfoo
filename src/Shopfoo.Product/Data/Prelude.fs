@@ -29,6 +29,12 @@ type internal FakeRepository<'k, 'v when 'k: comparison>(data: 'v seq, getKey: '
         |> Option.ofPair
         |> Option.map List.ofSeq
 
+    member _.Reset(data: 'v seq) =
+        repository.Clear()
+
+        for key, values in data |> Seq.groupBy getKey do
+            repository.Add(key, ResizeArray values)
+
 [<RequireQualifiedAccess>]
 module internal ISBN =
     let CleanArchitecture = ISBN "9780134494166"

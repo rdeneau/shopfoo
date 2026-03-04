@@ -22,6 +22,10 @@ type internal CatalogPipeline
     ) =
     let loggerFactory = monitors.WorkflowLoggerFactory(Manifest.DomainName)
 
+    member _.ResetCache() =
+        booksPipeline.ResetCache()
+        fakeStorePipeline.ResetCache()
+
     member _.GetProducts(provider: Provider) : Async<Product list> =
         async {
             match provider with

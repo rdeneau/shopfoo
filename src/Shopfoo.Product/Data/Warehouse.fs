@@ -7,12 +7,16 @@ open Shopfoo.Product.Data
 open Shopfoo.Product.Data.Helpers
 
 type StockEventRepository(stockEvents: StockEvent seq) =
+    let initialData = Seq.toList stockEvents
     let repository = FakeRepository(stockEvents, _.SKU)
 
     member _.AddStockEvent(stockEvent: StockEvent) : unit = repository.Add stockEvent
     member _.GetStockEvents(sku: SKU) : StockEvent list option = repository.Get sku
+    member _.Reset() = repository.Reset initialData
 
 type internal WarehousePipeline(repository: StockEventRepository) =
+    member _.ResetCache() = repository.Reset()
+
     member _.AdjustStock({ SKU = sku; Quantity = quantity }: Stock) : Async<Result<unit, 'a>> =
         async {
             do! Fake.latencyInMilliseconds 250

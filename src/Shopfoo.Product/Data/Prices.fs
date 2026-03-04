@@ -51,6 +51,12 @@ type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: Fa
                     Error(DataError(DataNotFound(sku.Value, "Prices")))
         }
 
+    member internal _.Reseed(allPrices: Prices list) =
+        repository.Clear()
+
+        for prices in allPrices do
+            repository.Add(prices.SKU, prices)
+
 module private Fakes =
     let private cleanArchitecture = Prices.Create(ISBN.CleanArchitecture, USD, 39.90m)
     let private cleanCode = Prices.Create(ISBN.CleanCode, EUR, 46.46m, 54.20m)
@@ -82,3 +88,6 @@ module private Fakes =
 module PricesRepository =
     let ofList (allPrices: Prices list) : PricesRepository = allPrices |> Dictionary.ofListBy _.SKU
     let internal instance = ofList Fakes.allPrices
+
+type PricesPipeline with
+    member internal this.ResetCache() = this.Reseed(Fakes.allPrices)

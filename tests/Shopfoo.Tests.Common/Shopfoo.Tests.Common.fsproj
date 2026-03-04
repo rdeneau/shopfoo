@@ -13,10 +13,11 @@
     <Content Include="paket.references" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="NetArchTestExtensions.fs" />
     <Compile Include="FsCheckArbs\Common.fs" />
     <Compile Include="FsCheckArbs\Domain.fs" />
     <Compile Include="FsCheckArbs\Shopfoo.fs" />
+    <Compile Include="NetArchTestExtensions.fs" />
+    <Compile Include="UnquoteExtensions.fs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Shopfoo.Common\Shopfoo.Common.fsproj" />

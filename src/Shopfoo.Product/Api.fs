@@ -39,6 +39,8 @@ type IProductApi =
     abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
     abstract member SearchBooks: (string -> Async<Result<BookSearchResults, Error>>)
 
+    abstract member ResetAllCaches: (unit -> Async<Result<unit, Error>>)
+
 [<Sealed>]
 type internal Api
     (
@@ -121,3 +123,14 @@ type internal Api
 
         member val SearchAuthors = openLibraryPipeline.SearchAuthors
         member val SearchBooks = openLibraryPipeline.SearchBooks
+
+        member api.ResetAllCaches = api.ResetAllCaches
+
+    member _.ResetAllCaches() =
+        async {
+            catalogPipeline.ResetCache()
+            pricesPipeline.ResetCache()
+            salesPipeline.ResetCache()
+            warehousePipeline.ResetCache()
+            return Ok()
+        }

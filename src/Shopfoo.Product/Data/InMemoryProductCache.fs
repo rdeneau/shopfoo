@@ -39,6 +39,8 @@ type internal InMemoryProductCache() =
             return ()
         }
 
+    member _.Clear() = cache.Clear()
+
     member this.SetProduct(fsid, product) = this.Set(fsid, product = product)
     member this.SetPrices(fsid, prices) = this.Set(fsid, prices = prices)
 

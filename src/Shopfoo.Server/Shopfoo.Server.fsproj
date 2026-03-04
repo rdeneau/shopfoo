@@ -21,6 +21,8 @@
     <Content Include="paket.references" />
     <Compile Include="Remoting\FeatApi.fs" />
     <Compile Include="Remoting\Security.fs" />
+    <Compile Include="Remoting\Admin\ResetProductCacheHandler.fs" />
+    <Compile Include="Remoting\Admin\AdminApiBuilder.fs" />
     <Compile Include="Remoting\Catalog\AddProductHandler.fs" />
     <Compile Include="Remoting\Catalog\GetBooksDataHandler.fs" />
     <Compile Include="Remoting\Catalog\GetProductsHandler.fs" />

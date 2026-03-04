@@ -28,7 +28,7 @@ open Shopfoo.Shared.Translations
 type private Msg =
     | ChangeLang of Lang * ApiCall<GetTranslationsResponse>
     | FillTranslations of Translations
-    | Login of Persona
+    | Login of AuthPersona
     | Logout
     | ThemeChanged of Theme
     | UrlChanged of Page
