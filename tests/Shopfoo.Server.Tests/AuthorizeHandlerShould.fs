@@ -1,4 +1,4 @@
-module Shopfoo.Server.Tests.AuthorizeHandlerShould
+namespace Shopfoo.Server.Tests
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Security

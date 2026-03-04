@@ -1,14 +1,14 @@
-module Shopfoo.Server.Tests.ArchitectureTests
+namespace Shopfoo.Server.Tests
 
 open System.Reflection
-open Shopfoo.Feat.Tests.ArchitectureTests
+open Shopfoo.Feat.Tests
 open Shopfoo.Tests.Common.NetArchTestExtensions
 open NetArchTest.Rules
 open TUnit.Core
 
-let serverTypes = Types.InAssembly(Assembly.Load("Shopfoo.Server"))
+type ArchitectureTests() =
+    static let serverTypes = Types.InAssembly(Assembly.Load("Shopfoo.Server"))
 
-type ServerArchitectureTests() =
     [<Test>]
     member _.``Remoting API request handlers should be sealed and in their dedicated file``() =
         serverTypes

@@ -1,4 +1,4 @@
-module Shopfoo.Feat.Tests.ArchitectureTests
+namespace Shopfoo.Feat.Tests
 
 open System.Reflection
 open System.Text.RegularExpressions
@@ -8,7 +8,7 @@ open NetArchTest.Rules
 open TUnit.Core
 
 [<AutoOpen>]
-module Fixture =
+module ArchitectureTestsTypes =
     type Feat =
         | Product
         | Home
@@ -59,8 +59,8 @@ module Fixture =
     type FeatData =
         static member AllFeats() = [| Feat.Product; Feat.Home |]
 
-type FeatArchitectureTests() =
-    let otherNamespacesOf feat = [|
+type ArchitectureTests() =
+    static let otherNamespacesOf feat = [|
         for x in Feat.All do
             if x <> feat then
                 x.RootNamespace
