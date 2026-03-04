@@ -8,6 +8,9 @@
     <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Shopfoo.Server.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <ProjectReference Include="..\Shopfoo.Program\Shopfoo.Program.fsproj" />
     <ProjectReference Include="..\Shopfoo.Product\Shopfoo.Product.fsproj" />
     <ProjectReference Include="..\Shopfoo.Domain.Types\Shopfoo.Domain.Types.fsproj" />

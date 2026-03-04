@@ -20,7 +20,7 @@ module private Helpers =
 
     let echoHandler = EchoUserHandler()
 
-    let tokenFor user = user |> JsonFSharp.serialize |> AuthToken |> Some
+    let tokenFor user = tokenFor user |> Some
 
     let makeRequest (token: AuthToken option) : Request<unit> = {
         Token = token
