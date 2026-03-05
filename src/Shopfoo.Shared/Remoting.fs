@@ -98,7 +98,10 @@ type Command<'command'> = Request<'command'> -> Async<Response<unit>>
 type Query<'query, 'response> = Request<'query> -> Async<Response<'response>>
 type QueryWithTranslations<'query, 'response> = Query<QueryDataAndTranslations<'query>, 'response * Translations>
 
-type IApi = interface end
+/// Marker interface for Remoting API records.
+/// Each "area" represents a functional area of the front-end (e.g. Catalog, Prices),
+/// similar to the concept of Areas in ASP.NET MVC.
+type IAreaApi = interface end
 
 [<AutoOpen>]
 module CatalogApi =
@@ -122,7 +125,7 @@ module CatalogApi =
         SearchAuthors: Query<SearchAuthorsRequest, SearchAuthorsResponse>
         SearchBooks: Query<SearchBooksRequest, SearchBooksResponse>
     } with
-        interface IApi
+        interface IAreaApi
 
 [<AutoOpen>]
 module HomeApi =
@@ -135,7 +138,7 @@ module HomeApi =
         Index: QueryWithTranslations<unit, HomeIndexResponse>
         GetTranslations: Query<GetTranslationsRequest, GetTranslationsResponse>
     } with
-        interface IApi
+        interface IAreaApi
 
 [<AutoOpen>]
 module PricesApi =
@@ -158,14 +161,14 @@ module PricesApi =
         ReceiveSupply: Command<ReceiveSupplyInput>
         RemoveListPrice: Command<PriceCommand>
     } with
-        interface IApi
+        interface IAreaApi
 
 [<AutoOpen>]
 module AdminApi =
     type AdminApi = {
         ResetProductCache: Command<unit>
     } with
-        interface IApi
+        interface IAreaApi
 
 type RootApi = {
     Admin: AdminApi

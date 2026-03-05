@@ -28,21 +28,19 @@ let private errorHandler (logger: ILogger<WebApp>) (FirstException exn) (routeIn
         Propagate(ApiError.Technical(exn.Message, ?detail = exn.AsErrorDetail()))
     | _ -> Ignore
 
-let private apiHttpHandlerCore (api: #Remoting.IApi) logger : HttpHandler =
+let private areaApiHttpHandlerCore (api: #Remoting.IAreaApi) logger : HttpHandler =
     Remoting.createApi ()
     |> Remoting.withErrorHandler (errorHandler logger)
     |> Remoting.withRouteBuilder Route.builder
     |> Remoting.fromValue api
     |> Remoting.buildHttpHandler
 
-let private apiHttpHandler (api: #Remoting.IApi) = Require.services<ILogger<WebApp>> (apiHttpHandlerCore api)
+let private areaApiHttpHandler (api: #Remoting.IAreaApi) = Require.services<ILogger<WebApp>> (areaApiHttpHandlerCore api)
 
 let webApp (rootApi: Remoting.RootApi) : HttpHandler =
     choose [
-        choose [
-            apiHttpHandler rootApi.Admin
-            apiHttpHandler rootApi.Catalog
-            apiHttpHandler rootApi.Home
-            apiHttpHandler rootApi.Prices
-        ]
+        areaApiHttpHandler rootApi.Admin
+        areaApiHttpHandler rootApi.Catalog
+        areaApiHttpHandler rootApi.Home
+        areaApiHttpHandler rootApi.Prices
     ]
