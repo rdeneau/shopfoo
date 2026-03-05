@@ -55,7 +55,7 @@ type WorkMonitorsMock() =
 
         member _.LoggerFactory _ =
             { new IWorkLogger with
-                member _.Logger() = loggerWorkMonitor.Object()
+                member _.Logger _ = loggerWorkMonitor.Object()
             }
 
 type IServiceCollection with

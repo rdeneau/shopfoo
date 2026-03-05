@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Product.Data.Catalog
 
+open Microsoft.Extensions.Logging
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
@@ -44,7 +45,9 @@ type internal CatalogPipeline
         | SKUType.ISBN isbn -> booksPipeline.GetProduct isbn
         | SKUType.OLID olid ->
             async {
-                let getProductByOlid = loggerFactory.Logger().Invoke("GetProductByOlid", openLibraryPipeline.GetProductByOlid)
+                let getProductByOlid =
+                    loggerFactory.Logger(LogLevel.Information).Invoke("GetProductByOlid", openLibraryPipeline.GetProductByOlid)
+
                 let! bookResult = getProductByOlid olid
                 return bookResult |> Result.toOption
             }

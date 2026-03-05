@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Program.Runner
 
+open Microsoft.Extensions.Logging
 open Shopfoo.Domain.Types.Errors
 
 [<Interface>]
@@ -11,7 +12,7 @@ type WorkMonitor<'arg, 'ret> = delegate of name: string * work: Work<'arg, 'ret>
 
 [<Interface>]
 type IWorkLogger =
-    abstract member Logger: unit -> WorkMonitor<'arg, 'ret>
+    abstract member Logger: ?logLevel: LogLevel -> WorkMonitor<'arg, 'ret>
 
 [<Interface>]
 type IWorkMonitors =

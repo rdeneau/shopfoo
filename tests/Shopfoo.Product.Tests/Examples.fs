@@ -64,7 +64,7 @@ module CleanCode =
             Title = title
             Subtitle = subtitle
             Description = None
-            Covers = [ 8936088 ]
+            Covers = Some [ 8936088 ]
             Works = [ {| Key = workKey.Path |} ]
             Isbn10 = None
             Isbn13 = Some [ isbn.Value ]

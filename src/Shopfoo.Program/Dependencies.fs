@@ -27,11 +27,13 @@ module private Implementation =
                     logger.LogInformation($"""[Metrics] Sending '%s{String.concat "." metricSegments}'""")
                 }
 
-    type WorkLogger(logger: ILogger, ?logLevel: LogLevel) =
-        let logLevel = defaultArg logLevel LogLevel.Debug
+    type WorkLogger(logger: ILogger, ?defaultLogLevel: LogLevel) =
+        let defaultLogLevel = defaultArg defaultLogLevel LogLevel.Debug
 
         interface IWorkLogger with
-            member _.Logger() =
+            member _.Logger(?logLevel) =
+                let logLevel = defaultArg logLevel defaultLogLevel
+
                 WorkMonitor(fun name work arg ->
                     async {
                         logger.Log(logLevel, $"start %s{name}")
