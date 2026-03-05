@@ -56,7 +56,7 @@ type IReactProperty with
         | _ -> None
 
 type GuardProps(criteria: GuardCriteria, value: string, translations: AppTranslations, ?invalid) =
-    let len = String.length value
+    let len = if isNull value then 0 else value.Length // String.length does not handle null or undefined in Fable!
 
     member private _.Invalid =
         (criteria.Required && len = 0)

@@ -89,7 +89,7 @@ module Dto =
         Description: string option
 
         /// Example: [ 15126500 ]
-        Covers: int list
+        Covers: int list option
 
         /// Example: [ { "key": "/works/OL19809141W" } ]
         Works: {| Key: string |} list
@@ -247,8 +247,8 @@ module private Mappers =
         }
 
         let mapCoverKey (ISBN isbn) covers : CoverKey =
-            covers // ↩
-            |> List.tryHead
+            covers
+            |> Option.bind List.tryHead
             |> Option.map CoverKey.Id
             |> Option.defaultValue (CoverKey.ISBN isbn)
 
