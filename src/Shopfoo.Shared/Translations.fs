@@ -67,6 +67,15 @@ module TranslationPages =
         member this.Products = this.Get "Products"
         member this.SelectedPlural = this.Get "SelectedPlural"
 
+        member this.ProductCache = this.Get "ProductCache"
+        member this.ConfirmReset = this.Get "ConfirmReset"
+        member this.ConfirmResetCacheMessage = this.Get "ConfirmResetCacheMessage"
+        member this.ResetProductCache = this.Get "ResetProductCache"
+        member this.ResetProductCacheDisclaimer = this.Get "ResetProductCacheDisclaimer"
+
+        member this.ResetProductCacheSuccess(dateTime: DateTime) =
+            this.Format("ResetProductCacheSuccess", $"%i{dateTime.Hour}", $"%02i{dateTime.Minute}", $"%02i{dateTime.Second}")
+
         member this.Add = this.Get "Add"
         member this.Cancel = this.Get "Cancel"
         member this.Clear = this.Get "Clear"

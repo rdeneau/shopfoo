@@ -7,6 +7,7 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.UseElmish
 open Shopfoo.Client
+open Shopfoo.Client.Components
 open Shopfoo.Client.Components.Dialog
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
@@ -19,6 +20,7 @@ type private Msg =
     | OpenModal
     | CloseModal
     | ResetCache of ApiCall<unit>
+    | ClearResetStatus
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -40,8 +42,8 @@ let private update (fullContext: FullContext) (msg: Msg) (model: Model) =
         { model with ResetStatus = Remote.Loading }, // ↩
         Cmd.resetCache (fullContext.PrepareRequest())
 
-    | ResetCache(Done result) -> // ↩
-        { model with ResetStatus = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult }, Cmd.none
+    | ResetCache(Done result) -> { model with ResetStatus = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult }, Cmd.none
+    | ClearResetStatus -> { model with ResetStatus = Remote.Empty }, Cmd.none
 
 [<ReactComponent>]
 let AdminView (env: #Env.IFullContext) =
@@ -94,22 +96,19 @@ let AdminView (env: #Env.IFullContext) =
             button.error
             prop.key "admin-reset-confirm-button"
             prop.disabled (model.ResetStatus = Remote.Loading)
-            prop.onClick (fun _ -> dispatch (ResetCache Start))
-            prop.children [
-                Html.text "Confirm reset" // TODO: translations
-                match model.ResetStatus with
-                | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "admin-reset-spinner" ]
-                | _ -> ()
-            ]
+            prop.onClick (fun e ->
+                closeModal e
+                dispatch (ResetCache Start)
+            )
+            prop.text translations.Home.ConfirmReset
         ]
 
     let dialogProps = {
         MainButton = Some confirmButton
         Translations = {
-            // TODO: translations
-            Title = "Confirmation"
-            Message = "Are you sure you want to reset the product cache? This will affect all users and restore all products to their initial state."
-            Close = "Cancel"
+            Title = translations.Home.Confirmation
+            Close = translations.Home.Cancel
+            Message = translations.Home.ConfirmResetCacheMessage
         }
     }
 
@@ -125,7 +124,7 @@ let AdminView (env: #Env.IFullContext) =
                     Html.legend [
                         prop.key "admin-disclaimer-legend"
                         prop.className "text-sm"
-                        prop.text "⚙️ Admin" // TODO: translations
+                        prop.text $"⚙️ %s{translations.Home.Admin}"
                     ]
                     Html.p [ prop.key "admin-disclaimer-text"; prop.text translations.Home.AdminDisclaimer ]
                 ]
@@ -139,40 +138,50 @@ let AdminView (env: #Env.IFullContext) =
                     Html.legend [
                         prop.key "admin-cache-legend"
                         prop.className "text-sm"
-                        prop.text "Product cache" // TODO: translations
+                        prop.text $"🗄️ %s{translations.Home.ProductCache}"
                     ]
 
                     Html.p [
                         prop.key "admin-cache-description"
                         prop.className "mb-4"
-                        // TODO: translations ⬇️
-                        prop.text "Reset all product caches and repositories to their initial state (seed data). This action affects all users."
+                        prop.text translations.Home.ResetProductCacheDisclaimer
                     ]
 
                     Daisy.button.button [
                         button.error
                         prop.key "admin-reset-button"
-                        prop.text "Reset product cache" // TODO: translations
-                        prop.onClick (fun _ -> showModal ())
+                        prop.onClick (fun _ ->
+                            showModal ()
+                            dispatch ClearResetStatus
+                        )
+                        prop.children [
+                            Html.text translations.Home.ResetProductCache
+                            match model.ResetStatus with
+                            | Remote.Loading -> Daisy.loading [ loading.spinner; prop.key "admin-reset-spinner" ]
+                            | _ -> ()
+                        ]
                     ]
 
                     match model.ResetStatus with
-                    | Remote.Loaded dateTime ->
+                    | Remote.Loaded resetTime ->
                         Daisy.alert [
                             alert.success
-                            prop.key "admin-reset-success"
-                            prop.className "mt-4"
-                            // TODO: translations ⬇️
-                            prop.text $"Product cache reset successfully at %i{dateTime.Hour}:%02i{dateTime.Minute}:%02i{dateTime.Second}."
+                            prop.key "reset-cache-success"
+                            prop.className "mt-4 relative"
+                            prop.children [
+                                Html.text (translations.Home.ResetProductCacheSuccess resetTime)
+                                Daisy.button.button [
+                                    button.sm
+                                    button.circle
+                                    button.ghost
+                                    prop.className "absolute right-2 top-2"
+                                    prop.text "✕"
+                                    prop.onClick (fun _ -> dispatch ClearResetStatus)
+                                ]
+                            ]
                         ]
-                    | Remote.LoadError apiError ->
-                        Daisy.alert [
-                            alert.error
-                            prop.key "admin-reset-error"
-                            prop.className "mt-4"
-                            // TODO: translations ⬇️
-                            prop.text $"Failed to reset product cache: %s{apiError.ErrorMessage}"
-                        ]
+                    | Remote.LoadError apiError -> // ↩
+                        Alert.apiError "reset-cache-error" apiError fullContext.User
                     | _ -> ()
                 ]
             ]

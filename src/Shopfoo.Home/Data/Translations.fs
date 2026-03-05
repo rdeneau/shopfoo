@@ -14,8 +14,8 @@ let private translationPages = [
 
         TagCode "Admin", "Admin", "Administration"
         TagCode "AdminDisclaimer",
-        "This page is only used to verify the user access. Refresh the page, log in with a non-admin user, and check the redirection to the NotFound page.",
-        "Cette page n'a d'autre intérêt que de servir à vérifier les droits d'accès utilisateur. Pour cela, rafraîchir la page, se connecter avec un utilisateur non admin et vérifier la redirection vers la page NotFound."
+        "This page can be used to verify the user access. Refresh the page, log in with a non-admin user, and check the redirection to the NotFound page.",
+        "Cette page peut servir à vérifier les droits d'accès utilisateur. Pour cela, rafraîchir la page, se connecter avec un utilisateur non admin et vérifier la redirection vers la page NotFound."
 
         TagCode "Bazaar", "Bazaar", "Bazar"
         TagCode "Books", "Books", "Livres"
@@ -25,6 +25,19 @@ let private translationPages = [
         TagCode "Product", "Product", "Produit"
         TagCode "Products", "Products", "Produits"
         TagCode "SelectedPlural", "Selected", "Sélectionnés"
+
+        TagCode "ProductCache", "Product cache", "Cache produit"
+        TagCode "ConfirmReset", "Confirm reset", "Confirmer la réinitialisation"
+        TagCode "ConfirmResetCacheMessage",
+        "Are you sure you want to reset the product cache? This will affect all users and restore all products to their initial state.",
+        "Êtes-vous sûr de vouloir réinitialiser le cache produit ? Cela affectera tous les utilisateurs et restaurera tous les produits à leur état initial."
+        TagCode "ResetProductCache", "Reset product cache", "Réinitialiser le cache produit"
+        TagCode "ResetProductCacheDisclaimer",
+        "Reset all product caches and repositories to their initial state (seed data). This action affects all users.",
+        "Réinitialiser tous les caches et repositories à leur état initial (seed data). Cette action affecte tous les utilisateurs."
+        TagCode "ResetProductCacheSuccess",
+        "Product cache reset successfully at {0}:{1}:{2}.",
+        "Cache produit réinitialisé avec succès à {0}:{1}:{2}."
 
         TagCode "Add", "Add", "Ajouter"
         TagCode "Cancel", "Cancel", "Annuler"
