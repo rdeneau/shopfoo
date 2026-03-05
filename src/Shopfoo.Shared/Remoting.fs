@@ -40,7 +40,7 @@ type FullContext = {
 
 module Route =
     /// Defines how routes are generated on server and mapped from client.
-    /// E.g. api/Search/GetFirstPage
+    /// E.g. api/Home/Index
     let builder pageName methodName = $"/api/%s{pageName}/%s{methodName}"
 
 type Request<'t> = {
