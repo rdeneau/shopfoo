@@ -11,6 +11,7 @@ type TagCode = TagCode of code: string
 type TranslationKey = { Page: PageCode; Tag: TagCode }
 
 type Translations = {
+    Lang: Lang
     Pages: Map<PageCode, Map<TagCode, string>>
 } with
     static let fallbackText key =
@@ -29,7 +30,7 @@ type Translations = {
 
 [<RequireQualifiedAccess>]
 module Translations =
-    let Empty = { Pages = Map.empty }
+    let Empty = { Lang = Lang.English; Pages = Map.empty }
 
     let addByCodes pageCode tagCode value translations =
         let tagMap =

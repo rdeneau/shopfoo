@@ -34,7 +34,7 @@ type internal Api() =
                         |> Option.map (List.filter (fun (pageCode, _) -> pageCodes |> Set.contains pageCode))
 
                 match pages with
-                | Some pages -> return Ok { Pages = Map pages }
+                | Some pages -> return Ok { Lang = request.lang; Pages = Map pages }
                 | None -> return Error(DataError(DataRelatedError.DataNotFound(Id = string request.lang, Type = "")))
             }
 

@@ -1,9 +1,13 @@
 ﻿module Shopfoo.Client.Tests.Types
 
+open System
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Search
 open Shopfoo.Domain.Types
+open Shopfoo.Domain.Types.Translations
+open Shopfoo.Shared.Remoting
+open Shopfoo.Shared.Translations
 open Shopfoo.Tests.Common.FsCheckArbs
 
 type BookTag = private {
@@ -46,3 +50,21 @@ type SanitizedPage = private {
         | Page.ProductDetail { Type = SKUType.Unknown } -> Page.NotFound "unknown-sku"
         | Page.ProductIndex _ -> Page.ProductIndex this.Filters.Value
         | page -> page
+
+type Translations with
+    static member AllPages =
+        Set [
+            PageCode.Home
+            PageCode.Login
+            PageCode.Product
+        ]
+
+    static member In(lang: Lang) : Translations = {
+        Lang = lang // ↩
+        Pages = Map Shopfoo.Home.Data.Translations.repository[lang]
+    }
+
+    member this.For(?pageCode: PageCode) : Translations = // ↩
+        match pageCode with
+        | None -> this
+        | Some pageCode -> { this with Pages = this.Pages |> Map.filter (fun code _ -> code = pageCode) }

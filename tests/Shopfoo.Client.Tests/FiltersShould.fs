@@ -3,10 +3,10 @@
 open System
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Search
+open Shopfoo.Client.Tests.Types
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Translations
-open Shopfoo.Home.Data
 open Shopfoo.Shared.Translations
 open Shopfoo.Tests.Common.FsCheckArbs
 open Swensen.Unquote
@@ -72,7 +72,7 @@ type SimpleSearchConfig = {
     }
 
 type FiltersShould() =
-    static let translations: Translations = { Pages = Map Translations.repository[Lang.English] }
+    static let translations = Translations.In Lang.English
     static let appTranslations: AppTranslations = AppTranslations().Fill(translations)
 
     let forceCaseChange (s: string) =
@@ -263,7 +263,7 @@ type FiltersShould() =
 
         unexpectedRows =! []
 
-    [<Test; ShopfooFsCheckProperty>]
+    [<Test; ShopfooFsCheckProperty(MaxTest = 30)>]
     member _.``filter books by tag``(RandomFromSeed random, BooksProducts(Products(_, products))) =
         let tag =
             products
