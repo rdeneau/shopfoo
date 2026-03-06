@@ -39,13 +39,17 @@ type ApiRequestArgs<'response, 'msg> = {
 /// </summary>
 type Cmder = {
     User: User
+    UnitTestSession: UnitTestSession option
 } with
     /// <summary>
     /// Wraps a call to the Remoting API, offering an object-based syntax
     /// abstracting an Elmish <c>Cmd.OfAsync.either</c>.
     /// </summary>
     member this.ofApiRequest(args: ApiRequestArgs<'response, 'msg>) : Elmish.Cmd<'msg> =
-        let api, cmdOfAsyncEither = Server.api, Cmd.OfAsync.either
+        let api =
+            match this.UnitTestSession with
+            | Some session -> session.MockedApi
+            | None -> Server.api
 
         let onResponse result =
             match result with
@@ -61,10 +65,10 @@ type Cmder = {
 
             args.Error(apiError)
 
-        cmdOfAsyncEither args.Call api onResponse onException
+        Cmd.OfAsync.either args.Call api onResponse onException
 
 type FullContext with
-    member this.Cmder: Cmder = { User = this.User }
+    member this.Cmder: Cmder = { User = this.User; UnitTestSession = this.UnitTestSession }
 
     member this.PrepareRequest body =
         let secureRequest: Request<'a> = {

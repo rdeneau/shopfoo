@@ -15,29 +15,6 @@ type AuthPersona = {
     member this.Name = this.Persona.Name
     member this.Claims = this.Persona.Claims
 
-[<RequireQualifiedAccess>]
-type FullContext = {
-    Lang: Lang
-    User: User
-    Token: AuthToken option
-    Translations: AppTranslations
-} with
-    static member Default: FullContext = {
-        Lang = Lang.English
-        User = User.Anonymous
-        Token = None
-        Translations = AppTranslations()
-    }
-
-    member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
-    member this.WithPersona(persona: AuthPersona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
-
-    member this.FillTranslations(translations: Translations) = // ↩
-        { this with Translations = this.Translations.Fill translations }
-
-    member this.ResetTranslations() = // ↩
-        { this with Translations = AppTranslations() }
-
 module Route =
     /// Defines how routes are generated on server and mapped from client.
     /// E.g. api/Home/Index
@@ -176,3 +153,34 @@ type RootApi = {
     Home: HomeApi
     Prices: PricesApi
 }
+
+[<RequireQualifiedAccess>]
+type DelayedMessageHandling =
+    | Drop
+    | EmitImmediately
+
+type UnitTestSession = { DelayedMessageHandling: DelayedMessageHandling; MockedApi: RootApi }
+
+[<RequireQualifiedAccess>]
+type FullContext = {
+    User: User
+    Token: AuthToken option
+    Translations: AppTranslations
+    UnitTestSession: UnitTestSession option
+} with
+    static member Default: FullContext = {
+        User = User.Anonymous
+        Token = None
+        Translations = AppTranslations()
+        UnitTestSession = None
+    }
+
+    member this.Lang = this.Translations.Translations.Lang
+    member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
+    member this.WithPersona(persona: AuthPersona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
+
+    member this.FillTranslations(translations: Translations) = // ↩
+        { this with Translations = this.Translations.Fill translations }
+
+    member this.ResetTranslations() = // ↩
+        { this with Translations = AppTranslations() }
