@@ -51,6 +51,67 @@ type SanitizedPage = private {
         | Page.ProductIndex _ -> Page.ProductIndex this.Filters.Value
         | page -> page
 
+module RootApiMock =
+    let private notImplemented _ = raise (NotImplementedException())
+
+    let NothingImplemented: RootApi = {
+        Admin = { ResetProductCache = notImplemented }
+        Catalog = {
+            GetBooksData = notImplemented
+            GetProducts = notImplemented
+            GetProduct = notImplemented
+            SaveProduct = notImplemented
+            AddProduct = notImplemented
+            SearchAuthors = notImplemented
+            SearchBooks = notImplemented
+        }
+        Home = { Index = notImplemented; GetTranslations = notImplemented }
+        Prices = {
+            AdjustStock = notImplemented
+            DetermineStock = notImplemented
+            GetPrices = notImplemented
+            GetPurchasePrices = notImplemented
+            GetSalesStats = notImplemented
+            InputSale = notImplemented
+            SavePrices = notImplemented
+            MarkAsSoldOut = notImplemented
+            ReceiveSupply = notImplemented
+            RemoveListPrice = notImplemented
+        }
+    }
+
+type FullContext with
+    member fullContext.WithTranslations(translations: Translations) : FullContext = {
+        fullContext with
+            Translations = AppTranslations().Fill(translations)
+    }
+
+    member fullContext.WithUnitTestSession(delayedMessageHandling, ?mockedApi) = {
+        fullContext with
+            UnitTestSession =
+                Some { // ↩
+                    DelayedMessageHandling = delayedMessageHandling
+                    MockedApi = defaultArg mockedApi RootApiMock.NothingImplemented
+                }
+    }
+
+[<RequireQualifiedAccess>]
+module Lang =
+    type Enum =
+        | English = 'e'
+        | French = 'f'
+
+    let (|FromEnum|) =
+        function
+        | Enum.English -> Lang.English
+        | Enum.French -> Lang.French
+        | lang -> invalidArg (nameof lang) $"Unsupported language: {lang}"
+
+type LangSet =
+    /// All languages for which translations are available in the repository.
+    /// => English and French, but not Latin.
+    static member val All = Set [ Lang.English; Lang.French ]
+
 type Translations with
     static member AllPages =
         Set [
