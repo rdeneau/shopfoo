@@ -12,6 +12,7 @@
     <Content Include="paket.references" />
     <Compile Include="Types.fs" />
     <Compile Include="AppShould.fs" />
+    <Compile Include="AppViewShould.fs" />
     <Compile Include="AppTranslationsShould.fs" />
     <Compile Include="FiltersShould.fs" />
     <Compile Include="RoutingTests.fs" />

@@ -137,6 +137,29 @@ type private Env(fullContext, dispatch) =
 
 // -- View --------------------------------------------------------
 
+let internal resolvePageAccess (page: Page) (user: User) : Page * Feat option =
+    match page, user with
+    // Requested page consistent with the authentication
+    | Page.About, _
+    | Page.NotFound _, _
+    | Page.Login, User.Anonymous -> page, None
+
+    // Requested page consistent with the authentication but subject to an access check
+    | Page.ProductIndex _, User.LoggedIn _
+    | Page.ProductDetail _, User.LoggedIn _ -> page, Some Feat.Catalog
+    | Page.Admin, User.LoggedIn _ -> page, Some Feat.Admin
+
+    // Default page when logged in
+    | Page.Home, User.LoggedIn _
+    | Page.Login, User.LoggedIn _ -> Page.ProductIndexDefaults, Some Feat.Catalog
+
+    // Authentication needed prior to the access check
+    // -> Display the login page inline, without redirection.
+    | Page.Admin, User.Anonymous
+    | Page.Home, User.Anonymous
+    | Page.ProductIndex _, User.Anonymous
+    | Page.ProductDetail _, User.Anonymous -> Page.Login, None
+
 [<ReactComponent>]
 let AppView () =
     let model, dispatch = React.useElmish (init, update)
@@ -144,28 +167,7 @@ let AppView () =
     let translations = fullContext.Translations
     let env = Env(fullContext, dispatch)
 
-    let pageToDisplayInline, featAccessToCheck =
-        match model.Page, fullContext.User with
-        // Requested page consistent with the authentication
-        | Page.About, _
-        | Page.NotFound _, _
-        | Page.Login, User.Anonymous -> model.Page, None
-
-        // Requested page consistent with the authentication but subject to an access check
-        | Page.ProductIndex _, User.LoggedIn _
-        | Page.ProductDetail _, User.LoggedIn _ -> model.Page, Some Feat.Catalog
-        | Page.Admin, User.LoggedIn _ -> model.Page, Some Feat.Admin
-
-        // Default page when logged in
-        | Page.Home, User.LoggedIn _
-        | Page.Login, User.LoggedIn _ -> Page.ProductIndexDefaults, Some Feat.Catalog
-
-        // Authentication needed prior to the access check
-        // -> Display the login page inline, without redirection.
-        | Page.Admin, User.Anonymous
-        | Page.Home, User.Anonymous
-        | Page.ProductIndex _, User.Anonymous
-        | Page.ProductDetail _, User.Anonymous -> Page.Login, None
+    let pageToDisplayInline, featAccessToCheck = resolvePageAccess model.Page fullContext.User
 
     React.useEffect (fun () ->
         match featAccessToCheck with
