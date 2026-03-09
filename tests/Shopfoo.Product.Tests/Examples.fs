@@ -17,7 +17,7 @@ module UncleBob =
         let authorDto = {
             Key = key.Path
             Name = name
-            Photos = []
+            Photos = None
         }
 
 [<RequireQualifiedAccess>]

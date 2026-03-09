@@ -71,7 +71,7 @@ module Dto =
         Name: string
 
         /// Example: [ 10721801 ]
-        Photos: int list
+        Photos: int list option
     }
 
     [<CLIMutable>]
