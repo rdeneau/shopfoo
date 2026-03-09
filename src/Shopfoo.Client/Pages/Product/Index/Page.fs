@@ -113,10 +113,10 @@ let private update env msg (model: Model) =
 
     | SearchBooks searchTerm ->
         { model with SearchedBooks = Remote.Loading }, // ↩
-        Cmd.searchBooks (env.FullContext.PrepareRequest { SearchTerm = searchTerm })
+        Cmd.searchBooks (Env.prepareRequest env { SearchTerm = searchTerm })
 
-    | BooksSearched(Ok response) -> { model with SearchedBooks = Remote.Loaded response }, Cmd.none
     | BooksSearched(Error apiError) -> { model with SearchedBooks = Remote.LoadError apiError }, Cmd.none
+    | BooksSearched(Ok response) -> { model with SearchedBooks = Remote.Loaded response }, Cmd.none
     | ClearSearchedBooks -> { model with SearchedBooks = Remote.Empty }, Cmd.none
 
 type private ProviderProps = {

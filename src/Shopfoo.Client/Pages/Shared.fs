@@ -48,6 +48,7 @@ module Env =
 
     let fillTranslations (env: #IFillTranslations) translations = env.FillTranslations translations
     let prepareQueryWithTranslations (env: #IFullContext) query = env.FullContext.PrepareQueryWithTranslations query
+    let prepareRequest (env: #IFullContext) request = env.FullContext.PrepareRequest request
     let user (env: #IFullContext) = env.FullContext.User
 
 [<AutoOpen>]
