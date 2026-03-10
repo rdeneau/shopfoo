@@ -14,6 +14,7 @@ open Shopfoo.Client.Pages.Product.Index.FilterBar
 open Shopfoo.Client.Pages.Shared
 open Shopfoo.Client.Remoting
 open Shopfoo.Client.Routing
+open Shopfoo.Client.Search
 open Shopfoo.Common
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
@@ -21,9 +22,9 @@ open Shopfoo.Domain.Types.Security
 open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 
-type private Model = { Products: Remote<Provider * Product list>; SearchedBooks: Remote<SearchBooksResponse> }
+type internal Model = { Products: Remote<Provider * Product list>; SearchedBooks: Remote<SearchResponse<Product>> }
 
-type private Msg =
+type internal Msg =
     | ResetProvider
     | SelectProvider of Provider
     | ProductsFetched of Provider * ApiResult<GetProductsResponse * Translations>
@@ -68,7 +69,7 @@ module private Cmd =
 
 [<RequireQualifiedAccess>]
 module private PreviewProduct =
-    let fromSearchedBook (searchedBook: SearchedBook) : Product =
+    let private previewSearchedBook (searchedBook: SearchedBook) : Product =
         let book = {
             ISBN = ISBN ""
             Subtitle = searchedBook.Subtitle
@@ -84,7 +85,28 @@ module private PreviewProduct =
             ImageUrl = ImageUrl.None
         }
 
-    let fromSearchBooksResponse (response: SearchBooksResponse) : Product list = response.Books |> List.map fromSearchedBook
+    let fromSearchBooksResponse (response: SearchBooksResponse) (searchConfig: SearchConfig) translations : SearchResponse<Product> =
+        let search = Searcher(searchConfig, translations)
+
+        let items = [
+            for book in response.Items do
+                let product = previewSearchedBook book
+
+                let searchStatus =
+                    search.Product product // ↩
+                    |> SearchResult.build searchConfig
+                    |> SearchResult.status
+
+                match searchStatus with
+                | SearchStatus.Matches _ -> product
+                | SearchStatus.NoMatch -> ()
+        ]
+
+        {
+            Items = items
+            // Adjusted total count to reflect the number of items we actually display, after filtering
+            TotalCount = response.TotalCount - (response.Items.Length - items.Length)
+        }
 
 let private init (filters: Filters) =
     { Products = Remote.Empty; SearchedBooks = Remote.Empty },
@@ -94,7 +116,7 @@ let private init (filters: Filters) =
         | None -> ()
     ]
 
-let private update env msg (model: Model) =
+let internal update env (filters: Filters) msg (model: Model) =
     match msg with
     | ResetProvider -> // ↩
         { model with Products = Remote.Empty; SearchedBooks = Remote.Empty }, Cmd.none
@@ -115,8 +137,10 @@ let private update env msg (model: Model) =
         { model with SearchedBooks = Remote.Loading }, // ↩
         Cmd.searchBooks (Env.prepareRequest env { SearchTerm = searchTerm })
 
+    | BooksSearched(Ok response) ->
+        { model with SearchedBooks = Remote.Loaded(PreviewProduct.fromSearchBooksResponse response filters.Search env.Translations) }, Cmd.none
+
     | BooksSearched(Error apiError) -> { model with SearchedBooks = Remote.LoadError apiError }, Cmd.none
-    | BooksSearched(Ok response) -> { model with SearchedBooks = Remote.Loaded response }, Cmd.none
     | ClearSearchedBooks -> { model with SearchedBooks = Remote.Empty }, Cmd.none
 
 type private ProviderProps = {
@@ -133,7 +157,7 @@ let ProductIndexView env (filters: Filters) =
         React.useEffectOnce (fun () -> Router.navigatePage (Page.CurrentNotFound()))
         Html.none
     | _ ->
-        let model, dispatch = React.useElmish (init filters, update env, [||])
+        let model, dispatch = React.useElmish (init filters, update env filters, [||])
 
         React.useEffect (fun () ->
             match model.Products with
@@ -200,7 +224,7 @@ let ProductIndexView env (filters: Filters) =
                 | Remote.Loaded(provider, products) ->
                     let previewProducts =
                         match provider, model.SearchedBooks with
-                        | OpenLibrary, Remote.Loaded response -> PreviewProduct.fromSearchBooksResponse response
+                        | OpenLibrary, Remote.Loaded response -> response.Items
                         | _ -> []
 
                     let allProducts = previewProducts @ products

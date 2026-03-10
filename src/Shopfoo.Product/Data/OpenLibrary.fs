@@ -321,7 +321,7 @@ type internal OpenLibraryClient(httpClient: HttpClient, settings: OpenLibraryCli
             task {
                 let encodedTerm = WebUtility.UrlEncode(searchTerm)
                 let fields = "author_key,author_name,key,title,editions"
-                use request = HttpRequestMessage.Get(Uri.Relative $"/search.json?q=%s{encodedTerm}&limit=10&language=eng&fields=%s{fields}")
+                use request = HttpRequestMessage.Get(Uri.Relative $"/search.json?q=%s{encodedTerm}&limit=30&language=eng&fields=%s{fields}")
                 use! response = httpClient.SendAsync(request)
                 let! content = response.TryReadContentAsStringAsync(request)
                 return serializer.TryDeserializeResult<SearchBooksResponseDto>(content)

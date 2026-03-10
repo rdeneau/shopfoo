@@ -16,5 +16,5 @@ type SearchAuthorsHandler(api: FeatApi) =
             return
                 match result with
                 | Error error -> response.ApiError error
-                | Ok data -> response.Ok { Authors = Set.ofList data.Authors; TotalCount = data.TotalCount }
+                | Ok data -> response.Ok { Items = data.Authors; TotalCount = data.TotalCount }
         }

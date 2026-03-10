@@ -40,7 +40,7 @@ type private Tab
         filters: Filters,
         selectedProvider: Provider option,
         translations: AppTranslations,
-        searchedBooks: Remote<SearchBooksResponse>,
+        searchedBooks: Remote<SearchResponse<Product>>,
         onSearchBooks: string -> unit,
         onClearSearchedBooks: unit -> unit
     ) =
@@ -234,11 +234,11 @@ type private Tab
                     )
                 | Remote.Loading -> SearchButtonProps.Searching
                 | Remote.LoadError apiError -> SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
-                | Remote.Loaded { Books = []; TotalCount = 0 } ->
+                | Remote.Loaded { Items = []; TotalCount = 0 } ->
                     SearchButtonProps.SearchComplete(SearchCompletionStatus.Info translations.Product.NoBooksFound)
-                | Remote.Loaded data when data.TotalCount > data.Books.Length ->
+                | Remote.Loaded data when data.TotalCount > data.Items.Length ->
                     SearchButtonProps.SearchComplete(
-                        SearchCompletionStatus.Info(translations.Product.BookSearchLimit(limit = data.Books.Length, totalFound = data.TotalCount))
+                        SearchCompletionStatus.Info(translations.Product.BookSearchLimit(limit = data.Items.Length, totalFound = data.TotalCount))
                     )
                 | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
             | _ -> SearchButtonProps.None

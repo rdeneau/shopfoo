@@ -239,7 +239,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
 
         let searchedAuthors =
             match remoteSearchedAuthors with
-            | Remote.Loaded response -> response.Authors
+            | Remote.Loaded response -> Set.ofList response.Items
             | _ -> Set.empty
 
         let searchMoreButtonProps =
@@ -258,11 +258,11 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     )
                 | Remote.Loading -> SearchButtonProps.Searching
                 | Remote.LoadError apiError -> SearchButtonProps.SearchComplete(SearchCompletionStatus.Error apiError.ErrorMessage)
-                | Remote.Loaded { Authors = Set.Empty } ->
+                | Remote.Loaded { TotalCount = 0 } ->
                     SearchButtonProps.SearchComplete(SearchCompletionStatus.Info translations.Product.NoAuthorsFound)
-                | Remote.Loaded data when data.TotalCount > data.Authors.Count ->
+                | Remote.Loaded data when data.TotalCount > data.Items.Length ->
                     SearchButtonProps.SearchComplete(
-                        SearchCompletionStatus.Info(translations.Product.AuthorSearchLimit(limit = data.Authors.Count, totalFound = data.TotalCount))
+                        SearchCompletionStatus.Info(translations.Product.AuthorSearchLimit(limit = data.Items.Length, totalFound = data.TotalCount))
                     )
                 | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
 

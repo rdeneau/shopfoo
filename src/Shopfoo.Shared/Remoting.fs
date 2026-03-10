@@ -87,11 +87,15 @@ module CatalogApi =
     type GetBooksDataResponse = { Authors: Set<BookAuthor>; Tags: Set<BookTag> }
     type GetProductsResponse = { Products: Product list }
     type GetProductResponse = { Product: Product option }
-    type SearchAuthorsRequest = { SearchTerm: string }
-    type SearchAuthorsResponse = { Authors: Set<BookAuthor>; TotalCount: int }
 
-    type SearchBooksRequest = { SearchTerm: string }
-    type SearchBooksResponse = { Books: SearchedBook list; TotalCount: int }
+    type SearchRequest<'t> = { SearchTerm: string }
+    type SearchResponse<'t> = { Items: 't list; TotalCount: int }
+
+    type SearchAuthorsRequest = SearchRequest<BookAuthor>
+    type SearchAuthorsResponse = SearchResponse<BookAuthor>
+
+    type SearchBooksRequest = SearchRequest<SearchedBook>
+    type SearchBooksResponse = SearchResponse<SearchedBook>
 
     type CatalogApi = {
         GetBooksData: Query<unit, GetBooksDataResponse>

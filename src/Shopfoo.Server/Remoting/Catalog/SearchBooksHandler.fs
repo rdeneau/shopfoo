@@ -16,5 +16,5 @@ type SearchBooksHandler(api: FeatApi) =
             return
                 match result with
                 | Error error -> response.ApiError error
-                | Ok data -> response.Ok { Books = data.Books; TotalCount = data.TotalCount }
+                | Ok data -> response.Ok { Items = data.Books; TotalCount = data.TotalCount }
         }
