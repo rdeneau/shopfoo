@@ -2,7 +2,6 @@ module Shopfoo.Client.Pages.Product.Index.FilterBar
 
 open Feliz
 open Feliz.DaisyUI
-open Feliz.DaisyUI.Operators
 open Feliz.Router
 open Glutinum.Iconify
 open Glutinum.IconifyIcons.Fa6Solid
@@ -39,6 +38,7 @@ type private ProviderTabProps = {
 type private Tab
     (
         filters: Filters,
+        selectedProvider: Provider option,
         translations: AppTranslations,
         searchedBooks: Remote<SearchBooksResponse>,
         onSearchBooks: string -> unit,
@@ -220,9 +220,8 @@ type private Tab
         let searchTerm = filters.Search.Term |> Option.defaultValue ""
 
         let searchMoreButtonProps =
-            match searchTerm with
-            | String.NullOrWhiteSpace -> SearchButtonProps.None
-            | _ ->
+            match selectedProvider, searchTerm with
+            | Some OpenLibrary, (String.NotEmpty as searchTerm) ->
                 match searchedBooks with
                 | Remote.Empty ->
                     SearchButtonProps.Active(
@@ -242,6 +241,7 @@ type private Tab
                         SearchCompletionStatus.Info(translations.Product.BookSearchLimit(limit = data.Books.Length, totalFound = data.TotalCount))
                     )
                 | Remote.Loaded _ -> SearchButtonProps.SearchComplete SearchCompletionStatus.Success
+            | _ -> SearchButtonProps.None
 
         Html.div [
             prop.key "search-bar"
@@ -294,7 +294,7 @@ let ProductFilterBar
     onClearSearchedBooks
     (translations: AppTranslations)
     =
-    let tab = Tab(filters, translations, searchedBooks, onSearchBooks, onClearSearchedBooks)
+    let tab = Tab(filters, selectedProvider, translations, searchedBooks, onSearchBooks, onClearSearchedBooks)
 
     let productCountByCategory =
         products
