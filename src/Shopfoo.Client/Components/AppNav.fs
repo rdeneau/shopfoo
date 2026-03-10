@@ -43,10 +43,10 @@ type private Nav(currentPage, translations: AppTranslations) =
     member nav.About = nav.page (Page.About, translate _.Home.About)
     member nav.Admin = nav.page (Page.Admin, translate _.Home.Admin)
     member nav.Login = nav.page (Page.Login, translate _.Home.Login)
-    member nav.Products = nav.page (Page.ProductIndexDefaults, translate _.Home.Products)
+    member nav.Product sku = nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")
+    member nav.Products = nav.page (Page.ProductIndexDefaultsWith _.ClearSearchSort(), translate _.Home.Products)
     member nav.Bazaar = nav.page (Page.ProductIndexDefaultsWith _.ToBazaar(), translate _.Home.Bazaar)
     member nav.Books = nav.page (Page.ProductIndexDefaultsWith _.ToBooks(), translate _.Home.Books)
-    member nav.Product sku = nav.page (Page.ProductDetail sku, text = sku.Value, cssClass = "font-semibold")
 
 [<ReactComponent>]
 let AppNavBar key currentPage pageDisplayedInline translations children =

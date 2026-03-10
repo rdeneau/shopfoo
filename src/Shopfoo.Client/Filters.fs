@@ -52,36 +52,38 @@ type Filters = {
     Search: SearchConfig
     SortBy: (Column * SortDirection) option
 } with
-    member this.Provider =
-        match this.CategoryFilters with
+    member filters.Provider =
+        match filters.CategoryFilters with
         | Some(CategoryFilters.Bazaar _) -> Some Provider.FakeStore
         | Some(CategoryFilters.Books _) -> Some Provider.OpenLibrary
         | None -> None
 
-    member this.BazaarCategory =
-        match this.CategoryFilters with
+    member filters.BazaarCategory =
+        match filters.CategoryFilters with
         | Some(CategoryFilters.Bazaar category) -> category
         | Some(CategoryFilters.Books _) -> None
         | None -> None
 
-    member this.BooksAuthorId =
-        match this.CategoryFilters with
+    member filters.BooksAuthorId =
+        match filters.CategoryFilters with
         | Some(CategoryFilters.Books(authorId, _)) -> authorId
         | Some(CategoryFilters.Bazaar _) -> None
         | None -> None
 
-    member this.BooksTag =
-        match this.CategoryFilters with
+    member filters.BooksTag =
+        match filters.CategoryFilters with
         | Some(CategoryFilters.Books(_, tag)) -> tag
         | Some(CategoryFilters.Bazaar _) -> None
         | None -> None
 
-    member this.ToBazaar() = { this with CategoryFilters = Some(CategoryFilters.Bazaar None) }
-    member this.ToBazaarWithCategory category = { this with CategoryFilters = Some(CategoryFilters.Bazaar(Some category)) }
+    member filters.ClearSearchSort() = { filters with Filters.Search.Term = None; SortBy = None }
+    member filters.WithCategoryFilters(?categoryFilters) = { filters with CategoryFilters = categoryFilters }
 
-    member this.ToBooks() = { this with CategoryFilters = Some(CategoryFilters.Books(authorId = None, tag = None)) }
-    member this.ToBooksWithAuthor authorId = { this with CategoryFilters = Some(CategoryFilters.Books(authorId, this.BooksTag)) }
-    member this.ToBooksWithTag tag = { this with CategoryFilters = Some(CategoryFilters.Books(this.BooksAuthorId, tag)) }
+    member filters.ToBazaar(?category) = filters.WithCategoryFilters(CategoryFilters.Bazaar category)
+    member filters.ToBooks(authorId, tag) = filters.WithCategoryFilters(CategoryFilters.Books(authorId, tag))
+    member filters.ToBooks() = filters.ToBooks(authorId = None, tag = None)
+    member filters.ToBooksWithAuthor(authorId) = filters.ToBooks(authorId = authorId, tag = filters.BooksTag)
+    member filters.ToBooksWithTag(tag) = filters.ToBooks(authorId = filters.BooksAuthorId, tag = tag)
 
 [<RequireQualifiedAccess>]
 module Filters =

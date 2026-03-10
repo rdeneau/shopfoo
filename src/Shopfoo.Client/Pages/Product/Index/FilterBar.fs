@@ -65,7 +65,7 @@ type private Tab
                 tab.active
                 yield! prop.hrefRouted (pageWithFilters _.ToBazaar())
             else
-                yield! prop.hrefRouted (pageWithFilters _.ToBazaarWithCategory(props.Category))
+                yield! prop.hrefRouted (pageWithFilters _.ToBazaar(props.Category))
 
             prop.children [
                 Daisy.indicator [
@@ -329,8 +329,8 @@ let ProductFilterBar
     }
 
     let providerTabs () = [
-        providerTab OpenLibrary translations.Home.Books fa6Solid.book _.ToBooks()
-        providerTab FakeStore translations.Home.Bazaar fa6Solid.store _.ToBazaar()
+        providerTab OpenLibrary translations.Home.Books fa6Solid.book _.ClearSearchSort().ToBooks()
+        providerTab FakeStore translations.Home.Bazaar fa6Solid.store _.ClearSearchSort().ToBazaar()
     ]
 
     Daisy.tabs [
