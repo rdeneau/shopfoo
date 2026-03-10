@@ -4,7 +4,7 @@ open Feliz
 open Feliz.DaisyUI
 open Glutinum.IconifyIcons.Fa6Solid
 open Shopfoo.Client
-open Shopfoo.Client.Components
+open Shopfoo.Client.Components.Highlight
 open Shopfoo.Client.Components.Icon
 open Shopfoo.Client.Routing
 open Shopfoo.Client.Filters
@@ -36,6 +36,8 @@ type private Td(filters: Filters, row: Row) =
         | Category.Bazaar bazaarProduct -> Some bazaarProduct
         | Category.Books _ -> None
 
+    let highlightCssClasses = filters.Search.Highlighting.CssClasses HighlightProp.All
+
     member _.num =
         Html.td [ // ↩
             prop.key $"%s{row.Key}-num"
@@ -56,13 +58,16 @@ type private Td(filters: Filters, row: Row) =
             prop.key $"%s{row.Key}-category"
             prop.className "w-30"
             prop.children [
-                for i, result in List.indexed row.SearchResult[Column.BazaarCategory] do
-                    result
-                    |> Highlight.matches Html.span [
-                        prop.key $"%s{row.Key}-category-%i{i}"
-                        if (bazaarProduct |> Option.map _.Category) = filters.BazaarCategory then
-                            prop.className $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
-                    ]
+                match bazaarProduct with
+                | None -> Html.none
+                | Some { Category = bazaarCategory } ->
+                    for i, result in List.indexed row.SearchResult[Column.BazaarCategory] do
+                        result
+                        |> Highlight.matches Html.span [
+                            prop.key $"%s{row.Key}-category-%i{i}"
+                            if filters.BazaarCategory = Some bazaarCategory then
+                                prop.classes highlightCssClasses
+                        ]
             ]
         ]
 
@@ -84,7 +89,7 @@ type private Td(filters: Filters, row: Row) =
                                 |> Highlight.matches Html.span [
                                     prop.key $"%s{row.Key}-author-%i{i}"
                                     if filters.BooksAuthorId = Some author.OLID then
-                                        prop.className $"%s{Highlight.Css.TextColors} %s{Highlight.Css.Border}"
+                                        prop.classes highlightCssClasses
                                 ]
                             | _ -> ()
                     ]
@@ -108,9 +113,8 @@ type private Td(filters: Filters, row: Row) =
                                     prop.key $"%s{row.Key}-tag-%i{i}"
                                     prop.classes [
                                         "leading-tight px-1 max-w-[150px] group-hover:max-w-none"
-                                        if filters.BooksTag = Some tag then
-                                            Highlight.Css.BorderColor
-                                            Highlight.Css.TextColors
+                                        if filters.BooksTag = Some tag && filters.Search.Highlighting = Highlighting.Active then
+                                            yield! filters.Search.Highlighting.CssClasses(HighlightProp.BorderColor ||| HighlightProp.TextColors)
                                     ]
                                     prop.children [
                                         result

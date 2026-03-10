@@ -6,6 +6,7 @@ open Feliz
 open Feliz.DaisyUI
 open Feliz.DaisyUI.Operators
 open type Shopfoo.Client.Components.Checkbox
+open Shopfoo.Client.Components.Highlight
 open type Shopfoo.Client.Components.SearchBox
 open Shopfoo.Client.Search
 open Shopfoo.Client.UI
