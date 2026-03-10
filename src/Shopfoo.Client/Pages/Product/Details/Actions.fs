@@ -360,6 +360,66 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                     (fun () -> drawerControl.Open(Drawer.ManagePrice(RetailPrice.ToDefine prices.Currency, prices)))
                         ]
 
+                    // -- Sales ----
+                    match model.SalesStats with
+                    | Remote.Loaded salesStats ->
+                        // -- Last Sale ----
+                        Daisy.fieldsetLabel [
+                            prop.key "last-sale-label"
+                            prop.children [
+                                Html.text translations.Product.LastSale
+
+                                match salesStats.LastSale with
+                                | None -> ()
+                                | Some sale -> Html.text $" (%s{translations.Home.FormatDate(sale.Date, standardDateFormat)})"
+                            ]
+                        ]
+
+                        ActionsDropdown
+                            "last-sale"
+                            "mb-0"
+                            (fullContext.User.AccessTo Feat.Sales)
+                            (Value.OfMoneyOptional(salesStats.LastSale |> Option.map _.Price))
+                            [
+                                ActionProps.withIcon
+                                    "input-sales"
+                                    (icon fa6Solid.cashRegister)
+                                    translations.Product.SaleAction.InputSales
+                                    (fun () ->
+                                        let defaultSalePrice = prices.RetailPrice.ToOption() |> Option.map _.Value
+                                        drawerControl.Open(Drawer.InputSales(prices.Currency, defaultSalePrice))
+                                    )
+                            ]
+
+                        // -- Total Sales Over 1Y (form hint) ----
+                        Daisy.fieldsetLabel [
+                            prop.key "sales-over-1y-hint"
+                            prop.className "grid grid-cols-[1fr_auto] items-center mb-3 italic"
+                            prop.children [
+                                Html.span [
+                                    prop.key "sales-1y-label"
+                                    prop.className "pr-2"
+                                    prop.children [
+                                        Html.text $"%s{translations.Product.TotalSalesOver1Y}%s{translations.Home.Colon}  "
+                                        Html.text (
+                                            match salesStats.TotalOver1Y with
+                                            | None -> "-"
+                                            | Some price -> price.ValueWithCurrencySymbol
+                                        )
+                                    ]
+                                ]
+                                match salesStats.TotalOver1Y with
+                                | None -> ()
+                                | Some _ ->
+                                    Html.span [
+                                        prop.key "sales-1y-values"
+                                        prop.className "text-right"
+                                        prop.text $"%s{translations.Product.Quantity}%s{translations.Home.Colon}  %i{salesStats.QuantityOver1Y}"
+                                    ]
+                            ]
+                        ]
+                    | _ -> ()
+
                     // -- Purchase Prices ----
                     match prices.RetailPrice, model.PurchasePriceStats with
                     | RetailPrice.Regular retailPrice, Remote.Loaded purchasePrices ->
@@ -423,66 +483,6 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
                                         | None -> "-"
                                     )
                                 ]
-                            ]
-                        ]
-                    | _ -> ()
-
-                    // -- Sales ----
-                    match model.SalesStats with
-                    | Remote.Loaded salesStats ->
-                        // -- Last Sale ----
-                        Daisy.fieldsetLabel [
-                            prop.key "last-sale-label"
-                            prop.children [
-                                Html.text translations.Product.LastSale
-
-                                match salesStats.LastSale with
-                                | None -> ()
-                                | Some sale -> Html.text $" (%s{translations.Home.FormatDate(sale.Date, standardDateFormat)})"
-                            ]
-                        ]
-
-                        ActionsDropdown
-                            "last-sale"
-                            "mb-0"
-                            (fullContext.User.AccessTo Feat.Sales)
-                            (Value.OfMoneyOptional(salesStats.LastSale |> Option.map _.Price))
-                            [
-                                ActionProps.withIcon
-                                    "input-sales"
-                                    (icon fa6Solid.cashRegister)
-                                    translations.Product.SaleAction.InputSales
-                                    (fun () ->
-                                        let defaultSalePrice = prices.RetailPrice.ToOption() |> Option.map _.Value
-                                        drawerControl.Open(Drawer.InputSales(prices.Currency, defaultSalePrice))
-                                    )
-                            ]
-
-                        // -- Total Sales Over 1Y (form hint) ----
-                        Daisy.fieldsetLabel [
-                            prop.key "sales-over-1y-hint"
-                            prop.className "grid grid-cols-[1fr_auto] items-center mb-3 italic"
-                            prop.children [
-                                Html.span [
-                                    prop.key "sales-1y-label"
-                                    prop.className "pr-2"
-                                    prop.children [
-                                        Html.text $"%s{translations.Product.TotalSalesOver1Y}%s{translations.Home.Colon}  "
-                                        Html.text (
-                                            match salesStats.TotalOver1Y with
-                                            | None -> "-"
-                                            | Some price -> price.ValueWithCurrencySymbol
-                                        )
-                                    ]
-                                ]
-                                match salesStats.TotalOver1Y with
-                                | None -> ()
-                                | Some _ ->
-                                    Html.span [
-                                        prop.key "sales-1y-values"
-                                        prop.className "text-right"
-                                        prop.text $"%s{translations.Product.Quantity}%s{translations.Home.Colon}  %i{salesStats.QuantityOver1Y}"
-                                    ]
                             ]
                         ]
                     | _ -> ()
