@@ -1,5 +1,5 @@
 [<RequireQualifiedAccess>]
-module Shopfoo.Client.Tests.Pages.Scenario
+module Shopfoo.Client.Tests.Scenario
 
 open Elmish
 

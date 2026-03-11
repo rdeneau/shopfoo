@@ -4,7 +4,7 @@ open System
 open Elmish
 open Shopfoo.Client.Pages.Product.Details.CatalogInfo
 open Shopfoo.Client.Remoting
-open Shopfoo.Client.Tests.Pages
+open Shopfoo.Client.Tests
 open Shopfoo.Client.Tests.Pages.Product.Examples
 open Shopfoo.Client.Tests.Types
 open Shopfoo.Common
