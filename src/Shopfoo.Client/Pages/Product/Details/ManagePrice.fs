@@ -92,8 +92,8 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
 
     let canSave =
         match price.Intent with
-        | Increase
-        | Decrease -> (abs priceChange) >= 0.01m
+        | Increase -> priceChange >= 0.01m
+        | Decrease -> priceChange <= -0.01m
         | Define -> newPrice >= 0.01m
 
     let currencyLabel priceKey symbol = Daisy.label [ prop.key $"%s{key}-%s{priceKey}-symbol-left"; prop.text $"%s{symbol}" ]
@@ -173,8 +173,9 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
                     match priceChange, price.Intent with
                     | 0m, _ -> ()
                     | _, Define -> ()
-                    | _, Increase -> displayPrecentChange translations.Product.Increase "+"
-                    | _, Decrease -> displayPrecentChange translations.Product.Decrease ""
+                    | _, Increase when canSave -> displayPrecentChange translations.Product.Increase "+"
+                    | _, Decrease when canSave -> displayPrecentChange translations.Product.Decrease ""
+                    | _ -> ()
                 ]
             ]
 
@@ -184,6 +185,8 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
                     "w-full mb-4"
                     if afterSaveOk then
                         "bg-base-300"
+                    if not canSave && priceChange <> 0m then
+                        "input-error"
                 ]
                 prop.children [
                     match currency with
