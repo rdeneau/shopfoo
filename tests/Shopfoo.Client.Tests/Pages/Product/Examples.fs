@@ -3,6 +3,18 @@ module Shopfoo.Client.Tests.Pages.Product.Examples
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 
+[<AutoOpen>]
+module Accessors =
+    let bazaarOf (product: Product) =
+        match product.Category with
+        | Category.Bazaar b -> b
+        | other -> failwith $"Expected Category.Bazaar, got %A{other}"
+
+    let bookOf (product: Product) =
+        match product.Category with
+        | Category.Books b -> b
+        | other -> failwith $"Expected Category.Books, got %A{other}"
+
 [<RequireQualifiedAccess>]
 module Empty =
     let bazaarProduct (fsid: FSID) : Product =

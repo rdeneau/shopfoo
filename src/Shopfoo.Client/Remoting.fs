@@ -34,6 +34,14 @@ type ApiRequestArgs<'response, 'msg> = {
     Success: 'response -> 'msg
 }
 
+[<RequireQualifiedAccess>]
+module Response =
+    let toApiResult (response: Response<'response>) : ApiResult<'response> =
+        match response with
+        | Ok response -> Ok response
+        | Error(ServerError.ApiError apiError) -> Error apiError
+        | Error(ServerError.AuthError authError) -> Error(ApiError.ForAuthenticationError(authError))
+
 /// <summary>
 /// <c>Cmd</c> builder to use to perform calls to the Remoting API.
 /// </summary>
@@ -51,13 +59,12 @@ type Cmder = {
             | Some session -> session.MockedApi, Cmd.OfAsyncWith.either Async.StartImmediate
             | None -> Server.api, Cmd.OfAsync.either
 
-        let onResponse result =
-            match result with
-            | Error(ServerError.ApiError apiError) -> args.Error(apiError)
-            | Ok response -> args.Success(response)
-            | Error(ServerError.AuthError authError) -> args.Error(ApiError.ForAuthenticationError(authError))
+        let onResponse (response: Response<'response>) : 'msg =
+            match response |> Response.toApiResult with
+            | Ok response -> args.Success response
+            | Error apiError -> args.Error apiError
 
-        let onException (exn: exn) =
+        let onException (exn: exn) : 'msg =
             let apiError =
                 match exn with
                 | :? ProxyRequestException as exn -> ApiError.Technical(exn.Message, detail = { Exception = exn.ResponseText })

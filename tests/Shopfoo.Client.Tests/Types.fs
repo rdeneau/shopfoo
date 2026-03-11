@@ -86,12 +86,13 @@ type FullContext with
             Translations = AppTranslations().Fill(translations)
     }
 
-    member fullContext.WithUnitTestSession(delayedMessageHandling, ?mockedApi) = {
+    member fullContext.WithUnitTestSession(delayedMessageHandling, ?mockedApi, ?now) = {
         fullContext with
             UnitTestSession =
-                Some { // ↩
+                Some {
                     DelayedMessageHandling = delayedMessageHandling
                     MockedApi = defaultArg mockedApi RootApiMock.NothingImplemented
+                    Now = now
                 }
     }
 
