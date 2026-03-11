@@ -46,10 +46,10 @@ type Cmder = {
     /// abstracting an Elmish <c>Cmd.OfAsync.either</c>.
     /// </summary>
     member this.ofApiRequest(args: ApiRequestArgs<'response, 'msg>) : Elmish.Cmd<'msg> =
-        let api =
+        let api, cmdOfAsyncEither =
             match this.UnitTestSession with
-            | Some session -> session.MockedApi
-            | None -> Server.api
+            | Some session -> session.MockedApi, Cmd.OfAsyncWith.either Async.StartImmediate
+            | None -> Server.api, Cmd.OfAsync.either
 
         let onResponse result =
             match result with
@@ -65,7 +65,7 @@ type Cmder = {
 
             args.Error(apiError)
 
-        Cmd.OfAsync.either args.Call api onResponse onException
+        cmdOfAsyncEither args.Call api onResponse onException
 
 type FullContext with
     member this.Cmder: Cmder = { User = this.User; UnitTestSession = this.UnitTestSession }
@@ -98,6 +98,11 @@ module Remote =
         function
         | Some value -> Remote.Loaded value
         | None -> Remote.Empty
+
+    let isLoaded =
+        function
+        | Remote.Loaded _ -> true
+        | _ -> false
 
     let ofResult =
         function

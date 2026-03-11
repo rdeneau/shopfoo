@@ -104,7 +104,8 @@ module Result =
 
 type SetExtensions =
     [<Extension>]
-    static member Toggle(set: Set<'t>, item: 't, isSelected: bool) : Set<'t> = if isSelected then set.Add item else set.Remove item
+    static member Toggle(set: Set<'t>, item: 't, isSelected: bool) : Set<'t> = // ↩
+        if isSelected then set.Add item else set.Remove item
 
     [<Extension>]
     static member Toggle(set: Set<'t>, item: 't) : Set<'t> = // ↩

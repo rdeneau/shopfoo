@@ -23,14 +23,14 @@ open Shopfoo.Domain.Types.Translations
 open Shopfoo.Shared.Remoting
 open Shopfoo.Shared.Translations
 
-type private Model = {
+type internal Model = {
     Product: Remote<Product>
     BooksData: Remote<GetBooksDataResponse>
     SaveDate: Remote<DateTime>
     SearchedAuthors: Remote<SearchAuthorsResponse>
 }
 
-type private Msg =
+type internal Msg =
     | ProductFetched of ApiResult<GetProductResponse * Translations>
     | BooksFetched of ApiResult<GetBooksDataResponse>
     | ProductChanged of Product
@@ -39,6 +39,31 @@ type private Msg =
     | SearchAuthors of searchTerm: string
     | AuthorsSearched of ApiResult<SearchAuthorsResponse>
     | ClearSearchedAuthors
+
+[<RequireQualifiedAccess>]
+module internal Msg =
+    type ProductMsg = Product -> Msg
+
+    // -- Product ----
+
+    let addProduct: ProductMsg = fun product -> Msg.AddProduct(product, Start)
+
+    let private changeCategory category : ProductMsg = fun product -> Msg.ProductChanged { product with Category = category }
+    let changeDescription description : ProductMsg = fun product -> Msg.ProductChanged { product with Description = description }
+    let changeImageUrl url : ProductMsg = fun product -> Msg.ProductChanged { product with ImageUrl = ImageUrl.Valid url }
+    let changeName name : ProductMsg = fun product -> Msg.ProductChanged { product with Title = name }
+
+    // -- Bazaar ----
+
+    let private changeBazaarProduct newBazaarProduct : ProductMsg = changeCategory (Category.Bazaar newBazaarProduct)
+    let changeBazaarCategory newBazaarCategory bazaarProduct : ProductMsg = changeBazaarProduct { bazaarProduct with Category = newBazaarCategory }
+
+    // -- Book ----
+
+    let private changeBook newBook : ProductMsg = changeCategory (Category.Books newBook)
+    let changeBookSubtitle subtitle book : ProductMsg = changeBook { book with Subtitle = subtitle }
+    let toggleBookTag (isChecked, tag) book : ProductMsg = changeBook { book with Tags = book.Tags.Toggle(tag, isChecked) }
+    let toggleBookAuthor (isChecked, author) book : ProductMsg = changeBook { book with Authors = book.Authors.Toggle(author, isChecked) }
 
 [<RequireQualifiedAccess>]
 module private Cmd =
@@ -86,7 +111,7 @@ let private init (fullContext: FullContext) sku =
     },
     Cmd.loadProduct (fullContext.PrepareQueryWithTranslations sku)
 
-let private update fillTranslations onSaveProduct (fullContext: FullContext) (msg: Msg) (model: Model) =
+let internal update fillTranslations onSaveProduct (fullContext: FullContext) (msg: Msg) (model: Model) =
     match msg with
     | BooksFetched(Ok booksData) -> { model with BooksData = Remote.Loaded booksData }, Cmd.none
     | BooksFetched(Error apiError) -> { model with BooksData = Remote.LoadError apiError }, Cmd.none
@@ -144,10 +169,7 @@ let private update fillTranslations onSaveProduct (fullContext: FullContext) (ms
     | AuthorsSearched(Error apiError) -> { model with SearchedAuthors = Remote.LoadError apiError }, Cmd.none
     | ClearSearchedAuthors -> { model with SearchedAuthors = Remote.Empty }, Cmd.none
 
-type private Fieldset(catalogAccess, product: Product, translations: AppTranslations, dispatch) =
-    let bookChanged book = // ↩
-        ProductChanged { product with Category = Category.Books book }
-
+type private Fieldset(catalogAccess, product: Product, translations: AppTranslations, dispatch: Msg -> unit) =
     let propsOrReadonly (props: IReactProperty seq) = [
         match catalogAccess with
         | Some Access.Edit -> yield! props
@@ -179,9 +201,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                                 yield!
                                     propOnCheckedChangeOrReadonly (fun isChecked ->
                                         if isChecked then
-                                            let productCategory = Category.Bazaar { bazaarProduct with Category = category }
-
-                                            dispatch (ProductChanged { product with Category = productCategory })
+                                            dispatch (Msg.changeBazaarCategory category bazaarProduct product)
                                     )
                             ]
                             icon iconifyIcon
@@ -234,8 +254,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
             authorSearchInfo: SearchInfo,
             setAuthorSearchInfo: SearchInfo -> unit
         ) =
-        let toggleAuthor (isChecked, author) = // ↩
-            dispatch (bookChanged { book with Authors = book.Authors.Toggle(author, isChecked) })
+        let toggleAuthor args = dispatch (Msg.toggleBookAuthor args book product)
 
         let searchedAuthors =
             match remoteSearchedAuthors with
@@ -340,14 +359,14 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     prop.placeholder translations.Product.Subtitle
                     props.value
                     yield! props.validation
-                    yield! propOnChangeOrReadonly (fun subtitle -> dispatch (bookChanged { book with Subtitle = subtitle }))
+                    yield! propOnChangeOrReadonly (fun subtitle -> dispatch (Msg.changeBookSubtitle subtitle book product))
                 ]
             ]
         ]
 
     member _.bookTags(book: Book, booksData: GetBooksDataResponse, tagSearchInfo: SearchInfo, setTagSearchInfo: SearchInfo -> unit) =
         let toggleTag (isChecked, tag) = // ↩
-            dispatch (bookChanged { book with Tags = book.Tags.Toggle(tag, isChecked) })
+            dispatch (Msg.toggleBookTag (isChecked, tag) book product)
 
         let tagItems = [
             for tag in Set.union book.Tags booksData.Tags do
@@ -370,8 +389,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     tooltip = translations.Product.AddTag,
                     onSearch =
                         fun () ->
-                            let productCategory = Category.Books { book with Tags = book.Tags.Add tag }
-                            dispatch (ProductChanged { product with Category = productCategory })
+                            toggleTag (true, tag)
                             AfterSearch(shouldClearTerm = true)
                 )
             else
@@ -417,7 +435,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     prop.placeholder translations.Product.Description
                     props.value
                     yield! props.validation
-                    yield! propOnChangeOrReadonly (fun description -> dispatch (ProductChanged { product with Description = description }))
+                    yield! propOnChangeOrReadonly (fun description -> dispatch (Msg.changeDescription description product))
                 ]
             ]
         ]
@@ -445,7 +463,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     prop.placeholder translations.Product.ImageUrl
                     props.value
                     yield! props.validation
-                    yield! propOnChangeOrReadonly (fun url -> dispatch (ProductChanged { product with ImageUrl = ImageUrl.Valid url }))
+                    yield! propOnChangeOrReadonly (fun url -> dispatch (Msg.changeImageUrl url product))
                 ]
             ]
         ]
@@ -473,7 +491,7 @@ type private Fieldset(catalogAccess, product: Product, translations: AppTranslat
                     prop.placeholder translations.Product.Name
                     props.value
                     yield! props.validation
-                    yield! propOnChangeOrReadonly (fun name -> dispatch (ProductChanged { product with Title = name }))
+                    yield! propOnChangeOrReadonly (fun name -> dispatch (Msg.changeName name product))
                 ]
             ]
         ]
