@@ -15,8 +15,9 @@
     <Compile Include="AppViewShould.fs" />
     <Compile Include="AppTranslationsShould.fs" />
     <Compile Include="FiltersShould.fs" />
-    <Compile Include="Pages\Product\IndexPageShould.fs" />
+    <Compile Include="Pages\Product\Examples.fs" />
     <Compile Include="Pages\Product\CatalogInfoShould.fs" />
+    <Compile Include="Pages\Product\IndexPageShould.fs" />
     <Compile Include="RoutingTests.fs" />
   </ItemGroup>
   <ItemGroup>
