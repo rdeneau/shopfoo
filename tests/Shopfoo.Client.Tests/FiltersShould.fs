@@ -163,10 +163,10 @@ type FiltersShould() =
 
         unexpectedRows =! []
 
-    let sort direction products =
+    let sort direction items =
         match direction with
-        | SortDirection.Ascending -> products |> List.sort
-        | SortDirection.Descending -> products |> List.sortDescending
+        | SortDirection.Ascending -> items |> List.sort
+        | SortDirection.Descending -> items |> List.sortDescending
 
     let performSortBy (column, direction) (mapActual: Row -> 't) (mapExpected: int -> Product -> 't) products = {|
         actual =
@@ -193,22 +193,22 @@ type FiltersShould() =
 
     let bazaarCategoryAndTitle product =
         match product.Category with
-        | Category.Bazaar cat -> cat.Category, product.Title
+        | Category.Bazaar cat -> {| category = cat.Category; title = product.Title |}
         | _ -> failwith "Expected only bazaar products"
 
     let bookAuthorsAndTitle product =
         match product.Category with
-        | Category.Books book -> [ for x in book.Authors -> x.Name ], product.Title
+        | Category.Books book -> {| authors = [ for x in book.Authors -> x.Name ]; title = product.Title |}
         | _ -> failwith "Expected only book products"
 
     let bookTagsAndTitle product =
         match product.Category with
-        | Category.Books book -> Set.toList book.Tags, product.Title
+        | Category.Books book -> {| tags = Set.toList book.Tags; title = product.Title |}
         | _ -> failwith "Expected only book products"
 
     let bookSubtitle product =
         match product.Category with
-        | Category.Books book -> book.Subtitle
+        | Category.Books book -> {| subtitle = book.Subtitle |}
         | _ -> failwith "Expected only book products"
 
     [<Test; ShopfooFsCheckProperty>]
