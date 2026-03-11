@@ -42,7 +42,7 @@ let private update (fullContext: FullContext) (msg: Msg) (model: Model) =
         { model with ResetStatus = Remote.Loading }, // ↩
         Cmd.resetCache (fullContext.PrepareRequest())
 
-    | ResetCache(Done result) -> { model with ResetStatus = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult }, Cmd.none
+    | ResetCache(Done result) -> { model with ResetStatus = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult }, Cmd.none
     | ClearResetStatus -> { model with ResetStatus = Remote.Empty }, Cmd.none
 
 [<ReactComponent>]

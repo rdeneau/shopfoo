@@ -51,7 +51,7 @@ let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
         Cmd.adjustStock (fullContext.PrepareRequest model.Stock)
 
     | AdjustStock(Done result) ->
-        { model with SaveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
+        { model with SaveDate = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult },
         Cmd.ofEffect (fun _ -> onSave (model.Stock, result |> Result.tryGetError))
 
 [<ReactComponent>]

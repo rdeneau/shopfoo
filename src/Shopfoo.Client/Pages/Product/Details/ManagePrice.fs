@@ -59,7 +59,7 @@ let private update (fullContext: FullContext) onSave (msg: Msg) (model: Model) =
         Cmd.savePrices (fullContext.PrepareRequest model.Prices)
 
     | SavePrices(Done result) ->
-        { model with SaveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
+        { model with SaveDate = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult },
         Cmd.ofEffect (fun _ -> onSave (model.Prices, result |> Result.tryGetError))
 
 [<ReactComponent>]

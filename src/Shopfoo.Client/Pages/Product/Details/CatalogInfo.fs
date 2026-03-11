@@ -137,7 +137,7 @@ let internal update fillTranslations onSaveProduct (fullContext: FullContext) (m
         Cmd.saveProduct (fullContext.PrepareRequest product)
 
     | SaveProduct(product, Done result) ->
-        let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
+        let saveDate = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult
 
         { model with SaveDate = saveDate }, // ↩
         Cmd.ofEffect (fun _ -> onSaveProduct (product, result |> Result.tryGetError))
@@ -147,7 +147,7 @@ let internal update fillTranslations onSaveProduct (fullContext: FullContext) (m
         Cmd.addProduct (fullContext.PrepareRequest product)
 
     | AddProduct(product, Done result) ->
-        let saveDate = result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult
+        let saveDate = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult
         let error = result |> Result.tryGetError
 
         { model with SaveDate = saveDate },

@@ -148,7 +148,9 @@ let private update (fullContext: FullContext) sku onSavePrice (msg: Msg) (model:
 
         match prices with
         | Some prices ->
-            { model with Prices = Remote.Loaded prices; PriceActionStatus = action, result |> Result.map (fun () -> DateTime.Now) |> Remote.ofResult },
+            let remoteDate = result |> Result.map (fun () -> fullContext.Now) |> Remote.ofResult
+
+            { model with Prices = Remote.Loaded prices; PriceActionStatus = action, remoteDate },
             Cmd.ofEffect (fun _ -> onSavePrice (prices, result |> Result.tryGetError))
         | _ ->
             // Unexpected case

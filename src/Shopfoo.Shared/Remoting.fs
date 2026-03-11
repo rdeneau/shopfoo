@@ -1,5 +1,6 @@
 ﻿module Shopfoo.Shared.Remoting
 
+open System
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Security
@@ -163,7 +164,11 @@ type DelayedMessageHandling =
     | Drop
     | EmitImmediately
 
-type UnitTestSession = { DelayedMessageHandling: DelayedMessageHandling; MockedApi: RootApi }
+type UnitTestSession = {
+    DelayedMessageHandling: DelayedMessageHandling
+    MockedApi: RootApi
+    Now: DateTime option
+}
 
 [<RequireQualifiedAccess>]
 type FullContext = {
@@ -180,11 +185,10 @@ type FullContext = {
     }
 
     member this.Lang = this.Translations.Translations.Lang
+    member this.Now = this.UnitTestSession |> Option.bind _.Now |> Option.defaultValue DateTime.Now
+
+    member this.FillTranslations(translations: Translations) = { this with Translations = this.Translations.Fill translations }
+    member this.ResetTranslations() = { this with Translations = AppTranslations() }
+
     member this.WithAnonymousUser() = { this with User = User.Anonymous; Token = None }
     member this.WithPersona(persona: AuthPersona) = { this with User = User.LoggedIn(persona.Name, persona.Claims); Token = Some persona.Token }
-
-    member this.FillTranslations(translations: Translations) = // ↩
-        { this with Translations = this.Translations.Fill translations }
-
-    member this.ResetTranslations() = // ↩
-        { this with Translations = AppTranslations() }
