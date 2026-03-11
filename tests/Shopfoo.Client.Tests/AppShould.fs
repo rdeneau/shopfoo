@@ -55,13 +55,12 @@ type AppShould() =
     [<Arguments(Lang.Enum.English, "About")>]
     [<Arguments(Lang.Enum.French, "À propos")>]
     member _.``populate the FullContext after a ChangeLang success message``(Lang.FromEnum lang, about) =
-        let newModel, _ =
+        let { FullContext = actual }, _ =
             defaultModel
             |> update (Msg.ChangeLang(lang, Done(Ok { Lang = lang; Translations = Translations.In lang })))
 
-        newModel.FullContext.Lang =! lang
-        newModel.FullContext.Translations.Home.About =! about
-        newModel.FullContext.Translations.PopulatedPages =! Translations.AllPages
+        (actual.Lang, actual.Translations.Home.About, actual.Translations.PopulatedPages)
+        =! (lang, about, Translations.AllPages)
 
     [<Test>]
     [<Arguments(Lang.Enum.English, "About", Lang.Enum.French)>]
@@ -74,9 +73,8 @@ type AppShould() =
             { defaultModel with FullContext = defaultModel.FullContext.WithTranslations(Translations.In initialLang) }
             |> update (Msg.ChangeLang(targetLang, Done(Error apiError)))
 
-        newModel.FullContext.Lang =! initialLang
-        newModel.FullContext.Translations.Home.About =! about
-        newModel |> LangStatus.allOfModel =! expectedMenus
+        (newModel.FullContext.Lang, newModel.FullContext.Translations.Home.About, newModel |> LangStatus.allOfModel)
+        =! (initialLang, about, expectedMenus)
 
     [<Test; MethodDataSource(typeof<LangSet>, nameof LangSet.All)>]
     member _.``merge new translations with existing ones`` lang =
