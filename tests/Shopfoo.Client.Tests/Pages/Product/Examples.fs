@@ -1,4 +1,4 @@
-module Shopfoo.Client.Tests.Examples
+module Shopfoo.Client.Tests.Pages.Product.Examples
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog

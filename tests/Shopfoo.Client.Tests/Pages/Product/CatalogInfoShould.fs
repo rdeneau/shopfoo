@@ -1,9 +1,10 @@
-namespace Shopfoo.Client.Tests
+namespace Shopfoo.Client.Tests.Pages.Product
 
 open Elmish
 open Shopfoo.Client.Pages.Product.Details.CatalogInfo
 open Shopfoo.Client.Remoting
-open Shopfoo.Client.Tests.Examples
+open Shopfoo.Client.Tests.Pages
+open Shopfoo.Client.Tests.Pages.Product.Examples
 open Shopfoo.Client.Tests.Types
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog

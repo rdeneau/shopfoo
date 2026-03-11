@@ -1,4 +1,4 @@
-namespace Shopfoo.Client.Tests
+namespace Shopfoo.Client.Tests.Pages.Product
 
 open Shopfoo.Client.Filters
 open Shopfoo.Client.Pages.Product.Index.Page
