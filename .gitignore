@@ -22,3 +22,6 @@ appsettings.Development.json
 .github/skills
 CLAUDE.md
 .claude
+
+# Symbolic link pointing to /src/Shopfoo.Client/index.html
+/src/Shopfoo.Server/public/index.html

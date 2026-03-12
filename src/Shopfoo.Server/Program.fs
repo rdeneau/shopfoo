@@ -22,7 +22,8 @@ let private configureApp (app: WebApplication) =
     let rootApiBuilder = app.Services.GetRequiredService<Remoting.RootApiBuilder>()
 
     app
-        .UseStaticFiles() // ↩
+        .UseDefaultFiles() // serves / → index.html (SPA entry point) in production
+        .UseStaticFiles()
         .UseGiraffe(WebApp.webApp (rootApiBuilder.Build()))
 
 let private builderOptions = WebApplicationOptions(WebRootPath = "public")
