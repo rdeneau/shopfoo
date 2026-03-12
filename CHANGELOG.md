@@ -1,3 +1,9 @@
+## [1.4.1](https://github.com/rdeneau/shopfoo/compare/v1.4.0...v1.4.1) (2026-03-12)
+
+### Bug Fixes
+
+* 🐛 FakeStore not accessible from Azure ([f8cf980](https://github.com/rdeneau/shopfoo/commit/f8cf98095f13baab64c25f7e75b030acc0cbeaeb))
+
 ## [1.4.0](https://github.com/rdeneau/shopfoo/compare/v1.3.0...v1.4.0) (2026-03-12)
 
 ### Features
