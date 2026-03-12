@@ -15,6 +15,7 @@ type GetBooksDataHandler(api: FeatApi) =
 
             let books =
                 products
+                |> Result.defaultValue []
                 |> Seq.choose (fun p ->
                     match p.Category with
                     | Category.Books book -> Some book

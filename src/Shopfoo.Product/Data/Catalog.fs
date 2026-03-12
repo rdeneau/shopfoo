@@ -27,16 +27,16 @@ type internal CatalogPipeline
         booksPipeline.ResetCache()
         fakeStorePipeline.ResetCache()
 
-    member _.GetProducts(provider: Provider) : Async<Product list> =
+    member _.GetProducts(provider: Provider) : Async<Res<Product list>> =
         async {
             match provider with
             | Provider.OpenLibrary -> // ↩
-                return! booksPipeline.GetProducts()
+                let! products = booksPipeline.GetProducts()
+                return Ok products
 
             | Provider.FakeStore ->
-                match! fakeStorePipeline.GetProducts() with
-                | Ok data -> return data
-                | Error _ -> return []
+                let getProducts = loggerFactory.Logger(LogLevel.Information).Invoke("getProducts", fakeStorePipeline.GetProducts)
+                return! getProducts ()
         }
 
     member _.GetProduct(sku: SKU) : Async<Product option> =

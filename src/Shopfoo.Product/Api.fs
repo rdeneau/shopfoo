@@ -18,28 +18,28 @@ open Shopfoo.Program.Runner
 
 [<Interface>]
 type IProductApi =
-    abstract member GetProducts: (Provider -> Async<Product list>)
+    abstract member GetProducts: (Provider -> Async<Res<Product list>>)
     abstract member GetProduct: (SKU -> Async<Product option>)
-    abstract member AddProduct: (Product * Currency -> Async<Result<unit, Error>>)
-    abstract member SaveProduct: (Product -> Async<Result<unit, Error>>)
+    abstract member AddProduct: (Product * Currency -> Async<Res<unit>>)
+    abstract member SaveProduct: (Product -> Async<Res<unit>>)
 
     abstract member GetPrices: (SKU -> Async<Prices option>)
-    abstract member SavePrices: (Prices -> Async<Result<unit, Error>>)
-    abstract member MarkAsSoldOut: (SKU -> Async<Result<unit, Error>>)
-    abstract member RemoveListPrice: (SKU -> Async<Result<unit, Error>>)
+    abstract member SavePrices: (Prices -> Async<Res<unit>>)
+    abstract member MarkAsSoldOut: (SKU -> Async<Res<unit>>)
+    abstract member RemoveListPrice: (SKU -> Async<Res<unit>>)
 
-    abstract member AdjustStock: (Stock -> Async<Result<unit, Error>>)
-    abstract member DetermineStock: (SKU -> Async<Result<Stock, Error>>)
+    abstract member AdjustStock: (Stock -> Async<Res<unit>>)
+    abstract member DetermineStock: (SKU -> Async<Res<Stock>>)
     abstract member GetPurchasePrices: (SKU -> Async<PurchasePrices>)
     abstract member GetSales: (SKU -> Async<Sale list option>)
     abstract member GetSalesStats: (SKU -> Async<SalesStats>)
-    abstract member AddSale: (Sale -> Async<Result<unit, Error>>)
-    abstract member ReceiveSupply: (ReceiveSupplyInput -> Async<Result<unit, Error>>)
+    abstract member AddSale: (Sale -> Async<Res<unit>>)
+    abstract member ReceiveSupply: (ReceiveSupplyInput -> Async<Res<unit>>)
 
-    abstract member SearchAuthors: (string -> Async<Result<BookAuthorSearchResults, Error>>)
-    abstract member SearchBooks: (string -> Async<Result<BookSearchResults, Error>>)
+    abstract member SearchAuthors: (string -> Async<Res<BookAuthorSearchResults>>)
+    abstract member SearchBooks: (string -> Async<Res<BookSearchResults>>)
 
-    abstract member ResetAllCaches: (unit -> Async<Result<unit, Error>>)
+    abstract member ResetAllCaches: (unit -> Async<Res<unit>>)
 
 [<Sealed>]
 type internal Api

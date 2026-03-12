@@ -21,8 +21,8 @@ let private configureServices (configuration: IConfiguration) (services: IServic
 let private configureApp (app: WebApplication) =
     let rootApiBuilder = app.Services.GetRequiredService<Remoting.RootApiBuilder>()
 
-    app
-        .UseDefaultFiles() // serves / → index.html (SPA entry point) in production
+    app // ↩
+        .UseDefaultFiles() // serves / -> index.html (SPA entry point) in production
         .UseStaticFiles()
         .UseGiraffe(WebApp.webApp (rootApiBuilder.Build()))
 

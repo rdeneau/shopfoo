@@ -21,5 +21,8 @@ type GetProductsHandler(api: FeatApi, authorizedPageCodes) =
                 }
 
             let response = ResponseBuilder.withTranslations user translations
-            return response.Ok { Products = products }
+
+            match products with
+            | Error err -> return response.ApiError err
+            | Ok products -> return response.Ok { Products = products }
         }
