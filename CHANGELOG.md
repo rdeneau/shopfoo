@@ -1,3 +1,21 @@
+## [1.4.0](https://github.com/rdeneau/shopfoo/compare/v1.3.0...v1.4.0) (2026-03-12)
+
+### Features
+
+* 💄 improve about page disclaimer ([a842c07](https://github.com/rdeneau/shopfoo/commit/a842c0794208c6a8856f8d70c61b60190373ae71))
+* 🖼️ add favicon.png ([e242f21](https://github.com/rdeneau/shopfoo/commit/e242f21f4c33ba56ef47374de02ae5a23a62405e))
+* **Actions:** 🖼️ place "Last sale" before "Last purchase" ([1b8b44e](https://github.com/rdeneau/shopfoo/commit/1b8b44ef286cf89a461443791d71d52538cef811))
+
+### Bug Fixes
+
+* ⛓️‍💥 error 404 on Azure ([333776f](https://github.com/rdeneau/shopfoo/commit/333776fadfd12c3cd01dc823494179569cbda722))
+* 🐛 "Highlight matches" toggle should apply to bazaar category, book author/tag filters ([0375ba4](https://github.com/rdeneau/shopfoo/commit/0375ba4833434dbb31d976c96d12d764f25285cc))
+* 🐛 apply front-end search on OpenLib book search results to display the exact count (N found, P displayed) ([30f7373](https://github.com/rdeneau/shopfoo/commit/30f7373900760cea8a8223a8a97d2c08ac0597cd))
+* 🐛 disable "Search Books on Open Library" for Bazaar products ([60d9079](https://github.com/rdeneau/shopfoo/commit/60d9079475daddf6e1ec0b63ce385df2eb348fa8))
+* 🐛 reset search term and sort when switching providers ([648c9b7](https://github.com/rdeneau/shopfoo/commit/648c9b70ada3481ccf55f3fe825ddff5a1cadf49))
+* 🧪 failing Filters test (to be confirmed) ([cae1219](https://github.com/rdeneau/shopfoo/commit/cae1219641e79eee97caf67e28e5e2d7a58a9aff))
+* **ManagePrice:** 🐛 properly prevent price decrease in case of Increase, and vice versa ([a318857](https://github.com/rdeneau/shopfoo/commit/a318857b65301d464a9c3284eb5c126029da56af))
+
 ## [1.3.0](https://github.com/rdeneau/shopfoo/compare/v1.2.0...v1.3.0) (2026-03-12)
 
 ### Features
