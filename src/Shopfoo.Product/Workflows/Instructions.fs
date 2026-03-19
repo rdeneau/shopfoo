@@ -4,71 +4,36 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
-open Shopfoo.Effects
+open Shopfoo.Effects.Instruction
 
-type GetPricesQuery<'a> = Query<SKU, Prices, 'a>
-type GetSalesQuery<'a> = Query<SKU, Sale list, 'a>
-type GetStockEventsQuery<'a> = Query<SKU, StockEvent list, 'a>
-type SavePricesCommand<'a> = Command<Prices, 'a>
-type SaveProductCommand<'a> = Command<Product, 'a>
-type AddPricesCommand<'a> = Command<Prices, 'a>
-type AddProductCommand<'a> = Command<Product, 'a>
+// Queries: <Request, Response>
+type GetPricesQuery = Query<SKU, Prices>
+type GetSalesQuery = Query<SKU, Sale list>
+type GetStockEventsQuery = Query<SKU, StockEvent list>
 
-type ProductInstruction<'a> =
-    | GetPrices of GetPricesQuery<'a>
-    | GetSales of GetSalesQuery<'a>
-    | GetStockEvents of GetStockEventsQuery<'a>
-    | SavePrices of SavePricesCommand<'a>
-    | SaveProduct of SaveProductCommand<'a>
-    | AddPrices of AddPricesCommand<'a>
-    | AddProduct of AddProductCommand<'a>
+// Commands: <Response>
+type SavePricesCommand = Command<Prices>
+type SaveProductCommand = Command<Product>
+type AddPricesCommand = Command<Prices>
+type AddProductCommand = Command<Product>
 
-[<Interface>]
-type IProductEffect<'a> =
-    inherit IProgramEffect<'a>
-    inherit IInterpretableEffect<ProductInstruction<'a>>
-
-type GetPricesEffect<'a>(query: GetPricesQuery<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = GetPricesEffect(query.Map f)
-        override val Instruction = GetPrices query
-
-type GetSalesEffect<'a>(query: GetSalesQuery<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = GetSalesEffect(query.Map f)
-        override val Instruction = GetSales query
-
-type GetStockEventsEffect<'a>(query: GetStockEventsQuery<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = GetStockEventsEffect(query.Map f)
-        override val Instruction = GetStockEvents query
-
-type SavePricesEffect<'a>(command: SavePricesCommand<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = SavePricesEffect(command.Map f)
-        override val Instruction = SavePrices command
-
-type SaveProductEffect<'a>(command: SaveProductCommand<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = SaveProductEffect(command.Map f)
-        override val Instruction = SaveProduct command
-
-type AddPricesEffect<'a>(command: AddPricesCommand<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = AddPricesEffect(command.Map f)
-        override val Instruction = AddPrices command
-
-type AddProductEffect<'a>(command: AddProductCommand<'a>) =
-    interface IProductEffect<'a> with
-        override _.Map(f) = AddProductEffect(command.Map f)
-        override val Instruction = AddProduct command
+type ProductInstruction =
+    | GetPrices of GetPricesQuery
+    | GetSales of GetSalesQuery
+    | GetStockEvents of GetStockEventsQuery
+    | SavePrices of SavePricesCommand
+    | SaveProduct of SaveProductCommand
+    | AddPrices of AddPricesCommand
+    | AddProduct of AddProductCommand
 
 [<RequireQualifiedAccess>]
 module Program =
-    let getPrices = Program.effect GetPricesEffect GetPricesQuery
-    let getSales = Program.effect GetSalesEffect GetSalesQuery
-    let getStockEvents = Program.effect GetStockEventsEffect GetStockEventsQuery
-    let savePrices = Program.effect SavePricesEffect SavePricesCommand
-    let saveProduct = Program.effect SaveProductEffect SaveProductCommand
-    let addPrices = Program.effect AddPricesEffect AddPricesCommand
-    let addProduct = Program.effect AddProductEffect AddProductCommand
+    type private Step = StepImplBuilder<ProductInstruction>
+
+    let getPrices = Step.lift GetPrices GetPricesQuery
+    let getSales = Step.lift GetSales GetSalesQuery
+    let getStockEvents = Step.lift GetStockEvents GetStockEventsQuery
+    let savePrices = Step.lift SavePrices SavePricesCommand
+    let saveProduct = Step.lift SaveProduct SaveProductCommand
+    let addPrices = Step.lift AddPrices AddPricesCommand
+    let addProduct = Step.lift AddProduct AddProductCommand

@@ -110,6 +110,11 @@ module Set =
 
 [<AutoOpen>]
 module ActivePatterns =
+    let inline (|As|_|) (input: obj) : 't option =
+        match input with
+        | :? 't as value -> Some value
+        | _ -> None
+
     let (|Between|_|) min max value = Option.ofBool (value >= min && value <= max)
     let (|In|_|) values value = Option.ofBool (Seq.contains value values)
     let (|Is|_|) otherValue value = Option.ofBool (value = otherValue)

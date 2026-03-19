@@ -5,6 +5,7 @@ open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Domain.Types.Warehouse
+open Shopfoo.Effects
 open Shopfoo.Effects.Dependencies
 open Shopfoo.Product.Data.Catalog
 open Shopfoo.Product.Data.OpenLibrary
@@ -44,18 +45,18 @@ type internal Api
     ) =
     let interpret = interpreterFactory.Create(ProductDomain)
 
-    let runEffect (productEffect: IProductEffect<_>) =
-        match productEffect.Instruction with
-        | GetPrices query -> interpret.Query(query, pricesPipeline.GetPrices)
-        | GetSales query -> interpret.Query(query, salesPipeline.GetSales)
-        | GetStockEvents query -> interpret.Query(query, warehousePipeline.GetStockEvents)
-        | SavePrices command -> interpret.Command(command, pricesPipeline.SavePrices)
-        | SaveProduct command -> interpret.Command(command, catalogPipeline.SaveProduct)
-        | AddPrices command -> interpret.Command(command, pricesPipeline.AddPrices)
-        | AddProduct command -> interpret.Command(command, catalogPipeline.AddProduct)
+    let runStep (step: IInterpretableStep<ProductInstruction>) : Async<obj> =
+        match step.AsUnion with
+        | GetPrices query -> interpret.Query(step, query, pricesPipeline.GetPrices)
+        | GetSales query -> interpret.Query(step, query, salesPipeline.GetSales)
+        | GetStockEvents query -> interpret.Query(step, query, warehousePipeline.GetStockEvents)
+        | SavePrices command -> interpret.Command(step, command, pricesPipeline.SavePrices)
+        | SaveProduct command -> interpret.Command(step, command, catalogPipeline.SaveProduct)
+        | AddPrices command -> interpret.Command(step, command, pricesPipeline.AddPrices)
+        | AddProduct command -> interpret.Command(step, command, catalogPipeline.AddProduct)
 
     let interpretWorkflow (workflow: ProductWorkflow<'arg, 'ret>) args = // ↩
-        interpret.Workflow runEffect workflow args
+        interpret.Workflow runStep workflow args
 
     interface IProductApi with
         member val GetProducts = catalogPipeline.GetProducts

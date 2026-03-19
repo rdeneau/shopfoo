@@ -1,6 +1,8 @@
 ﻿module Shopfoo.Effects.Interpreter
 
+open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
+open Shopfoo.Effects.Instruction
 
 module Monitoring =
     [<Interface>]
@@ -23,36 +25,45 @@ open Monitoring
 type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipelineLoggerFactory, timer: IPipelineTimer) =
     let logger = loggerFactory.CreateLogger $"Shopfoo.Domain.%s{domain.Name}.Workflow"
 
-    member private _.Instruction(instruction: Instruction<_, _, _>, withTiming, pipeline: 'arg -> Async<_>) =
+    member private _.Instruction
+        (
+            step: IInterpretableStep<'union>,
+            instruction: Instruction<'req, 'res>,
+            withTiming: string -> ('req -> Async<'res>) -> 'req -> Async<'res>,
+            pipeline: 'req -> Async<'res>
+        ) : Async<obj> =
         let pipelineWithMonitoring =
             pipeline // ↩
-            |> logger.LogPipeline instruction.Name
-            |> withTiming instruction.Name
+            |> logger.LogPipeline step.Name
+            |> withTiming step.Name
 
-        instruction.RunAsync(pipelineWithMonitoring)
+        async {
+            let! res = pipelineWithMonitoring instruction.Request
+            return box res
+        }
 
-    member this.Command(command: Command<_, _>, pipeline) = this.Instruction(command, timer.TimeCommand, pipeline)
-    member this.Query(query: Query<_, _, _>, pipeline) = this.Instruction(query, timer.TimeQuery, pipeline)
-    member this.QueryFailable(query: QueryFailable<_, _, _>, pipeline) = this.Instruction(query, timer.TimeCommand, pipeline)
-    member this.QueryOptional(query: Query<_, _, _>, pipeline) = this.Instruction(query, timer.TimeQueryOptional, pipeline)
+    member this.Command(step, command: Command<_>, pipeline) = this.Instruction(step, command, timer.TimeCommand, pipeline)
 
-    member _.Workflow<'arg, 'ret, 'effect, 'workflow
-        when 'effect :> IProgramEffect<Program<Result<'ret, Error>>>
-        and 'workflow :> IProgramWorkflow<'arg, 'ret>
+    member this.Query(step: IInterpretableStep<'union>, query: Query<'req, 'ret>, pipeline: 'req -> Async<'ret option>) =
+        this.Instruction(step, query, timer.TimeQuery, pipeline)
+
+    member this.QueryFailable(step, query: QueryFailable<_, _>, pipeline) = this.Instruction(step, query, timer.TimeCommand, pipeline)
+    member this.QueryOptional(step, query: Query<_, _>, pipeline) = this.Instruction(step, query, timer.TimeQueryOptional, pipeline)
+
+    member _.Workflow<'arg, 'ret, 'step, 'workflow
+        when 'workflow :> IProgramWorkflow<'arg, 'ret>
         and 'workflow :> IDomainWorkflow<'dom>>
-        runEffect
+        (runStep: 'step -> Async<obj>)
         =
         let rec loop program =
             match program with
-            | Stop res -> async { return res }
-            | Effect eff ->
-                match eff with
-                | :? 'effect as effect ->
-                    async {
-                        let! res = runEffect effect
-                        return! loop res
-                    }
-                | _ -> failwithf $"Unsupported effect: %A{eff}"
+            | End res -> async { return res }
+            | Step(As(step: 'step), cont) ->
+                async {
+                    let! res = runStep step
+                    return! loop (cont res)
+                }
+            | Step(step, _) -> failwithf $"Unsupported step: %A{step}"
 
         fun (workflow: 'workflow) (arg: 'arg) ->
             async {

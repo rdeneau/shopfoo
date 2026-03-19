@@ -11,8 +11,8 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="paket.references" />
-    <Compile Include="Prelude.fs" />
     <Compile Include="Program.fs" />
+    <Compile Include="Instruction.fs" />
     <Compile Include="Interpreter.fs" />
     <Compile Include="Metrics.fs" />
     <Compile Include="Dependencies.fs" />
