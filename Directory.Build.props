@@ -1,0 +1,7 @@
+<Project>
+  <PropertyGroup>
+    <!-- Workaround: Microsoft.Build.Tasks.Git doesn't support the 'relativeworktrees' git extension -->
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    <EnableSourceControlManagerQueries>false</EnableSourceControlManagerQueries>
+  </PropertyGroup>
+</Project>
