@@ -18,10 +18,10 @@ type StepImpl<'union, 'req, 'res>(instruction: Instruction<'req, 'res>, unionCas
     let info, _ = FSharpValue.GetUnionFields(union, typeof<'union>)
     let name = info.Name
 
-    interface IProgramStepReturning<'res>
+    interface IStep with
+        member _.Name = name
 
     interface IInterpretableStep<'union> with
-        member _.Name = name
         member _.AsUnion = union
 
     member this.ToProgram() : Program<'res> = // ↩

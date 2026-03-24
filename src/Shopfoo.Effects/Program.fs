@@ -3,20 +3,18 @@
 open Shopfoo.Common
 open Shopfoo.Domain.Types.Errors
 
-type IProgramStep = interface end
-
 [<Interface>]
-type IProgramStepReturning<'res> =
-    inherit IProgramStep
+type IStep =
+    abstract member Name: string
 
 [<Interface>]
 type IInterpretableStep<'union> =
-    abstract member Name: string
+    inherit IStep
     abstract member AsUnion: 'union
 
 type Program<'a> =
     | End of 'a
-    | Step of step: IProgramStep * cont: (obj -> Program<'a>)
+    | Step of step: IStep * cont: (obj -> Program<'a>)
     | Parallel of left: Program<obj> * right: Program<obj> * merge: (obj * obj -> Program<'a>)
 
 [<AutoOpen>]
@@ -94,6 +92,28 @@ module Program =
             let! result = xProg
             return result |> Result.tryGetError
         }
+
+    // ── Program description (for structural testing) ──
+
+    type ProgramEntry =
+        | Instruction of string
+        | ParallelInstructions of string list
+
+    let describe (prog: Program<'a>) : ProgramEntry list =
+        let rec namesOf (prog: Program<obj>) =
+            match prog with
+            | Step(step, _) -> [ step.Name ]
+            | Parallel(left, right, _) -> namesOf left @ namesOf right
+            | End _ -> []
+
+        let rec loop (prog: Program<obj>) =
+            match prog with
+            | End _ -> []
+            | Step(step, _) -> [ Instruction step.Name ]
+            | Parallel(left, right, _) -> [ ParallelInstructions(namesOf left @ namesOf right) ]
+
+        let asObj = program { let! res = prog in return box res }
+        loop asObj
 
 [<AutoOpen>]
 module ProgramBuilderExtensions =

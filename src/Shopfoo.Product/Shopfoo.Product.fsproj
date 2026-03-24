@@ -5,6 +5,9 @@
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
   </PropertyGroup>
   <ItemGroup>
+    <InternalsVisibleTo Include="Shopfoo.Product.Tests" />
+  </ItemGroup>
+  <ItemGroup>
     <Content Include="paket.references" />
     <Compile Include="Model\Extensions.fs" />
     <Compile Include="Model\Prices.fs" />

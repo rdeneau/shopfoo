@@ -7,7 +7,9 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
+open Shopfoo.Effects
 open Shopfoo.Product.Data.Books
+open Shopfoo.Product.Workflows
 open Shopfoo.Product.Tests
 open Shopfoo.Product.Tests.Fakes
 open Shopfoo.Product.Tests.Types
@@ -209,4 +211,46 @@ type AddProductShould() =
             }
 
             actual =! Ok(product, expectedPrices)
+        }
+
+    [<Test>]
+    member _.``run addProduct and addPrices in parallel``() =
+        let prog = AddProductWorkflow.Instance.Run(createValidBookProduct (), Currency.EUR)
+        let entries = Program.describe prog
+        entries =! [ Program.ParallelInstructions [ "AddProduct"; "AddPrices" ] ]
+
+    [<Test>]
+    member _.``combine errors when both addProduct and addPrices fail``() =
+        async {
+            let product = createValidBookProduct ()
+            let isbn = product.SKU.Value
+
+            let bookRaw: BookRaw = {
+                ISBN = ISBN isbn
+                Title = product.Title
+                Subtitle =
+                    match product.Category with
+                    | Category.Books book -> book.Subtitle
+                    | _ -> ""
+                Description = product.Description
+                Authors =
+                    match product.Category with
+                    | Category.Books book -> [ for a in book.Authors -> { Id = a.OLID; Name = a.Name } ]
+                    | _ -> []
+                Image = product.ImageUrl.Url
+                Tags = []
+            }
+
+            let prices = Prices.Initial(product.SKU, Currency.EUR)
+
+            use fixture = new ApiTestFixture(books = [ bookRaw ], pricesSet = [ prices ])
+            let! result = fixture.Api.AddProduct(product, Currency.EUR)
+
+            let expectedError =
+                Errors [
+                    DataError(DuplicateKey("ISBN " + isbn, "Book"))
+                    DataError(DuplicateKey(product.SKU.Value, "Prices"))
+                ]
+
+            result =! Error expectedError
         }
