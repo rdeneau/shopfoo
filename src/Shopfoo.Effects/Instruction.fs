@@ -29,5 +29,9 @@ type StepImpl<'union, 'req, 'res>(instruction: Instruction<'req, 'res>, unionCas
 
 [<Sealed>]
 type StepImplBuilder<'union> =
-    static member lift (unionCase: Instruction<'req, 'res> -> 'union) (instructionCtor: 'req -> Instruction<'req, 'res>) (request: 'req) =
+    static member lift
+        (unionCase: Instruction<'req, 'res> -> 'union)
+        (instructionCtor: 'req -> Instruction<'req, 'res>)
+        (request: 'req)
+        : Program<'res> =
         StepImpl<'union, 'req, 'res>(instructionCtor request, unionCase).ToProgram()

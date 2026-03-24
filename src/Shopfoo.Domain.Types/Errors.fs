@@ -220,6 +220,7 @@ type Error =
     | OperationNotAllowed of OperationNotAllowedError
     | GuardClause of GuardClauseError
     | Validation of GuardClauseError list
+    | Errors of Error list
 
 [<AutoOpen>]
 module Helpers =
@@ -285,6 +286,14 @@ module Result =
     /// </summary>
     let requireSome info (value: 'a option) = requireSomeData (info, TypeName.FullName) value
 
+    /// Combine two results: both Ok → tuple; both Error → Errors case; single Error discards the Ok.
+    let zip (resA: Result<'a, Error>) (resB: Result<'b, Error>) : Result<'a * 'b, Error> =
+        match resA, resB with
+        | Ok a, Ok b -> Ok(a, b)
+        | Error e1, Error e2 -> Error(Errors [ e1; e2 ])
+        | Error e, _
+        | _, Error e -> Error e
+
 #endif
 
 module ErrorCategory =
@@ -299,6 +308,7 @@ module ErrorCategory =
         | OperationNotAllowed _ -> "Operation Not Allowed"
         | GuardClause _ -> "Guard Clause"
         | Validation _ -> "Validation"
+        | Errors _ -> "Multiple Errors"
 
 [<RequireQualifiedAccess>]
 type ErrorDetailLevel =
@@ -361,13 +371,14 @@ module ErrorMessage =
                 ?innerMessage = status.Content
             )
 
-    let ofError =
+    let rec ofError =
         function
         | Bug(FirstException exn) -> ofBug exn
         | DataError err -> ofDataError err
         | OperationNotAllowed err -> ofOperationNotAllowed err
         | GuardClause err -> ofGuardClause err
         | Validation errors -> errors |> List.map ofGuardClause |> ErrorMessage.Combine
+        | Errors errors -> errors |> List.map ofError |> ErrorMessage.Combine
 
 type ErrorType =
     | Business

@@ -28,11 +28,15 @@ type internal PricesPipeline(repository: PricesRepository, fakeStorePipeline: Fa
             return repository |> Dictionary.tryUpdateBy _.SKU prices |> liftDataRelatedError
         }
 
-    member _.AddPrices(prices: Prices) : Async<Result<unit, 'a>> =
+    member _.AddPrices(prices: Prices) : Async<Result<unit, Error>> =
         async {
             do! Fake.latencyInMilliseconds 200
-            repository.Add(prices.SKU, prices)
-            return Ok()
+
+            if repository.ContainsKey prices.SKU then
+                return Error(Error.DataError(DuplicateKey(Id = prices.SKU.Value, Type = nameof Prices)))
+            else
+                repository.Add(prices.SKU, prices)
+                return Ok()
         }
 
 module private Fakes =

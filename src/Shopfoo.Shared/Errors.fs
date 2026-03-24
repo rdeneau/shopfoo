@@ -60,6 +60,7 @@ and ApiError = {
         | OperationNotAllowed _ -> ApiErrorBuilder.Technical.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | GuardClause _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
         | Validation _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
+        | Errors _ -> ApiErrorBuilder.Business.Build(errorMessage, errorCategory, ?key = key, ?translations = translations)
 
     static member FromException(FirstException exn, user: User) =
         ApiErrorBuilder.Technical.Build(exn.Message, ?detail = exn.AsErrorDetail(User.errorDetailLevel user))

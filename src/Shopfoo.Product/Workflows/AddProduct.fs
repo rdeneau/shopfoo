@@ -2,6 +2,7 @@
 
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
+open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
 open Shopfoo.Effects
 open Shopfoo.Product.Model
@@ -23,10 +24,10 @@ type internal AddProductWorkflow private () =
 
             do! Product.validate product
 
-            // TODO RDE: handle addProduct and addPrices in Parallel
-            // TODO RDE: handle addProduct and addPrices in a "saga", with compensation actions in case of failure (e.g. if addPrices fails, remove the product that was just added)
-            do! Program.addProduct product
-            do! Program.addPrices (Prices.Initial(sku, currency))
+            // addProduct and addPrices can be run in Parallel
+            let! resA = Program.addProduct product
+            and! resB = Program.addPrices (Prices.Initial(sku, currency))
 
-            return Ok()
+            // Combine potential errors from any or both operations, and ignore the successful values (both `unit`)
+            return Result.zip resA resB |> Result.map ignore
         }

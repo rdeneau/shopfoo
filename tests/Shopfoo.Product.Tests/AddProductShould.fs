@@ -7,6 +7,7 @@ open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 open Shopfoo.Domain.Types.Errors
 open Shopfoo.Domain.Types.Sales
+open Shopfoo.Product.Data.Books
 open Shopfoo.Product.Tests
 open Shopfoo.Product.Tests.Fakes
 open Shopfoo.Product.Tests.Types
@@ -103,6 +104,59 @@ module Extensions =
     let (|FieldIssues|) (NonEmptySet issueTypes: NonEmptySet<FieldIssueType>) = issueTypes |> Seq.map FieldIssue.ofType |> Seq.distinctBy _.Name // Avoid duplicate issues for the same field
 
 type AddProductShould() =
+    member private _.TestAddProductFailure(product, expectedError, createFixture) =
+        async {
+            use fixture: ApiTestFixture = createFixture ()
+            let! result = fixture.Api.AddProduct(product, Currency.EUR)
+            result =! Error expectedError
+        }
+
+    [<Test>]
+    member this.``prevent adding Bazaar products``() =
+        this.TestAddProductFailure(
+            product = createValidElectronicProduct (),
+            expectedError = GuardClause { EntityName = "Product"; ErrorMessage = "Adding Bazaar products is not supported" },
+            createFixture = (fun () -> new ApiTestFixture())
+        )
+
+    [<Test>]
+    member this.``prevent adding a book already existing in the catalog``() =
+        let product = createValidBookProduct ()
+        let isbn = product.SKU.Value // SKU is the ISBN for books
+
+        let bookRaw: BookRaw = {
+            ISBN = ISBN isbn
+            Title = product.Title
+            Subtitle =
+                match product.Category with
+                | Category.Books book -> book.Subtitle
+                | _ -> ""
+            Description = product.Description
+            Authors =
+                match product.Category with
+                | Category.Books book -> [ for a in book.Authors -> { Id = a.OLID; Name = a.Name } ]
+                | _ -> []
+            Image = product.ImageUrl.Url
+            Tags = []
+        }
+
+        this.TestAddProductFailure(
+            product,
+            expectedError = DataError(DuplicateKey("ISBN " + isbn, "Book")),
+            createFixture = (fun () -> new ApiTestFixture(books = [ bookRaw ]))
+        )
+
+    [<Test>]
+    member this.``prevent adding the prices already existing``() =
+        let product = createValidBookProduct ()
+        let prices = Prices.Initial(product.SKU, Currency.EUR)
+
+        this.TestAddProductFailure(
+            product,
+            expectedError = DataError(DuplicateKey(product.SKU.Value, "Prices")),
+            createFixture = (fun () -> new ApiTestFixture(pricesSet = [ prices ]))
+        )
+
     [<Test; ShopfooFsCheckProperty>]
     member _.``reject invalid product``(FieldIssues issues) =
         async {

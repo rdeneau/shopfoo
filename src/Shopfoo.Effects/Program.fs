@@ -17,6 +17,7 @@ type IInterpretableStep<'union> =
 type Program<'a> =
     | End of 'a
     | Step of step: IProgramStep * cont: (obj -> Program<'a>)
+    | Parallel of left: Program<obj> * right: Program<obj> * merge: (obj * obj -> Program<'a>)
 
 [<AutoOpen>]
 module ProgramBuilder =
@@ -24,6 +25,7 @@ module ProgramBuilder =
         match program with
         | End x -> f x
         | Step(step, cont) -> Step(step, cont >> bind f)
+        | Parallel(left, right, merge) -> Parallel(left, right, merge >> bind f)
 
     /// Bind operator
     let private (>>=) program f = bind f program
@@ -38,6 +40,15 @@ module ProgramBuilder =
         | Ok v -> f v
         | Error errors -> End((errors |> Error.Validation) |> Error)
 
+    let rec private map (f: 'a -> 'b) (prog: Program<'a>) : Program<'b> =
+        match prog with
+        | End x -> End(f x)
+        | Step(step, cont) -> Step(step, cont >> map f)
+        | Parallel(left, right, merge) -> Parallel(left, right, merge >> map f)
+
+    let map2 (f: 'a -> 'b -> 'c) (progA: Program<'a>) (progB: Program<'b>) : Program<'c> =
+        Parallel(map box progA, map box progB, fun (a, b) -> End(f (unbox<'a> a) (unbox<'b> b)))
+
     type ProgramBuilder() =
         member _.Zero() = End()
         member _.Return(value) = End value
@@ -45,6 +56,8 @@ module ProgramBuilder =
         member _.Bind(program: Program<_>, f) = program >>= f
         member _.Bind(programR: Program<Result<_, _>>, f) = programR >>= (bindResult f)
         member _.Bind(result: Result<_, _>, f) = result |> bindResult f // Useful to bind the result of a domain type smart constructor
+        member _.Bind2Return(progA, progB, f) = map2 (fun a b -> f (a, b)) progA progB
+        member this.MergeSources(progA, progB) = this.Bind2Return(progA, progB, id)
 
     let program = ProgramBuilder()
 

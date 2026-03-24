@@ -21,6 +21,12 @@ module Monitoring =
 
 open Monitoring
 
+[<Interface>]
+/// Enables polymorphic recursion over Program<'r> for any 'r.
+/// Needed because F# does not support polymorphic local let-rec bindings.
+type private IRunner =
+    abstract Run<'r> : Program<'r> -> Async<'r>
+
 [<Sealed>]
 type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipelineLoggerFactory, timer: IPipelineTimer) =
     let logger = loggerFactory.CreateLogger $"Shopfoo.Domain.%s{domain.Name}.Workflow"
@@ -50,26 +56,35 @@ type Interpreter<'dom when 'dom :> IDomain>(domain: 'dom, loggerFactory: IPipeli
     member this.QueryFailable(step, query: QueryFailable<_, _>, pipeline) = this.Instruction(step, query, timer.TimeCommand, pipeline)
     member this.QueryOptional(step, query: Query<_, _>, pipeline) = this.Instruction(step, query, timer.TimeQueryOptional, pipeline)
 
-    member _.Workflow<'arg, 'ret, 'step, 'workflow
-        when 'workflow :> IProgramWorkflow<'arg, 'ret>
-        and 'workflow :> IDomainWorkflow<'dom>>
+    member _.Workflow<'arg, 'ret, 'step, 'workflow when 'workflow :> IProgramWorkflow<'arg, 'ret> and 'workflow :> IDomainWorkflow<'dom>>
         (runStep: 'step -> Async<obj>)
         =
-        let rec loop program =
-            match program with
-            | End res -> async { return res }
-            | Step(As(step: 'step), cont) ->
-                async {
-                    let! res = runStep step
-                    return! loop (cont res)
-                }
-            | Step(step, _) -> failwithf $"Unsupported step: %A{step}"
+        // F# does not support polymorphic local let-rec, so we use an interface with a generic method.
+        let runner =
+            { new IRunner with
+                member this.Run<'r>(program: Program<'r>) =
+                    match program with
+                    | End res -> async { return res }
+                    | Step(As(step: 'step), cont) ->
+                        async {
+                            let! res = runStep step
+                            return! this.Run(cont res)
+                        }
+                    | Step(step, _) -> failwithf $"Unsupported step: %A{step}"
+                    | Parallel(left, right, merge) ->
+                        async {
+                            let! childLeft = Async.StartChild(this.Run left)
+                            let! rightResult = this.Run right
+                            let! leftResult = childLeft
+                            return! this.Run(merge (leftResult, rightResult))
+                        }
+            }
 
         fun (workflow: 'workflow) (arg: 'arg) ->
             async {
                 try
                     let program = workflow.Run(arg)
-                    return! loop program
+                    return! runner.Run program
                 with FirstException exn ->
                     return bug exn
             }

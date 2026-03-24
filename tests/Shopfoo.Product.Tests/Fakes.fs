@@ -3,6 +3,17 @@
 open Shopfoo.Domain.Types
 open Shopfoo.Domain.Types.Catalog
 
+let createValidElectronicProduct () : Product =
+    let fsid = FSID 23
+
+    {
+        SKU = fsid.AsSKU
+        Title = "Test Electronic Product"
+        Description = "A test electronic product from FakeStore"
+        Category = Category.Bazaar { FSID = fsid; Category = BazaarCategory.Electronics }
+        ImageUrl = ImageUrl.Valid "https://example.com/test-electronic-product.jpg"
+    }
+
 let createValidBookProduct () : Product =
     let isbn = ISBN "978-0-13-468599-1"
 
