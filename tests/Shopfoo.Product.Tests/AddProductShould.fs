@@ -124,7 +124,7 @@ type AddProductShould() =
     [<Test>]
     [<Arguments(CurrencyEnum.EUR)>]
     [<Arguments(CurrencyEnum.USD)>]
-    member _.``add initial prices too, in the given currency`` (Currency.FromEnum currency) =
+    member _.``add initial prices too, in the given currency``(Currency.FromEnum currency) =
         async {
             use fixture = new ApiTestFixture()
             let product = createValidBookProduct ()

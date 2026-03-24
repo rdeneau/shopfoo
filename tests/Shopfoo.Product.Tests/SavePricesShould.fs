@@ -50,7 +50,7 @@ type SavePricesShould() =
             result =! Error(Error.Validation [ expectedError ])
         }
 
-    member private _.accept (prices: Prices) =
+    member private _.accept(prices: Prices) =
         async {
             let initialPrices = Prices.Initial(prices.SKU, prices.Currency)
             use fixture = new ApiTestFixture(pricesSet = [ initialPrices ])
@@ -66,13 +66,13 @@ type SavePricesShould() =
     [<Arguments(CurrencyEnum.EUR)>]
     [<Arguments(CurrencyEnum.USD)>]
     member this.``accept RetailPrice with ListPrice``(Currency.FromEnum currency) =
-        this.accept(Prices.Create((ISBN "978-0-13-468599-5").AsSKU, currency, 19.99m, listPrice = 24.99m))
+        this.accept (Prices.Create((ISBN "978-0-13-468599-5").AsSKU, currency, 19.99m, listPrice = 24.99m))
 
     [<Test>]
     [<Arguments(CurrencyEnum.EUR)>]
     [<Arguments(CurrencyEnum.USD)>]
     member this.``accept RetailPrice without ListPrice``(Currency.FromEnum currency) =
-        this.accept(Prices.Create((ISBN "978-0-13-468599-6").AsSKU, currency, 19.99m))
+        this.accept (Prices.Create((ISBN "978-0-13-468599-6").AsSKU, currency, 19.99m))
 
     [<Test>]
     [<Arguments(CurrencyEnum.EUR)>]
