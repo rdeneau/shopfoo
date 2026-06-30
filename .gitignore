@@ -4,6 +4,7 @@
 .farmer/
 .idea/
 .ionide/
+.paket/
 .vs/
 obj/
 bin/
