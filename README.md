@@ -55,6 +55,9 @@ Hence its name, ❝ *Safe Clean Architecture*. ❞
 Run the relevant command(s) in a console at the root of the solution:
 
 ```powershell
+dotnet tool restore
+dotnet paket restore
+
 # Both Client and Server
 dotnet run
 
