@@ -12,7 +12,7 @@ type Dismiss =
     | Auto
     | Manual
 
-let private Timeout = TimeSpan.FromMilliseconds(3000)
+let private Timeout = TimeSpan.FromMilliseconds(3000.)
 
 [<ReactComponent>]
 let Toast key alertProps dismiss onDismiss children =

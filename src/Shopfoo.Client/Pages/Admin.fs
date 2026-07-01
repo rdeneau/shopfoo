@@ -74,7 +74,7 @@ let AdminView (env: #Env.IFullContext) =
         match model.ResetStatus with
         | Remote.Loaded _ when model.ShowModal ->
             JS.runAfter
-                (TimeSpan.FromMilliseconds 500)
+                (TimeSpan.FromMilliseconds 500.)
                 (fun () ->
                     updateModal _.close()
                     dispatch CloseModal

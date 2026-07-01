@@ -64,7 +64,7 @@ let AdjustStockForm key (fullContext: FullContext) stock drawerControl onSave =
         match model.SaveDate with
         | Remote.Loaded _ ->
             JS.runAfter // ↩
-                (TimeSpan.FromMilliseconds(500))
+                (TimeSpan.FromMilliseconds(500.))
                 (fun () -> model.CloseDrawer(drawerControl))
         | _ -> ()
     )

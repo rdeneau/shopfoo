@@ -56,7 +56,7 @@ type MultiSelect =
 
         let focusSearchBox _ =
             fun () -> searchInputRef.current |> Option.iter _.focus()
-            |> JS.runAfter (TimeSpan.FromMilliseconds 150)
+            |> JS.runAfter (TimeSpan.FromMilliseconds 150.)
 
         let searchConfig = {
             Columns = Set.empty

@@ -72,7 +72,7 @@ let ManagePriceForm key (fullContext: FullContext) price prices drawerControl on
         match model.SaveDate with
         | Remote.Loaded _ ->
             JS.runAfter // ↩
-                (TimeSpan.FromMilliseconds(500))
+                (TimeSpan.FromMilliseconds(500.))
                 (fun () -> model.CloseDrawer(drawerControl))
         | _ -> ()
     )
