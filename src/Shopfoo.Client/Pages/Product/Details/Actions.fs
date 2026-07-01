@@ -206,7 +206,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         match model.PriceActionStatus with
         | priceAction, Remote.Loaded _ when priceAction = dialog.Action ->
             JS.runAfter // ↩
-                (TimeSpan.FromMilliseconds(500))
+                (TimeSpan.FromMilliseconds(500.))
                 (fun () -> updateModal _.close())
         | _ -> ()
     )
