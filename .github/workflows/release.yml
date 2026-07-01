@@ -87,10 +87,10 @@ jobs:
           # Checkout the latest release tag if force_deploy is true, otherwise checkout main (which was updated by semantic-release)
           ref: ${{ github.event.inputs.force_deploy && steps.get_latest_release.outputs.tag_name || 'main' }}
 
-      - name: Setup .NET 9
+      - name: Setup .NET 10
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: '9.x'
+          dotnet-version: '10.x'
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
