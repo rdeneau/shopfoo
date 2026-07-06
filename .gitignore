@@ -26,3 +26,4 @@ CLAUDE.md
 
 # Symbolic link pointing to /src/Shopfoo.Client/index.html
 /src/Shopfoo.Server/public/index.html
+/.serena
