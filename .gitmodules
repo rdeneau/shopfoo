@@ -1,0 +1,4 @@
+[submodule "external/Feliz.Router"]
+	path = external/Feliz.Router
+	url = https://github.com/JoschuaL/Feliz.Router.git
+	branch = master

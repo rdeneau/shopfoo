@@ -8,6 +8,7 @@
   </PropertyGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Shopfoo.Client.Tests" />
+    <ProjectReference Include="..\..\external\Feliz.Router\src\Feliz.Router.fsproj" />
     <ProjectReference Include="..\Shopfoo.Shared\Shopfoo.Shared.fsproj" />
   </ItemGroup>
   <ItemGroup>

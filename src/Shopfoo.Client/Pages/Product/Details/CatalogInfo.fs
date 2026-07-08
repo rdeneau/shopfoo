@@ -550,7 +550,7 @@ let CatalogInfoForm key (fullContext: FullContext) (productModel: ProductModel) 
             ]
         ]
 
-    React.fragment [
+    React.Fragment [
         match model.Product with
         | Remote.Empty ->
             Daisy.alert [
