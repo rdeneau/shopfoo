@@ -20,6 +20,7 @@
     <Compile Include="Filters.fs" />
     <Compile Include="Routing.fs" />
     <Compile Include="UI.fs" />
+    <Compile Include="Iconify.fs" />
     <Compile Include="Components\Actions.fs" />
     <Compile Include="Components\Alert.fs" />
     <Compile Include="Components\AppNav.fs" />

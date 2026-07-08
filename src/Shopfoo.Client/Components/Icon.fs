@@ -1,8 +1,14 @@
 ﻿module Shopfoo.Client.Components.Icon
 
-open Feliz.Iconify
-open type Feliz.Iconify.Offline.Exports
+open Fable.Core
+open Fable.Core.JsInterop
+open Feliz
+open Glutinum.Iconify
 open Shopfoo.Client.UI
+
+module private IconifyReact =
+    [<Import("Icon", "@iconify/react")>]
+    let iconComponent: obj = jsNative
 
 type Rotate =
     | Deg90
@@ -11,7 +17,7 @@ type Rotate =
 
 // https://iconify.design/docs/iconify-icon/transform.html
 type IconProp =
-    | IconifyIcon of Glutinum.Iconify.IconifyIcon
+    | IconifyIcon of IconifyIcon
     | HFlip
     | VFlip
     | Rotate of Rotate
@@ -31,17 +37,21 @@ type IconProp =
 /// </code>
 /// </example>
 let iconCustom (props: IconProp list) =
-    Icon [
-        for prop in props do
-            match prop with
-            | IconifyIcon iconifyIcon -> icon.icon iconifyIcon
-            | HFlip -> icon.hFlip true
-            | VFlip -> icon.vFlip true
-            | Rotate Deg90 -> icon.rotate "deg90"
-            | Rotate Deg180 -> icon.rotate "deg180"
-            | Rotate Deg270 -> icon.rotate "deg270"
-            | Size size -> icon.width (string size)
-    ]
+    let iconProps =
+        props
+        |> List.choose (function
+            | IconifyIcon iconifyIcon -> Some("icon" ==> iconifyIcon)
+            | HFlip -> Some("hFlip" ==> true)
+            | VFlip -> Some("vFlip" ==> true)
+            | Rotate Deg90 -> Some("rotate" ==> "90deg")
+            | Rotate Deg180 -> Some("rotate" ==> "180deg")
+            | Rotate Deg270 -> Some("rotate" ==> "270deg")
+            | Size size ->
+                let value = string size
+                Some("width" ==> value))
+        |> createObj
+
+    ReactLegacy.createElement(unbox<ReactNode> IconifyReact.iconComponent, iconProps)
     |> React.withKeyAuto
 
 /// <summary>
@@ -55,4 +65,4 @@ let iconCustom (props: IconProp list) =
 /// let myIconComponent = icon fa6Solid.brush
 /// </code>
 /// </example>
-let icon (iconifyIcon: Glutinum.Iconify.IconifyIcon) = iconCustom [ IconifyIcon iconifyIcon ]
+let icon (iconifyIcon: IconifyIcon) = iconCustom [ IconifyIcon iconifyIcon ]

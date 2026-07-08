@@ -10,8 +10,6 @@ nuget Feliz.UseElmish
 nuget FSharp.SystemTextJson
 nuget FsToolkit.ErrorHandling.TaskResult
 nuget Giraffe.GoodRead
-nuget Glutinum.Feliz.Iconify
-nuget Glutinum.IconifyIcons.Fa6Solid
 nuget Microsoft.Extensions.Http
 nuget NetArchTest.eNhancedEdition
 nuget NSubstitute
