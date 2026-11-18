@@ -203,7 +203,14 @@ type FiltersShould() =
 
     let bookTagsAndTitle product =
         match product.Category with
-        | Category.Books book -> {| tags = Set.toList book.Tags; title = product.Title |}
+        | Category.Books book ->
+            // Same flat key as the app: the tags (or "" when none) followed by the title.
+            let tags =
+                match Set.toList book.Tags with
+                | [] -> [ "" ]
+                | tags -> tags
+
+            tags @ [ product.Title ]
         | _ -> failwith "Expected only book products"
 
     let bookSubtitle product =
