@@ -2,8 +2,9 @@ source https://api.nuget.org/v3/index.json
 framework: net10.0
 storage: none
 
+nuget Fable.Browser.XMLHttpRequest
+nuget Fable.Parsimmon
 nuget Fable.React
-nuget Fable.Remoting.Client
 nuget Fable.Remoting.Giraffe
 nuget Feliz.DaisyUI
 nuget Feliz.UseElmish

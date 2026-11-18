@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <IsPackable>false</IsPackable>
+    <!-- FS0044: the .NET side of the upstream TypeShape code uses formatter-based serialization APIs, obsolete since .NET 8 -->
+    <NoWarn>$(NoWarn);FS0044</NoWarn>
+  </PropertyGroup>
+  <ItemGroup>
+    <Content Include="paket.references" />
+    <None Include="LICENSE" />
+    <None Include="README.md" />
+    <None Include="Fable.SimpleJson\LICENSE" />
+    <None Include="Fable.SimpleJson\isBrowser.js" />
+    <None Include="Fable.SimpleJson\quote.js" />
+    <Compile Include="Fable.SimpleJson\TypeCheck.fs" />
+    <Compile Include="Fable.SimpleJson\TypeInfo.fs" />
+    <Compile Include="Fable.SimpleJson\TypeInfo.Converter.fs" />
+    <Compile Include="Fable.SimpleJson\Json.fs" />
+    <Compile Include="Fable.SimpleJson\Parser.fs" />
+    <Compile Include="Fable.SimpleJson\SimpleJson.fs" />
+    <Compile Include="Fable.SimpleJson\Json.Converter.fs" />
+    <Compile Include="Fable.Remoting.MsgPack\TypeShape.fs" />
+    <Compile Include="Fable.Remoting.MsgPack\TypeShapeUtils.fs" />
+    <Compile Include="Fable.Remoting.MsgPack\Format.fs" />
+    <Compile Include="Fable.Remoting.MsgPack\Write.fs" />
+    <Compile Include="Fable.Remoting.MsgPack\Read.fs" />
+    <Compile Include="Types.fs" />
+    <Compile Include="Extensions.fs" />
+    <Compile Include="Http.fs" />
+    <Compile Include="Proxy.fs" />
+    <Compile Include="Remoting.fs" />
+  </ItemGroup>
+  <Import Project="..\..\.paket\Paket.Restore.targets" />
+</Project>

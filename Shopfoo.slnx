@@ -24,6 +24,7 @@
     <File Path="update-release-date.js" />
   </Folder>
   <Folder Name="/external/">
+    <Project Path="external/Fable.Remoting.Client/Fable.Remoting.Client.fsproj" />
     <Project Path="external/Feliz.Router/Feliz.Router.fsproj" />
   </Folder>
   <Folder Name="/src/" />
