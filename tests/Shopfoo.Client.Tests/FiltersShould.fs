@@ -1,4 +1,4 @@
-﻿namespace Shopfoo.Client.Tests
+namespace Shopfoo.Client.Tests
 
 open System
 open Shopfoo.Client.Filters
@@ -271,7 +271,7 @@ type FiltersShould() =
         unexpectedRows =! []
 
     [<Test; ShopfooFsCheckProperty(MaxTest = 30)>]
-    member _.``filter books by tag``(RandomFromSeed random, BooksProducts(Products(_, products))) =
+    member _.``filter books by tag``(RandomFromSeed random, BooksProductsWithTag(Products(_, products))) =
         let tag =
             products
             |> List.collect (fun p ->

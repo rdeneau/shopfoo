@@ -169,6 +169,20 @@ module DomainGen =
         |> Gen.where (fun (BooksProducts(Products(_, products))) -> products |> List.exists hasSearchableSubtitle)
         |> Gen.map (fun (BooksProducts products) -> BooksProductsWithSubtitle products)
 
+    type BooksProductsWithTag = BooksProductsWithTag of Products
+
+    /// Books products where at least one book has a tag, so that a tag can always be picked from the books.
+    /// `genBook` gives a book no tag 1 time out of 6: with only `genBooksProducts`, no book has a tag in ~0.03% of the cases.
+    let genBooksProductsWithTag: Gen<BooksProductsWithTag> =
+        let hasTag product =
+            match product.Category with
+            | Category.Books book -> not book.Tags.IsEmpty
+            | Category.Bazaar _ -> false
+
+        genBooksProducts
+        |> Gen.where (fun (BooksProducts(Products(_, products))) -> products |> List.exists hasTag)
+        |> Gen.map (fun (BooksProducts products) -> BooksProductsWithTag products)
+
 [<AutoOpen>]
 module ActivePatterns =
     let (|PositiveDollars|) (PositiveInt amount) : Money = Money.Dollars(decimal amount)
@@ -186,3 +200,4 @@ type DomainArbs =
     static member BazaarProducts() = Arb.fromGen genBazaarProducts
     static member BooksProducts() = Arb.fromGen genBooksProducts
     static member BooksProductsWithSubtitle() = Arb.fromGen genBooksProductsWithSubtitle
+    static member BooksProductsWithTag() = Arb.fromGen genBooksProductsWithTag
