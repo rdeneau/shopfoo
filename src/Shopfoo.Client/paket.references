@@ -1,7 +1,6 @@
 Fable.React
 Fable.Remoting.Client
 Feliz.DaisyUI
-Feliz.Router
 Feliz.UseElmish
-Glutinum.Feliz.Iconify
+Glutinum.Feliz.Iconify import_targets: false
 Glutinum.IconifyIcons.Fa6Solid

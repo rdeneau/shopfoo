@@ -23,6 +23,9 @@
     <File Path="CHANGELOG.md" />
     <File Path="update-release-date.js" />
   </Folder>
+  <Folder Name="/external/">
+    <Project Path="external/Feliz.Router/Feliz.Router.fsproj" />
+  </Folder>
   <Folder Name="/src/" />
   <Folder Name="/src/Core/">
     <Project Path="src/Shopfoo.Common/Shopfoo.Common.fsproj" />
