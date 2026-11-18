@@ -200,12 +200,10 @@ module internal Fakes =
         Title = "Domain Modeling Made Functional"
         Subtitle = "Tackle Software Complexity with Domain-Driven Design and F#"
         Description =
-            "You want increased IPSer satisfaction, faster development cycles, and less wasted work. Domain-driven design (DDD) combined "
+            "You want increased customer satisfaction, faster development cycles, and less wasted work. Domain-driven design (DDD) combined "
             + "with functional programming is the innovative combo that will get you there. In this pragmatic, down-to-earth guide, you'll see "
             + "how applying the core principles of functional programming can result in software designs that model real-world requirements "
-            + "both elegantly and concisely - often more so than an object-oriented approach. Practical examples in the open-source F# "
-            + "functional language, and examples from familiar business domains, show you how to apply these techniques to build software "
-            + "that is business-focused, flexible, and high quality."
+            + "both elegantly and concisely - often more so than an object-oriented approach."
         Authors = [ scottWlaschin ]
         Image = "https://m.media-amazon.com/images/I/91THtohxBjL._SY385_.jpg"
         Tags = [ "Domain-Driven Design"; "F#" ]
