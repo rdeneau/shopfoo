@@ -13,7 +13,9 @@ nuget FsToolkit.ErrorHandling.TaskResult
 nuget Giraffe.GoodRead
 nuget Glutinum.Feliz.Iconify
 nuget Glutinum.IconifyIcons.Fa6Solid
+nuget Microsoft.AspNetCore.WebUtilities ~> 10.0.15
 nuget Microsoft.Extensions.Http
+nuget Microsoft.Net.Http.Headers ~> 10.0.15
 nuget NetArchTest.eNhancedEdition
 nuget NSubstitute
 nuget TUnit.Assertions.FSharp
@@ -27,3 +29,4 @@ group Build
 
     nuget Fake.Core.Target
     nuget Fake.DotNet.Cli
+    nuget System.Security.Cryptography.Pkcs ~> 10.0.15
