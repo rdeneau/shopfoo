@@ -1,3 +1,14 @@
+## [1.4.2](https://github.com/rdeneau/shopfoo/compare/v1.4.1...v1.4.2) (2026-11-18)
+
+### Bug Fixes
+
+* 🐛 shorten a seed description over the 512-character limit ([b4ce56a](https://github.com/rdeneau/shopfoo/commit/b4ce56a57d7e5b822b269f4474b22049a1499b1d))
+* 🐛 vendor a remoting client patched for Fable 5 ([31ec125](https://github.com/rdeneau/shopfoo/commit/31ec125d4583af3ab2ae48c98f34391648183a2e)), closes [Fable.SimpleJson#111](https://github.com/rdeneau/Fable.SimpleJson/issues/111) [Fable.Remoting#394](https://github.com/rdeneau/Fable.Remoting/issues/394)
+* 🔒️ pin patched ASP.NET Core and Pkcs packages ([dc1283d](https://github.com/rdeneau/shopfoo/commit/dc1283d73fd4412a0fc7df263e693d0188e00980))
+* 🛠️ suppress NU1510 warning in builds ([68040cf](https://github.com/rdeneau/shopfoo/commit/68040cf9c2519560da85de48688a480ddecc62ab))
+* ci: missing `dotnet paket restore` ([8fa9267](https://github.com/rdeneau/shopfoo/commit/8fa92675f9dbec1f015fcd84aa339225b5d14e7d))
+* test runner ([1e098c0](https://github.com/rdeneau/shopfoo/commit/1e098c0a2c5d49228e943e250db4f53a12c7ad3f))
+
 ## [1.4.1](https://github.com/rdeneau/shopfoo/compare/v1.4.0...v1.4.1) (2026-03-12)
 
 ### Bug Fixes

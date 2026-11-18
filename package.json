@@ -10,8 +10,8 @@
     "type": "git",
     "url": "https://github.com/rdeneau/shopfoo.git"
   },
-  "releaseDate": "2026-03-12",
-  "version": "1.4.1",
+  "releaseDate": "2026-11-18",
+  "version": "1.4.2",
   "scripts": {
     "prestart": "dotnet tool restore",
     "start": "dotnet fable watch ./src/Shopfoo.Client --outDir ./src/Shopfoo.Client/.fable-build --sourceMaps --run vite dev",
