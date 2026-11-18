@@ -248,7 +248,7 @@ let ActionsForm key fullContext sku (drawerControl: DrawerControl) onSavePrice s
         | Action.SavePrices
         | Action.None -> DialogProps.Empty
 
-    React.fragment [
+    React.Fragment [
         ModalDialog $"%s{key}-dialog" modalRef dialogProps closeModal
 
         Daisy.fieldset [
