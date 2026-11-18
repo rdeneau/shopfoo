@@ -1,0 +1,61 @@
+<Solution>
+  <Configurations>
+    <Platform Name="Any CPU" />
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Folder Name="/build/">
+    <File Path=".config/dotnet-tools.json" />
+    <File Path=".editorconfig" />
+    <File Path="global.json" />
+    <File Path="package.json" />
+    <File Path="paket.dependencies" />
+    <File Path="paket.lock" />
+    <File Path="README.md" />
+    <File Path="vite.config.js" />
+    <Project Path="Build.fsproj" />
+  </Folder>
+  <Folder Name="/ci/">
+    <File Path=".github/workflows/build.yml" />
+    <File Path=".github/workflows/README.md" />
+    <File Path=".github/workflows/release.yml" />
+    <File Path=".releaserc.json" />
+    <File Path="CHANGELOG.md" />
+    <File Path="update-release-date.js" />
+  </Folder>
+  <Folder Name="/src/" />
+  <Folder Name="/src/Core/">
+    <Project Path="src/Shopfoo.Common/Shopfoo.Common.fsproj" />
+    <Project Path="src/Shopfoo.Data/Shopfoo.Data.fsproj" />
+    <Project Path="src/Shopfoo.Domain.Types/Shopfoo.Domain.Types.fsproj" />
+    <Project Path="src/Shopfoo.Program/Shopfoo.Program.fsproj" />
+  </Folder>
+  <Folder Name="/src/Feat/">
+    <Project Path="src/Shopfoo.Home/Shopfoo.Home.fsproj" />
+    <Project Path="src/Shopfoo.Product/Shopfoo.Product.fsproj" />
+  </Folder>
+  <Folder Name="/src/UI/">
+    <Project Path="src/Shopfoo.Client/Shopfoo.Client.fsproj" />
+    <Project Path="src/Shopfoo.Server/Shopfoo.Server.fsproj" />
+    <Project Path="src/Shopfoo.Shared/Shopfoo.Shared.fsproj" />
+  </Folder>
+  <Folder Name="/tests/" />
+  <Folder Name="/tests/Common/">
+    <Project Path="tests/Shopfoo.Tests.Common/Shopfoo.Tests.Common.fsproj">
+      <BuildType Solution="Release|Any CPU" Project="?" />
+      <Platform Solution="Release|Any CPU" Project="?" />
+      <Build Solution="Release|Any CPU" Project="false" />
+    </Project>
+  </Folder>
+  <Folder Name="/tests/Core/">
+    <Project Path="tests/Shopfoo.Program.Tests/Shopfoo.Program.Tests.fsproj" />
+  </Folder>
+  <Folder Name="/tests/Feat/">
+    <Project Path="tests/Shopfoo.Feat.Tests/Shopfoo.Feat.Tests.fsproj" />
+    <Project Path="tests/Shopfoo.Product.Tests/Shopfoo.Product.Tests.fsproj" />
+  </Folder>
+  <Folder Name="/tests/UI/">
+    <Project Path="tests/Shopfoo.Client.Tests/Shopfoo.Client.Tests.fsproj" />
+    <Project Path="tests/Shopfoo.Server.Tests/Shopfoo.Server.Tests.fsproj" />
+  </Folder>
+</Solution>
