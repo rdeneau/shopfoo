@@ -154,6 +154,21 @@ module DomainGen =
             return BooksProducts products
         }
 
+    type BooksProductsWithSubtitle = BooksProductsWithSubtitle of Products
+
+    /// Books products where at least one subtitle contains a word of 2+ characters,
+    /// so that a search term can always be picked from the subtitles.
+    /// `genBook` leaves a subtitle empty 20% of the time: with only `genBooksProducts`, all subtitles are empty in ~0.06% of the cases.
+    let genBooksProductsWithSubtitle: Gen<BooksProductsWithSubtitle> =
+        let hasSearchableSubtitle product =
+            match product.Category with
+            | Category.Books book -> book.Subtitle.Split(" ") |> Array.exists (fun word -> word.Length >= 2)
+            | Category.Bazaar _ -> false
+
+        genBooksProducts
+        |> Gen.where (fun (BooksProducts(Products(_, products))) -> products |> List.exists hasSearchableSubtitle)
+        |> Gen.map (fun (BooksProducts products) -> BooksProductsWithSubtitle products)
+
 [<AutoOpen>]
 module ActivePatterns =
     let (|PositiveDollars|) (PositiveInt amount) : Money = Money.Dollars(decimal amount)
@@ -170,3 +185,4 @@ type DomainArbs =
 
     static member BazaarProducts() = Arb.fromGen genBazaarProducts
     static member BooksProducts() = Arb.fromGen genBooksProducts
+    static member BooksProductsWithSubtitle() = Arb.fromGen genBooksProductsWithSubtitle

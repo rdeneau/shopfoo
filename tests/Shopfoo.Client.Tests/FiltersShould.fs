@@ -310,7 +310,7 @@ type FiltersShould() =
         verifySearchSuccess products search
 
     [<Test; ShopfooFsCheckProperty>]
-    member _.``search books by subtitle, case insensitive``(caseChange, RandomFromSeed random, BooksProducts(Products(_, products))) =
+    member _.``search books by subtitle, case insensitive``(caseChange, RandomFromSeed random, BooksProductsWithSubtitle(Products(_, products))) =
         let search = buildSearchConfig Column.BookSubtitle GetColumnTexts.bookSubtitle (MatchCase.No caseChange) random products
         verifySearchSuccess products search
 
